@@ -8,7 +8,6 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.padding
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Surface
-import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
@@ -16,13 +15,16 @@ import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.compose.rememberNavController
+import com.example.recetify.ui.login.ForgotPasswordScreen
 import com.example.recetify.ui.login.LoginScreen
+import com.example.recetify.ui.login.PasswordResetViewModel
+import com.example.recetify.ui.login.ResetPasswordScreen
+import com.example.recetify.ui.login.VerifyCodeScreen
 import com.example.recetify.ui.theme.RecetifyTheme
 
 class MainActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
-        // Esta línea viene de: implementation "androidx.activity:activity-ktx:1.8.0+"
         enableEdgeToEdge()
         setContent {
             RecetifyTheme {
@@ -39,28 +41,52 @@ class MainActivity : ComponentActivity() {
 
 @Composable
 fun AppNavGraph() {
-    val navController = rememberNavController()
+    val nav = rememberNavController()
+    // Esta es la única instancia de PasswordResetViewModel
+    val passwordVm: PasswordResetViewModel = viewModel()
 
-    NavHost(
-        navController = navController,
-        startDestination = "login"
-    ) {
+    NavHost(navController = nav, startDestination = "login") {
         composable("login") {
             LoginScreen(
-                viewModel = viewModel(),
+                viewModel = viewModel(), // tu VM de login
                 onLoginSuccess = { token ->
-                    // Una vez que recibes el token, limpias el backstack y vas a "home"
-                    navController.navigate("home") {
-                        popUpTo("login") { inclusive = true }
-                    }
+                    nav.navigate("home") { popUpTo("login") { inclusive = true } }
+                },
+                onForgot = {
+                    nav.navigate("forgot")
                 }
             )
         }
+
+        composable("forgot") {
+            ForgotPasswordScreen(
+                viewModel = passwordVm,    // le pasas la VM hoisteada
+                onNext = { nav.navigate("verify") }
+            )
+        }
+
+        composable("verify") {
+            VerifyCodeScreen(
+                viewModel = passwordVm,    // misma VM
+                onNext = { nav.navigate("reset") }
+            )
+        }
+
+        composable("reset") {
+            ResetPasswordScreen(
+                viewModel = passwordVm,    // misma VM
+                onFinish = {
+                    nav.navigate("login") { popUpTo("forgot") { inclusive = true } }
+                }
+            )
+        }
+
         composable("home") {
             HomeScreen()
         }
     }
 }
+
 
 @Composable
 fun HomeScreen() {
@@ -68,7 +94,7 @@ fun HomeScreen() {
         modifier = Modifier.fillMaxSize(),
         color = MaterialTheme.colorScheme.background
     ) {
-        Text(
+        androidx.compose.material3.Text(
             text = "¡Bienvenido a Recetify!",
             modifier = Modifier.padding(16.dp),
             style = MaterialTheme.typography.headlineSmall

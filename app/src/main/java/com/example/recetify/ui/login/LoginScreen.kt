@@ -35,7 +35,8 @@ private val Sen = FontFamily(
 @Composable
 fun LoginScreen(
     viewModel: LoginViewModel = viewModel(),
-    onLoginSuccess: (token: String) -> Unit
+    onLoginSuccess: (token: String) -> Unit,
+    onForgot: () -> Unit
 ) {
     val state by viewModel.state.collectAsState()
 
@@ -64,7 +65,7 @@ fun LoginScreen(
                 )
                 Spacer(modifier = Modifier.height(24.dp))
                 Text(
-                    text = "LOG IN",
+                    text = "INICIO DE SESION",
                     fontSize = 24.sp,
                     fontWeight = FontWeight.SemiBold,
                     color = Color.White,
@@ -124,11 +125,17 @@ fun LoginScreen(
                     modifier = Modifier.fillMaxWidth(),
                     shape = RoundedCornerShape(12.dp),
                     textStyle = TextStyle(color = Color.Black, fontSize = 16.sp),
-                    visualTransformation = if (state.isPasswordVisible) VisualTransformation.None else PasswordVisualTransformation(),
+                    visualTransformation = if (state.isPasswordVisible)
+                        VisualTransformation.None
+                    else
+                        PasswordVisualTransformation(),
                     trailingIcon = {
                         IconButton(onClick = viewModel::togglePasswordVisibility) {
                             Icon(
-                                imageVector = if (state.isPasswordVisible) Icons.Default.Visibility else Icons.Default.VisibilityOff,
+                                imageVector = if (state.isPasswordVisible)
+                                    Icons.Default.Visibility
+                                else
+                                    Icons.Default.VisibilityOff,
                                 contentDescription = "Toggle Password Visibility"
                             )
                         }
@@ -137,59 +144,79 @@ fun LoginScreen(
 
                 // Recordarme
                 var rememberMe by remember { mutableStateOf(false) }
-
                 Row(
                     verticalAlignment = Alignment.CenterVertically,
                     horizontalArrangement = Arrangement.spacedBy(8.dp)
                 ) {
-                    Box(
-                        modifier = Modifier
-                            .size(24.dp)                  // tamaño visual
-                            .clickable { rememberMe = !rememberMe },  // togglea al clickear
-                        contentAlignment = Alignment.Center
-                    ) {
-                        Checkbox(
-                            checked = rememberMe,
-                            onCheckedChange = null,       // lo controlamos en el Box
-                            modifier = Modifier.fillMaxSize(),
-                            colors = CheckboxDefaults.colors(
-                                checkedColor = Color(0xCCBC6154),
-                                uncheckedColor = Color.Gray
-                            )
-                        )
-                    }
-
+                    Checkbox(
+                        checked = rememberMe,
+                        onCheckedChange = { rememberMe = it }
+                    )
                     Text(
                         text = "Recordarme",
-                        color = Color(0xFF555555),
                         fontSize = 14.sp,
+                        color = Color(0xFF555555)
                     )
                 }
-
-
 
                 // Botón LOG IN
                 Button(
                     onClick = viewModel::onLoginClicked,
-                    modifier = Modifier.fillMaxWidth().height(48.dp),
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .height(48.dp),
                     shape = RoundedCornerShape(12.dp),
                     colors = ButtonDefaults.buttonColors(containerColor = Color(0xCCBC6154))
                 ) {
-                    if (state.isLoading) CircularProgressIndicator(modifier = Modifier.size(24.dp), strokeWidth = 2.dp, color = Color.White)
-                    else Text("LOG IN", color = Color.White)
+                    if (state.isLoading) {
+                        CircularProgressIndicator(
+                            modifier = Modifier.size(24.dp),
+                            strokeWidth = 2.dp,
+                            color = Color.White
+                        )
+                    } else {
+                        Text("LOG IN", color = Color.White)
+                    }
                 }
 
                 // Mensaje de error
-                state.error?.let { errorMsg ->
-                    Text(text = errorMsg, color = MaterialTheme.colorScheme.error, fontSize = 12.sp, modifier = Modifier.align(Alignment.CenterHorizontally))
+                state.error?.let { err ->
+                    Text(
+                        text = err,
+                        color = MaterialTheme.colorScheme.error,
+                        fontSize = 12.sp,
+                        modifier = Modifier.align(Alignment.CenterHorizontally)
+                    )
                 }
 
-                // Enlaces justo debajo del botón
+                // Enlaces debajo del botón
                 Spacer(modifier = Modifier.height(8.dp))
-                Column(modifier = Modifier.fillMaxWidth(), horizontalAlignment = Alignment.CenterHorizontally, verticalArrangement = Arrangement.spacedBy(4.dp)) {
-                    Text(text = "¿Olvidaste la contraseña?", fontSize = 14.sp, color = Color(0xFFBC6154), modifier = Modifier.clickable {})
-                    Row { Text(text = "No tenés una cuenta? ", fontSize = 14.sp, color = Color(0xFF555555))
-                        Text(text = "REGÍSTRATE", fontSize = 14.sp, fontWeight = FontWeight.Bold, color = Color(0xCCBC6154), modifier = Modifier.clickable {}) }
+                Column(
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalAlignment = Alignment.CenterHorizontally
+                ) {
+                    Text(
+                        text = "¿Olvidaste la contraseña?",
+                        fontSize = 14.sp,
+                        color = Color(0xFFBC6154),
+                        modifier = Modifier
+                            .clickable(onClick = onForgot)
+                            .padding(vertical = 4.dp)
+                    )
+                    Row {
+                        Text(
+                            text = "¿No tenés una cuenta? ",
+                            fontSize = 14.sp,
+                            color = Color(0xFF555555)
+                        )
+                        Text(
+                            text = "REGÍSTRATE",
+                            fontSize = 14.sp,
+                            fontWeight = FontWeight.Bold,
+                            color = Color(0xCCBC6154),
+                            modifier = Modifier.clickable { /* navegar a registro */ }
+                        )
+                    }
                 }
             }
         }
