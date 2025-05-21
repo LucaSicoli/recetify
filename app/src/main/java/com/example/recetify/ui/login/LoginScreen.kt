@@ -175,7 +175,7 @@ fun LoginScreen(
                             color = Color.White
                         )
                     } else {
-                        Text("LOG IN", color = Color.White)
+                        Text("INICIAR SESION", color = Color.White)
                     }
                 }
 

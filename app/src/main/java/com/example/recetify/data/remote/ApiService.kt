@@ -5,8 +5,6 @@ import com.example.recetify.data.remote.model.JwtResponse
 import com.example.recetify.data.remote.model.LoginRequest
 import com.example.recetify.data.remote.model.ResetDTO
 import retrofit2.http.Body
-import retrofit2.http.GET
-import retrofit2.http.Header
 import retrofit2.http.POST
 
 interface ApiService {
