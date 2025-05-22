@@ -175,7 +175,7 @@ fun LoginScreen(
                             color = Color.White
                         )
                     } else {
-                        Text("INICIAR SESION", color = Color.White)
+                        Text("INICIAR SESION", color = Color.White, fontFamily = Sen)
                     }
                 }
 
@@ -207,14 +207,17 @@ fun LoginScreen(
                         Text(
                             text = "¿No tenés una cuenta? ",
                             fontSize = 14.sp,
-                            color = Color(0xFF555555)
+                            color = Color(0xFF555555),
+                            fontFamily = Sen
                         )
                         Text(
                             text = "REGÍSTRATE",
                             fontSize = 14.sp,
                             fontWeight = FontWeight.Bold,
                             color = Color(0xCCBC6154),
+                            fontFamily = Sen,
                             modifier = Modifier.clickable { /* navegar a registro */ }
+
                         )
                     }
                 }

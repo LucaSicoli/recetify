@@ -23,6 +23,7 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.lifecycle.viewmodel.compose.viewModel
 import com.example.recetify.R
+import androidx.compose.material3.TextFieldDefaults
 
 private val Sen = FontFamily(
     Font(R.font.sen_regular, weight = FontWeight.Normal),
@@ -88,7 +89,7 @@ fun ResetPasswordScreen(
                     shape = RoundedCornerShape(12.dp),
                     visualTransformation = PasswordVisualTransformation(),
                     keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Password),
-                    textStyle = TextStyle(fontFamily = Sen, fontSize = 16.sp)
+                    textStyle = TextStyle(fontFamily = Sen, fontSize = 16.sp, color = Color.Black),
                 )
 
                 OutlinedTextField(
@@ -100,7 +101,7 @@ fun ResetPasswordScreen(
                     shape = RoundedCornerShape(12.dp),
                     visualTransformation = PasswordVisualTransformation(),
                     keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Password),
-                    textStyle = TextStyle(fontFamily = Sen, fontSize = 16.sp)
+                    textStyle = TextStyle(fontFamily = Sen, fontSize = 16.sp, color = Color.Black)
                 )
 
                 Button(
