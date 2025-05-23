@@ -1,4 +1,5 @@
-import com.example.recetify.data.remote.ApiService
+package com.example.recetify.data.remote
+
 import com.example.recetify.data.remote.model.SessionManager
 import com.google.gson.GsonBuilder
 import okhttp3.Interceptor
