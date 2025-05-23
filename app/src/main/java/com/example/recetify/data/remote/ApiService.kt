@@ -3,8 +3,10 @@ import com.example.recetify.data.remote.model.CodeDTO
 import com.example.recetify.data.remote.model.EmailDTO
 import com.example.recetify.data.remote.model.JwtResponse
 import com.example.recetify.data.remote.model.LoginRequest
+import com.example.recetify.data.remote.model.RecipeResponse
 import com.example.recetify.data.remote.model.ResetDTO
 import retrofit2.http.Body
+import retrofit2.http.GET
 import retrofit2.http.POST
 
 interface ApiService {
@@ -19,5 +21,8 @@ interface ApiService {
 
     @POST("api/auth/reset-password")
     suspend fun resetPassword(@Body req: ResetDTO): Unit
+
+    @GET("recipes")
+    suspend fun getAllRecipes(): List<RecipeResponse>
 }
 

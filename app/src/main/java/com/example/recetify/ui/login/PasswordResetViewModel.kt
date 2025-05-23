@@ -2,7 +2,6 @@ package com.example.recetify.ui.login
 
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
-import com.example.recetify.data.remote.RetrofitClient
 import com.example.recetify.data.remote.model.CodeDTO
 import com.example.recetify.data.remote.model.EmailDTO
 import com.example.recetify.data.remote.model.ResetDTO
