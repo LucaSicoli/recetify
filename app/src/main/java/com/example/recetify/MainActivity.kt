@@ -16,8 +16,20 @@ import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.compose.rememberNavController
+
 import com.example.recetify.ui.login.*
 import com.example.recetify.ui.onboarding.*
+
+import com.example.recetify.data.remote.model.SessionManager
+import com.example.recetify.ui.home.HomeScreen
+import com.example.recetify.ui.home.HomeViewModel
+import com.example.recetify.ui.login.ForgotPasswordScreen
+import com.example.recetify.ui.login.LoginScreen
+import com.example.recetify.ui.login.LoginViewModel
+import com.example.recetify.ui.login.PasswordResetViewModel
+import com.example.recetify.ui.login.ResetPasswordScreen
+import com.example.recetify.ui.login.VerifyCodeScreen
+
 import com.example.recetify.ui.theme.RecetifyTheme
 
 class MainActivity : ComponentActivity() {
@@ -40,6 +52,9 @@ class MainActivity : ComponentActivity() {
 @Composable
 fun AppNavGraph() {
     val nav = rememberNavController()
+
+    // VM única para el reset de contraseña
+
     val passwordVm: PasswordResetViewModel = viewModel()
 
     // Empieza por el onboarding (pantalla 01)
@@ -51,10 +66,21 @@ fun AppNavGraph() {
 
         // Login flow
         composable("login") {
+            // VM de login local
+            val loginVm: LoginViewModel = viewModel()
             LoginScreen(
+
                 viewModel = viewModel(),
+
+
+
                 onLoginSuccess = { token ->
-                    nav.navigate("home") { popUpTo("login") { inclusive = true } }
+                    // 1) guardo el token
+                    SessionManager.authToken = token
+                    // 2) navego a home
+                    nav.navigate("home") {
+                        popUpTo("login") { inclusive = true }
+                    }
                 },
                 onForgot = { nav.navigate("forgot") }
             )
@@ -78,16 +104,21 @@ fun AppNavGraph() {
             ResetPasswordScreen(
                 viewModel = passwordVm,
                 onFinish = {
-                    nav.navigate("login") { popUpTo("forgot") { inclusive = true } }
+                    nav.navigate("login") {
+                        popUpTo("forgot") { inclusive = true }
+                    }
                 }
             )
         }
 
         composable("home") {
-            HomeScreen()
+            // VM de home para cargar recetas
+            val homeVm: HomeViewModel = viewModel()
+            HomeScreen(homeVm = homeVm)
         }
     }
 }
+
 
 @Composable
 fun HomeScreen() {
@@ -102,3 +133,4 @@ fun HomeScreen() {
         )
     }
 }
+

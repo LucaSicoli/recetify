@@ -26,6 +26,7 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.lifecycle.viewmodel.compose.viewModel
 import com.example.recetify.R
+import com.example.recetify.data.remote.model.SessionManager
 
 private val Sen = FontFamily(
     Font(R.font.sen_regular, weight = FontWeight.Normal),
@@ -41,7 +42,10 @@ fun LoginScreen(
     val state by viewModel.state.collectAsState()
 
     LaunchedEffect(state.token) {
-        state.token?.let(onLoginSuccess)
+        state.token?.let { token ->
+            SessionManager.authToken = token
+            onLoginSuccess(token)
+        }
     }
 
     Column(modifier = Modifier.fillMaxSize()) {
