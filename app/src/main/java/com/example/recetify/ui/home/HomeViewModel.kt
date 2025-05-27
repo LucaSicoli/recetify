@@ -1,4 +1,3 @@
-// HomeViewModel.kt
 package com.example.recetify.ui.home
 
 import android.app.Application
@@ -23,34 +22,31 @@ class HomeViewModel(app: Application) : AndroidViewModel(app) {
 
     init {
         viewModelScope.launch(Dispatchers.IO) {
-            // 1) Descarga el JSON
+            // 1) Descarga JSON
             val fetched = try {
                 RetrofitClient.api.getAllRecipes()
             } catch (e: Throwable) {
                 emptyList<RecipeResponse>()
             }
 
-            // 2) Pre-carga cada imagen en Coil
+            // 2) Precarga imágenes en Coil
             val loader = ImageLoader(getApplication())
             fetched.forEach { recipe ->
-                // Reconstruye exactamente la URL final, igual que en UI
                 val base     = RetrofitClient.BASE_URL.trimEnd('/')
                 val original = recipe.fotoPrincipal.orEmpty()
                 val pathOnly = runCatching {
                     val uri = URI(original)
                     uri.rawPath + uri.rawQuery?.let { "?$it" }.orEmpty()
                 }.getOrNull() ?: original
-                val finalUrl = if (pathOnly.startsWith("/")) "$base$pathOnly"
-                else "$base/$pathOnly"
+                val finalUrl = if (pathOnly.startsWith("/")) "$base$pathOnly" else "$base/$pathOnly"
 
-                // Ejecuta la petición sin lanzar exceptions
                 val request = ImageRequest.Builder(getApplication())
                     .data(finalUrl)
                     .build()
                 runCatching { loader.execute(request) }
             }
 
-            // 3) Emitimos resultados YA con imágenes en caché
+            // 3) Emitir datos ya listos
             _recipes.value   = fetched
             _isLoading.value = false
         }
