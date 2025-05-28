@@ -1,38 +1,30 @@
-// HomeScreen.kt
 package com.example.recetify.ui.home
 
+import androidx.compose.animation.core.animateFloatAsState
+import androidx.compose.animation.core.tween
 import androidx.compose.foundation.ExperimentalFoundationApi
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Star
 import androidx.compose.material.icons.filled.Timer
 import androidx.compose.material.icons.outlined.Person
-import androidx.compose.material3.Card
-import androidx.compose.material3.CardDefaults
-import androidx.compose.material3.CircularProgressIndicator
-import androidx.compose.material3.Icon
-import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.Surface
-import androidx.compose.foundation.layout.wrapContentWidth
-import androidx.compose.foundation.lazy.rememberLazyListState
-import androidx.compose.material3.Text
-import androidx.compose.runtime.Composable
-import androidx.compose.runtime.collectAsState
-import androidx.compose.runtime.derivedStateOf
-import androidx.compose.runtime.getValue
-import androidx.compose.runtime.remember
+import androidx.compose.material3.*
+import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.Shape
+import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.layout.ContentScale
+import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.PlatformTextStyle
 import androidx.compose.ui.text.font.Font
@@ -66,10 +58,28 @@ fun HomeScreen(
     val isLoading by homeVm.isLoading.collectAsState()
     val listState = rememberLazyListState()
 
+    // distancia de fade en px
+    val fadeDistancePx = with(LocalDensity.current) { 80.dp.toPx() }
+    // alpha bruto
+    val rawAlpha = remember {
+        derivedStateOf {
+            if (listState.firstVisibleItemIndex > 0) 0f
+            else {
+                val fraction = listState.firstVisibleItemScrollOffset / fadeDistancePx
+                (1f - fraction).coerceIn(0f, 1f)
+            }
+        }
+    }.value
+    // animamos el alpha para que sea más lento
+    val logoAlpha by animateFloatAsState(
+        targetValue = rawAlpha,
+        animationSpec = tween(durationMillis = 500)
+    )
+
     Surface(modifier = Modifier.fillMaxSize(), color = Color.White) {
         if (isLoading) {
             Box(
-                modifier         = Modifier.fillMaxSize(),
+                Modifier.fillMaxSize(),
                 contentAlignment = Alignment.Center
             ) {
                 CircularProgressIndicator()
@@ -78,39 +88,37 @@ fun HomeScreen(
         }
 
         LazyColumn(
-            state             = listState,
-            modifier          = Modifier.fillMaxSize(),
-            contentPadding    = PaddingValues(top = 0.dp, bottom = 8.dp),
+            state = listState,
+            modifier = Modifier.fillMaxSize(),
+            contentPadding = PaddingValues(top = 0.dp, bottom = 8.dp),
             verticalArrangement = Arrangement.spacedBy(16.dp)
         ) {
-            // 1) Logo pegado arriba
+            // 1) Logo con fade más lento
             item {
                 Box(
-                    modifier = Modifier
+                    Modifier
                         .fillMaxWidth()
                         .padding(horizontal = 24.dp)
                 ) {
                     Image(
-                        painter            = painterResource(id = R.drawable.homecheflogo),
+                        painter = painterResource(id = R.drawable.homecheflogo),
                         contentDescription = "Logo Recetify",
-                        modifier           = Modifier
+                        modifier = Modifier
                             .size(210.dp)
                             .align(Alignment.TopCenter)
                             .padding(top = 58.dp)
+                            .graphicsLayer { alpha = logoAlpha },
+                        contentScale = ContentScale.Fit
                     )
                 }
             }
 
-            // 2) Sticky header full-width al hacer scroll,
-            //    pero desplazado ligeramente hacia arriba cuando NO es sticky
+            // 2) Sticky header siempre sin bordes redondeados
             stickyHeader {
-                val isStuck by remember {
-                    derivedStateOf { listState.firstVisibleItemIndex > 0 }
-                }
+                val isStuck by remember { derivedStateOf { listState.firstVisibleItemIndex > 0 } }
                 Box(
-                    modifier = Modifier
+                    Modifier
                         .fillMaxWidth()
-                        // acerca el header al logo solo en modo "no sticky"
                         .offset(y = if (!isStuck) (-24).dp else 0.dp)
                         .padding(horizontal = if (isStuck) 0.dp else 24.dp)
                         .background(Color.White)
@@ -120,7 +128,10 @@ fun HomeScreen(
                         modifier = Modifier
                             .fillMaxWidth()
                             .height(if (isStuck) 100.dp else 90.dp),
-                        shape = if (isStuck) RoundedCornerShape(0.dp) else RoundedCornerShape(16.dp)
+                        shape = if (isStuck)
+                            RoundedCornerShape(0.dp)
+                        else
+                            RoundedCornerShape(8.dp)
                     )
                 }
             }
@@ -128,7 +139,7 @@ fun HomeScreen(
             // 3) Recipes
             items(recipes, key = { it.id }) { recipe ->
                 Box(
-                    modifier = Modifier
+                    Modifier
                         .fillMaxWidth()
                         .padding(horizontal = 24.dp)
                 ) {
@@ -139,7 +150,6 @@ fun HomeScreen(
     }
 }
 
-
 @Composable
 private fun FeaturedHeader(
     modifier: Modifier = Modifier,
@@ -148,15 +158,13 @@ private fun FeaturedHeader(
     shape: Shape = RoundedCornerShape(16.dp)
 ) {
     Card(
-        modifier  = modifier
-            .padding(horizontal = 0.dp)
-            .height(90.dp),
-        shape     = shape,
+        modifier = modifier.height(90.dp),
+        shape = shape,
         elevation = CardDefaults.cardElevation(defaultElevation = 8.dp),
-        colors    = CardDefaults.cardColors(containerColor = Color.Transparent)
+        colors = CardDefaults.cardColors(containerColor = Color.Transparent)
     ) {
         Box(
-            modifier = Modifier
+            Modifier
                 .fillMaxSize()
                 .background(
                     brush = Brush.horizontalGradient(
@@ -169,7 +177,7 @@ private fun FeaturedHeader(
                 )
         ) {
             Row(
-                modifier = Modifier
+                Modifier
                     .align(Alignment.Center)
                     .wrapContentWidth()
                     .padding(horizontal = 12.dp),
@@ -186,7 +194,7 @@ private fun FeaturedHeader(
                     text = title,
                     maxLines = 1,
                     overflow = TextOverflow.Clip,
-                    style = androidx.compose.material3.MaterialTheme.typography.titleMedium.copy(
+                    style = MaterialTheme.typography.titleMedium.copy(
                         color = Color.White,
                         fontFamily = Destacado,
                         fontWeight = FontWeight.Bold,
@@ -200,7 +208,7 @@ private fun FeaturedHeader(
                     text = subtitle,
                     maxLines = 1,
                     overflow = TextOverflow.Clip,
-                    style = androidx.compose.material3.MaterialTheme.typography.bodyMedium.copy(
+                    style = MaterialTheme.typography.bodyMedium.copy(
                         color = Color.White.copy(alpha = 0.9f),
                         fontFamily = Sen,
                         fontSize = 20.sp,
@@ -226,27 +234,27 @@ fun RecipeCard(
     val finalUrl = if (pathOnly.startsWith("/")) "$base$pathOnly" else "$base/$pathOnly"
 
     Card(
-        modifier  = modifier.fillMaxWidth(),
-        shape     = RoundedCornerShape(16.dp),
+        modifier = modifier.fillMaxWidth(),
+        shape = RoundedCornerShape(8.dp),
         elevation = CardDefaults.cardElevation(defaultElevation = 4.dp),
-        colors    = CardDefaults.cardColors(containerColor = Color.White)
+        colors = CardDefaults.cardColors(containerColor = Color.White)
     ) {
         Column {
             AsyncImage(
-                model              = finalUrl,
+                model = finalUrl,
                 contentDescription = recipe.nombre,
-                modifier           = Modifier
+                modifier = Modifier
                     .fillMaxWidth()
                     .height(180.dp)
-                    .clip(RoundedCornerShape(topStart = 16.dp, topEnd = 16.dp)),
-                contentScale       = ContentScale.Crop
+                    .clip(RoundedCornerShape(topStart = 8.dp, topEnd = 8.dp)),
+                contentScale = ContentScale.Crop
             )
 
             Spacer(Modifier.height(12.dp))
 
             Column(Modifier.padding(horizontal = 16.dp)) {
                 Text(
-                    text  = recipe.nombre,
+                    text = recipe.nombre,
                     style = MaterialTheme.typography.titleMedium.copy(fontWeight = FontWeight.SemiBold),
                     color = Color.Black
                 )
@@ -255,14 +263,14 @@ fun RecipeCard(
 
                 Row(verticalAlignment = Alignment.CenterVertically) {
                     Icon(
-                        imageVector        = Icons.Outlined.Person,
+                        imageVector = Icons.Outlined.Person,
                         contentDescription = "Chef",
-                        tint               = Color.Black,
-                        modifier           = Modifier.size(16.dp)
+                        tint = Color.Black,
+                        modifier = Modifier.size(16.dp)
                     )
                     Spacer(Modifier.width(4.dp))
                     Text(
-                        text  = recipe.usuarioCreadorAlias.orEmpty(),
+                        text = recipe.usuarioCreadorAlias.orEmpty(),
                         style = MaterialTheme.typography.bodySmall.copy(color = Color.Black)
                     )
                 }
@@ -271,28 +279,28 @@ fun RecipeCard(
 
                 Row(verticalAlignment = Alignment.CenterVertically) {
                     Icon(
-                        imageVector        = Icons.Filled.Star,
+                        imageVector = Icons.Filled.Star,
                         contentDescription = "Rating",
-                        tint               = Color(0xFFe29587),
-                        modifier           = Modifier.size(18.dp)
+                        tint = Color(0xFFe29587),
+                        modifier = Modifier.size(18.dp)
                     )
                     Spacer(Modifier.width(4.dp))
                     Text(
-                        text  = "%,.1f".format(recipe.promedioRating ?: 0.0),
+                        text = "%,.1f".format(recipe.promedioRating ?: 0.0),
                         style = MaterialTheme.typography.bodyMedium.copy(color = Color.Black)
                     )
 
                     Spacer(Modifier.width(16.dp))
 
                     Icon(
-                        imageVector        = Icons.Filled.Timer,
+                        imageVector = Icons.Filled.Timer,
                         contentDescription = "Tiempo",
-                        tint               = Color.Black,
-                        modifier           = Modifier.size(18.dp)
+                        tint = Color.Black,
+                        modifier = Modifier.size(18.dp)
                     )
                     Spacer(Modifier.width(4.dp))
                     Text(
-                        text  = "${recipe.tiempo} min",
+                        text = "${recipe.tiempo} min",
                         style = MaterialTheme.typography.bodyMedium.copy(color = Color.Black)
                     )
                 }
@@ -300,10 +308,10 @@ fun RecipeCard(
                 Spacer(Modifier.height(8.dp))
 
                 Text(
-                    text      = recipe.descripcion.orEmpty(),
-                    style     = MaterialTheme.typography.bodyMedium.copy(color = Color.Black),
-                    maxLines  = 2,
-                    overflow  = TextOverflow.Ellipsis
+                    text = recipe.descripcion.orEmpty(),
+                    style = MaterialTheme.typography.bodyMedium.copy(color = Color.Black),
+                    maxLines = 2,
+                    overflow = TextOverflow.Ellipsis
                 )
             }
 
