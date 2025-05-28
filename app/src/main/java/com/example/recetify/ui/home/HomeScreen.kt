@@ -1,6 +1,7 @@
 // HomeScreen.kt
 package com.example.recetify.ui.home
 
+import androidx.compose.foundation.ExperimentalFoundationApi
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.*
@@ -17,15 +18,20 @@ import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Surface
+import androidx.compose.foundation.layout.wrapContentWidth
+import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.collectAsState
+import androidx.compose.runtime.derivedStateOf
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.Shape
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.PlatformTextStyle
@@ -35,6 +41,7 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import androidx.compose.ui.zIndex
 import androidx.lifecycle.viewmodel.compose.viewModel
 import coil.compose.AsyncImage
 import com.example.recetify.R
@@ -50,21 +57,103 @@ private val Destacado = FontFamily(
     Font(R.font.sen_semibold, weight = FontWeight.ExtraBold)
 )
 
+@OptIn(ExperimentalFoundationApi::class)
+@Composable
+fun HomeScreen(
+    homeVm: HomeViewModel = viewModel()
+) {
+    val recipes   by homeVm.recipes.collectAsState()
+    val isLoading by homeVm.isLoading.collectAsState()
+    val listState = rememberLazyListState()
+
+    Surface(modifier = Modifier.fillMaxSize(), color = Color.White) {
+        if (isLoading) {
+            Box(
+                modifier         = Modifier.fillMaxSize(),
+                contentAlignment = Alignment.Center
+            ) {
+                CircularProgressIndicator()
+            }
+            return@Surface
+        }
+
+        LazyColumn(
+            state             = listState,
+            modifier          = Modifier.fillMaxSize(),
+            contentPadding    = PaddingValues(top = 0.dp, bottom = 8.dp),
+            verticalArrangement = Arrangement.spacedBy(16.dp)
+        ) {
+            // 1) Logo pegado arriba
+            item {
+                Box(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(horizontal = 24.dp)
+                ) {
+                    Image(
+                        painter            = painterResource(id = R.drawable.homecheflogo),
+                        contentDescription = "Logo Recetify",
+                        modifier           = Modifier
+                            .size(210.dp)
+                            .align(Alignment.TopCenter)
+                            .padding(top = 58.dp)
+                    )
+                }
+            }
+
+            // 2) Sticky header full-width al hacer scroll,
+            //    pero desplazado ligeramente hacia arriba cuando NO es sticky
+            stickyHeader {
+                val isStuck by remember {
+                    derivedStateOf { listState.firstVisibleItemIndex > 0 }
+                }
+                Box(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        // acerca el header al logo solo en modo "no sticky"
+                        .offset(y = if (!isStuck) (-24).dp else 0.dp)
+                        .padding(horizontal = if (isStuck) 0.dp else 24.dp)
+                        .background(Color.White)
+                        .zIndex(10f)
+                ) {
+                    FeaturedHeader(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .height(if (isStuck) 100.dp else 90.dp),
+                        shape = if (isStuck) RoundedCornerShape(0.dp) else RoundedCornerShape(16.dp)
+                    )
+                }
+            }
+
+            // 3) Recipes
+            items(recipes, key = { it.id }) { recipe ->
+                Box(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(horizontal = 24.dp)
+                ) {
+                    RecipeCard(recipe)
+                }
+            }
+        }
+    }
+}
+
+
 @Composable
 private fun FeaturedHeader(
+    modifier: Modifier = Modifier,
     title: String = "DESTACADOS",
     subtitle: String = "del día",
-    modifier: Modifier = Modifier
+    shape: Shape = RoundedCornerShape(16.dp)
 ) {
     Card(
-        modifier = modifier
-            .fillMaxWidth()
-            .padding(horizontal = 24.dp)
-            .offset(y = (-16).dp)
+        modifier  = modifier
+            .padding(horizontal = 0.dp)
             .height(90.dp),
-        shape = RoundedCornerShape(16.dp),
+        shape     = shape,
         elevation = CardDefaults.cardElevation(defaultElevation = 8.dp),
-        colors = CardDefaults.cardColors(containerColor = Color.Transparent)
+        colors    = CardDefaults.cardColors(containerColor = Color.Transparent)
     ) {
         Box(
             modifier = Modifier
@@ -97,7 +186,7 @@ private fun FeaturedHeader(
                     text = title,
                     maxLines = 1,
                     overflow = TextOverflow.Clip,
-                    style = MaterialTheme.typography.titleMedium.copy(
+                    style = androidx.compose.material3.MaterialTheme.typography.titleMedium.copy(
                         color = Color.White,
                         fontFamily = Destacado,
                         fontWeight = FontWeight.Bold,
@@ -111,56 +200,13 @@ private fun FeaturedHeader(
                     text = subtitle,
                     maxLines = 1,
                     overflow = TextOverflow.Clip,
-                    style = MaterialTheme.typography.bodyMedium.copy(
+                    style = androidx.compose.material3.MaterialTheme.typography.bodyMedium.copy(
                         color = Color.White.copy(alpha = 0.9f),
                         fontFamily = Sen,
                         fontSize = 20.sp,
                         platformStyle = PlatformTextStyle(includeFontPadding = false)
                     )
                 )
-            }
-        }
-    }
-}
-
-@Composable
-fun HomeScreen(
-    homeVm: HomeViewModel = viewModel()
-) {
-    val recipes   by homeVm.recipes.collectAsState()
-    val isLoading by homeVm.isLoading.collectAsState()
-
-    Surface(
-        modifier = Modifier.fillMaxSize(),
-        color    = Color.White
-    ) {
-        if (isLoading) {
-            Box(Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
-                CircularProgressIndicator()
-            }
-            return@Surface
-        }
-
-        Column(modifier = Modifier.fillMaxSize()) {
-            Image(
-                painter = painterResource(id = R.drawable.homecheflogo),
-                contentDescription = "Logo Recetify",
-                modifier = Modifier
-                    .size(180.dp)
-                    .align(Alignment.CenterHorizontally)
-                    .padding(top = 14.dp)
-            )
-
-            FeaturedHeader()
-
-            LazyColumn(
-                modifier            = Modifier.fillMaxSize(),
-                contentPadding      = PaddingValues(horizontal = 24.dp, vertical = 8.dp),
-                verticalArrangement = Arrangement.spacedBy(16.dp)
-            ) {
-                items(recipes, key = { it.id }) { recipe ->
-                    RecipeCard(recipe)
-                }
             }
         }
     }
