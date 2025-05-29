@@ -52,32 +52,25 @@ class MainActivity : ComponentActivity() {
 @Composable
 fun AppNavGraph() {
     val nav = rememberNavController()
-
-    // VM única para el reset de contraseña
-
     val passwordVm: PasswordResetViewModel = viewModel()
 
-    // Empieza por el onboarding (pantalla 01)
+    // Empieza por el onboarding
     NavHost(navController = nav, startDestination = "start01") {
-        // Onboarding screens
         composable("start01") { Start01Screen(navController = nav) }
         composable("start02") { Start02Screen(navController = nav) }
         composable("start03") { Start03Screen(navController = nav) }
 
-        // Login flow
+        // Redirige a login cuando se termina onboarding
+        composable("index") {
+            nav.navigate("login") { popUpTo("start01") { inclusive = true } }
+        }
+
         composable("login") {
-            // VM de login local
             val loginVm: LoginViewModel = viewModel()
             LoginScreen(
-
-                viewModel = viewModel(),
-
-
-
+                viewModel = loginVm,
                 onLoginSuccess = { token ->
-                    // 1) guardo el token
                     SessionManager.authToken = token
-                    // 2) navego a home
                     nav.navigate("home") {
                         popUpTo("login") { inclusive = true }
                     }
@@ -112,25 +105,9 @@ fun AppNavGraph() {
         }
 
         composable("home") {
-            // VM de home para cargar recetas
             val homeVm: HomeViewModel = viewModel()
             HomeScreen(homeVm = homeVm)
         }
-    }
-}
-
-
-@Composable
-fun HomeScreen() {
-    Surface(
-        modifier = Modifier.fillMaxSize(),
-        color = MaterialTheme.colorScheme.background
-    ) {
-        Text(
-            text = "¡Bienvenido a Recetify!",
-            modifier = Modifier.padding(16.dp),
-            style = MaterialTheme.typography.headlineSmall
-        )
     }
 }
 
