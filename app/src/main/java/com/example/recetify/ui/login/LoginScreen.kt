@@ -1,11 +1,11 @@
-package com.example.recetify.ui.login
 
+package com.example.recetify.ui.login
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
-import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.KeyboardOptions
+import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Visibility
 import androidx.compose.material.icons.filled.VisibilityOff
@@ -14,6 +14,7 @@ import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.font.Font
@@ -26,6 +27,7 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.lifecycle.viewmodel.compose.viewModel
 import com.example.recetify.R
+import com.example.recetify.data.local.UserPreferences
 import com.example.recetify.data.remote.model.SessionManager
 
 private val Sen = FontFamily(
@@ -39,10 +41,44 @@ fun LoginScreen(
     onLoginSuccess: (token: String) -> Unit,
     onForgot: () -> Unit
 ) {
+    val context = LocalContext.current
+    val prefs   = remember { UserPreferences(context) }
+
+    // 1) Observamos el estado del ViewModel
     val state by viewModel.state.collectAsState()
 
+    // 2) Cargamos de DataStore los valores guardados
+    val savedRemember by prefs.rememberFlow.collectAsState(initial = false)
+    val savedAlias    by prefs.aliasFlow.collectAsState(initial = "")
+    val savedEmail    by prefs.emailFlow.collectAsState(initial = "")
+    val savedPwd      by prefs.passwordFlow.collectAsState(initial = "")
+
+    // 3) Local: checkbox “Recordarme”
+    var rememberMe by remember { mutableStateOf(savedRemember) }
+
+    // 4) Si ya había guardado datos, los precargamos en el ViewModel
+    LaunchedEffect(savedRemember) {
+        if (savedRemember) {
+            viewModel.onAliasChanged(savedAlias ?: "")
+            viewModel.onEmailChanged(savedEmail ?: "")
+            viewModel.onPasswordChanged(savedPwd ?: "")
+        }
+    }
+
+    // 5) Cuando el login sale bien, guardamos (o limpiamos) en DataStore
     LaunchedEffect(state.token) {
         state.token?.let { token ->
+            if (rememberMe) {
+                prefs.saveLoginData(
+                    alias    = state.alias,
+                    email    = state.email,
+                    password = state.password,
+                    remember = true
+                )
+            } else {
+                prefs.clearLoginData()
+            }
+            // Luego navegamos
             SessionManager.authToken = token
             onLoginSuccess(token)
         }
@@ -147,7 +183,6 @@ fun LoginScreen(
                 )
 
                 // Recordarme
-                var rememberMe by remember { mutableStateOf(false) }
                 Row(
                     verticalAlignment = Alignment.CenterVertically,
                     horizontalArrangement = Arrangement.spacedBy(8.dp)
@@ -221,7 +256,6 @@ fun LoginScreen(
                             color = Color(0xCCBC6154),
                             fontFamily = Sen,
                             modifier = Modifier.clickable { /* navegar a registro */ }
-
                         )
                     }
                 }

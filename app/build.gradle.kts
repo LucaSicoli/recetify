@@ -80,9 +80,10 @@ dependencies {
     implementation("com.squareup.retrofit2:converter-gson:2.9.0")
     implementation("com.squareup.okhttp3:logging-interceptor:5.0.0-alpha.2")
     implementation("io.coil-kt:coil-compose:2.2.2")
+    implementation("androidx.datastore:datastore-preferences:1.0.0")
     implementation("androidx.compose.material3:material3:1.2.1")
     implementation("androidx.navigation:navigation-compose:2.7.5") // Versión más reciente a mayo 2025
-
+    implementation("androidx.datastore:datastore-preferences:1.0.0")
 
 
 

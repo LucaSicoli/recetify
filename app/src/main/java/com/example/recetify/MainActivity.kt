@@ -32,7 +32,7 @@ class MainActivity : ComponentActivity() {
             RecetifyTheme {
                 Surface(
                     modifier = Modifier.fillMaxSize(),
-                    color = MaterialTheme.colorScheme.background
+                    color    = MaterialTheme.colorScheme.background
                 ) {
                     AppNavGraph()
                 }
@@ -44,47 +44,41 @@ class MainActivity : ComponentActivity() {
 @Composable
 fun AppNavGraph() {
     val nav = rememberNavController()
-    // VM única para el reset de contraseña
     val passwordVm: PasswordResetViewModel = viewModel()
 
     NavHost(navController = nav, startDestination = "login") {
         composable("login") {
-            // VM de login local
             val loginVm: LoginViewModel = viewModel()
             LoginScreen(
-                viewModel = loginVm,
+                viewModel      = loginVm,
                 onLoginSuccess = { token ->
-                    // 1) guardo el token
                     SessionManager.authToken = token
-                    // 2) navego a home
                     nav.navigate("home") {
                         popUpTo("login") { inclusive = true }
                     }
                 },
-                onForgot = {
-                    nav.navigate("forgot")
-                }
+                onForgot       = { nav.navigate("forgot") }
             )
         }
 
         composable("forgot") {
             ForgotPasswordScreen(
                 viewModel = passwordVm,
-                onNext = { nav.navigate("verify") }
+                onNext    = { nav.navigate("verify") }
             )
         }
 
         composable("verify") {
             VerifyCodeScreen(
                 viewModel = passwordVm,
-                onNext = { nav.navigate("reset") }
+                onNext    = { nav.navigate("reset") }
             )
         }
 
         composable("reset") {
             ResetPasswordScreen(
-                viewModel = passwordVm,
-                onFinish = {
+                viewModel  = passwordVm,
+                onFinish   = {
                     nav.navigate("login") {
                         popUpTo("forgot") { inclusive = true }
                     }
@@ -93,9 +87,7 @@ fun AppNavGraph() {
         }
 
         composable("home") {
-            // VM de home para cargar recetas
-            val homeVm: HomeViewModel = viewModel()
-            HomeScreen(homeVm = homeVm)
+            HomeScreen() // ya inyecta su propio HomeViewModel
         }
     }
 }
