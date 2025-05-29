@@ -8,10 +8,14 @@ import retrofit2.Retrofit
 import retrofit2.converter.gson.GsonConverterFactory
 
 object RetrofitClient {
+<<<<<<< HEAD
 
     private const val BASE_URL = "http://192.168.1.36:8080/"
 
 
+=======
+    const val BASE_URL = "http://192.168.0.25:8080/"
+>>>>>>> f3a2f39289142bb7129c048f0120c43d21a17bbb
 
     private val gson = GsonBuilder()
         .setDateFormat("yyyy-MM-dd'T'HH:mm:ss.SSSSSS")

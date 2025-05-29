@@ -5,21 +5,14 @@ import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
 import androidx.compose.foundation.layout.fillMaxSize
-import androidx.compose.foundation.layout.padding
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Surface
-import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.unit.dp
 import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.compose.rememberNavController
-
-import com.example.recetify.ui.login.*
-import com.example.recetify.ui.onboarding.*
-
 import com.example.recetify.data.remote.model.SessionManager
 import com.example.recetify.ui.home.HomeScreen
 import com.example.recetify.ui.home.HomeViewModel
@@ -29,7 +22,6 @@ import com.example.recetify.ui.login.LoginViewModel
 import com.example.recetify.ui.login.PasswordResetViewModel
 import com.example.recetify.ui.login.ResetPasswordScreen
 import com.example.recetify.ui.login.VerifyCodeScreen
-
 import com.example.recetify.ui.theme.RecetifyTheme
 
 class MainActivity : ComponentActivity() {
@@ -40,7 +32,7 @@ class MainActivity : ComponentActivity() {
             RecetifyTheme {
                 Surface(
                     modifier = Modifier.fillMaxSize(),
-                    color = MaterialTheme.colorScheme.background
+                    color    = MaterialTheme.colorScheme.background
                 ) {
                     AppNavGraph()
                 }
@@ -54,49 +46,39 @@ fun AppNavGraph() {
     val nav = rememberNavController()
     val passwordVm: PasswordResetViewModel = viewModel()
 
-    // Empieza por el onboarding
-    NavHost(navController = nav, startDestination = "start01") {
-        composable("start01") { Start01Screen(navController = nav) }
-        composable("start02") { Start02Screen(navController = nav) }
-        composable("start03") { Start03Screen(navController = nav) }
-
-        // Redirige a login cuando se termina onboarding
-        composable("index") {
-            nav.navigate("login") { popUpTo("start01") { inclusive = true } }
-        }
-
+    NavHost(navController = nav, startDestination = "login") {
         composable("login") {
             val loginVm: LoginViewModel = viewModel()
             LoginScreen(
-                viewModel = loginVm,
+                viewModel      = loginVm,
                 onLoginSuccess = { token ->
                     SessionManager.authToken = token
                     nav.navigate("home") {
                         popUpTo("login") { inclusive = true }
                     }
                 },
-                onForgot = { nav.navigate("forgot") }
+                onForgot       = { nav.navigate("forgot") }
             )
         }
 
         composable("forgot") {
             ForgotPasswordScreen(
                 viewModel = passwordVm,
-                onNext = { nav.navigate("verify") }
+                onNext    = { nav.navigate("verify") }
             )
         }
 
         composable("verify") {
             VerifyCodeScreen(
                 viewModel = passwordVm,
-                onNext = { nav.navigate("reset") }
+                onNext    = { nav.navigate("reset") }
             )
         }
 
         composable("reset") {
             ResetPasswordScreen(
-                viewModel = passwordVm,
-                onFinish = {
+                viewModel  = passwordVm,
+                onFinish   = {
                     nav.navigate("login") {
                         popUpTo("forgot") { inclusive = true }
                     }
@@ -105,9 +87,7 @@ fun AppNavGraph() {
         }
 
         composable("home") {
-            val homeVm: HomeViewModel = viewModel()
-            HomeScreen(homeVm = homeVm)
+            HomeScreen() // ya inyecta su propio HomeViewModel
         }
     }
 }
-

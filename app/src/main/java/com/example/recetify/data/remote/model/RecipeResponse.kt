@@ -8,6 +8,9 @@ data class RecipeResponse(
     val tiempo: Int,
     val porciones: Int,
     val fechaCreacion: String,
-    val estado: String
-)
+    val estado: String,
 
+    // ------> NUEVAS (con default para que no crashee aún sin backend):
+    val usuarioCreadorAlias: String? = null,
+    val promedioRating: Double?       = null
+)

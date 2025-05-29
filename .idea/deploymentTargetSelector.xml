@@ -2,7 +2,22 @@
 <project version="4">
   <component name="deploymentTargetSelector">
     <selectionStates>
+<<<<<<< HEAD
       <SelectionState runConfigName="Recetify.app">
+=======
+      <SelectionState runConfigName="app">
+        <option name="selectionMode" value="DROPDOWN" />
+        <DropdownSelection timestamp="2025-05-27T03:07:08.465577400Z">
+          <Target type="DEFAULT_BOOT">
+            <handle>
+              <DeviceId pluginId="PhysicalDevice" identifier="serial=R58W80TGSYH" />
+            </handle>
+          </Target>
+        </DropdownSelection>
+        <DialogSelection />
+      </SelectionState>
+      <SelectionState runConfigName="GreetingPreview">
+>>>>>>> f3a2f39289142bb7129c048f0120c43d21a17bbb
         <option name="selectionMode" value="DROPDOWN" />
         <DropdownSelection timestamp="2025-05-23T02:10:00.781371Z">
           <Target type="DEFAULT_BOOT">
