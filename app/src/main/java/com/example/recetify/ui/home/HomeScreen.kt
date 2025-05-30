@@ -76,7 +76,7 @@ fun HomeScreen(
         animationSpec = tween(durationMillis = 500)
     )
 
-    Surface(modifier = Modifier.fillMaxSize(), color = Color.White) {
+    Surface(modifier = Modifier.fillMaxSize(), color = Color(0xFFF5F5F5)) {
         if (isLoading) {
             Box(
                 Modifier.fillMaxSize(),
@@ -90,7 +90,7 @@ fun HomeScreen(
         LazyColumn(
             state = listState,
             modifier = Modifier.fillMaxSize(),
-            contentPadding = PaddingValues(top = 0.dp, bottom = 8.dp),
+            contentPadding = PaddingValues(top = 0.dp, bottom = 100.dp),
             verticalArrangement = Arrangement.spacedBy(16.dp)
         ) {
             // 1) Logo con fade más lento
