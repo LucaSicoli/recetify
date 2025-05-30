@@ -38,6 +38,9 @@ fun BottomNavBar(navController: NavController) {
             shape = RoundedCornerShape(topStart = 32.dp, topEnd = 32.dp)
         ) {
             val items = NavItem.items.filterNot { it is NavItem.Chef }
+            val navColors = NavigationBarItemDefaults.colors(
+                unselectedIconColor = Color.Black
+            )
 
             Row(
                 modifier = Modifier
@@ -46,7 +49,10 @@ fun BottomNavBar(navController: NavController) {
                 horizontalArrangement = Arrangement.SpaceBetween,
                 verticalAlignment = Alignment.CenterVertically
             ) {
-                items.take(2).forEach { item ->
+                items.forEachIndexed { index, item ->
+                    if (index == 2) {
+                        Spacer(modifier = Modifier.width(64.dp)) // espacio para FAB
+                    }
                     NavigationBarItem(
                         icon = {
                             Icon(
@@ -63,30 +69,8 @@ fun BottomNavBar(navController: NavController) {
                                 }
                             }
                         },
-                        alwaysShowLabel = false
-                    )
-                }
-
-                Spacer(modifier = Modifier.width(64.dp)) // espacio para FAB
-
-                items.takeLast(2).forEach { item ->
-                    NavigationBarItem(
-                        icon = {
-                            Icon(
-                                imageVector = item.icon!!,
-                                contentDescription = item.route
-                            )
-                        },
-                        selected = currentRoute == item.route,
-                        onClick = {
-                            if (currentRoute != item.route) {
-                                navController.navigate(item.route) {
-                                    popUpTo(navController.graph.startDestinationId)
-                                    launchSingleTop = true
-                                }
-                            }
-                        },
-                        alwaysShowLabel = false
+                        alwaysShowLabel = false,
+                        colors = navColors
                     )
                 }
             }
