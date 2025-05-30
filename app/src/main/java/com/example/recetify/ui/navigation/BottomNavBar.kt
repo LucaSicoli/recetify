@@ -55,8 +55,10 @@ fun BottomNavBar(navController: NavController) {
                     NavigationBarItem(
                         icon = {
                             Icon(
+                                modifier = Modifier.size(26.dp),
                                 imageVector = item.icon!!,
                                 contentDescription = item.route
+
                             )
                         },
                         selected = currentRoute == item.route,
@@ -96,7 +98,7 @@ fun BottomNavBar(navController: NavController) {
             Icon(
                 painter = painterResource(id = R.drawable.ic_chef_hat),
                 contentDescription = "Chef",
-                modifier = Modifier.size(28.dp)
+                modifier = Modifier.size(32.dp)
             )
         }
     }
