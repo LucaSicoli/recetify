@@ -8,6 +8,7 @@ import com.example.recetify.data.remote.model.ResetDTO
 import retrofit2.http.Body
 import retrofit2.http.GET
 import retrofit2.http.POST
+import retrofit2.http.Path
 
 interface ApiService {
     @POST("api/auth/login")
@@ -21,6 +22,9 @@ interface ApiService {
 
     @POST("api/auth/reset-password")
     suspend fun resetPassword(@Body req: ResetDTO): Unit
+
+    @GET("recipes/{id}")
+    suspend fun getRecipeById(@Path("id") id: Long): RecipeResponse
 
     @GET("recipes")
     suspend fun getAllRecipes(): List<RecipeResponse>
