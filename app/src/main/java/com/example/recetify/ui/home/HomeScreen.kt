@@ -40,6 +40,7 @@ import com.example.recetify.data.remote.RetrofitClient
 import com.example.recetify.data.remote.model.RecipeResponse
 import java.net.URI
 import androidx.compose.foundation.clickable
+import androidx.compose.ui.zIndex
 import androidx.navigation.NavController
 
 private val Sen = FontFamily(
@@ -79,25 +80,41 @@ fun HomeScreen(homeVm: HomeViewModel = viewModel(), navController: NavController
                 verticalArrangement = Arrangement.spacedBy(16.dp)
             ) {
                 item {
-                    Box(Modifier.fillMaxWidth()) {
+                    Box(
+                        Modifier
+                            .fillMaxWidth()
+                            .padding(horizontal = 24.dp)
+                    ) {
                         Image(
                             painter = painterResource(id = R.drawable.homecheflogo),
-                            contentDescription = "Logo",
+                            contentDescription = "Logo Recetify",
                             modifier = Modifier
                                 .size(210.dp)
-                                .align(Alignment.Center)
+                                .align(Alignment.TopCenter)
                                 .padding(top = 58.dp)
-                                .graphicsLayer { alpha = logoAlpha }
+                                .graphicsLayer { alpha = logoAlpha },
+                            contentScale = ContentScale.Fit
                         )
                     }
                 }
 
                 stickyHeader {
-                    FeaturedHeader(
-                        modifier = Modifier.fillMaxWidth(),
-                        title = "DESTACADOS",
-                        subtitle = "del día"
-                    )
+                    val isStuck by remember { derivedStateOf { listState.firstVisibleItemIndex > 0 } }
+                    Box(
+                        Modifier
+                            .fillMaxWidth()
+                            .offset(y = if (!isStuck) (-24).dp else 0.dp)
+                            .padding(horizontal = if (isStuck) 0.dp else 24.dp)
+                            .background(Color.White)
+                            .zIndex(10f)
+                    ) {
+                        FeaturedHeader(
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .height(if (isStuck) 100.dp else 90.dp),
+                            shape = if (isStuck) RoundedCornerShape(0.dp) else RoundedCornerShape(8.dp)
+                        )
+                    }
                 }
 
                 items(recipes, key = { it.id }) { recipe ->
@@ -114,7 +131,6 @@ fun HomeScreen(homeVm: HomeViewModel = viewModel(), navController: NavController
         }
     }
 }
-
 
 @Composable
 private fun FeaturedHeader(

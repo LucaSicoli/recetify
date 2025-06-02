@@ -20,13 +20,12 @@ import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.compose.currentBackStackEntryAsState
 import androidx.navigation.compose.rememberNavController
-import com.example.recetify.data.remote.model.RecipeResponse
 import com.example.recetify.data.remote.model.SessionManager
 import com.example.recetify.ui.home.HomeScreen
 import com.example.recetify.ui.login.*
 import com.example.recetify.ui.navigation.BottomNavBar
 import com.example.recetify.ui.theme.RecetifyTheme
-import com.example.recetify.ui.home.RecipeDetailScreen
+import com.example.recetify.ui.details.RecipeDetailScreen
 
 class MainActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -84,7 +83,8 @@ fun AppNavGraph() {
         }
 
         val backStack by nav.currentBackStackEntryAsState()
-        if (backStack?.destination?.route == "home") {
+        val route = backStack?.destination?.route ?: ""
+        if (route == "home" || route.startsWith("recipe/")) {
             Box(Modifier.align(Alignment.BottomCenter)) {
                 BottomNavBar(navController = nav)
             }
