@@ -1,5 +1,3 @@
-// RecipeDetailContent extraído de RecipeDetailScreen
-
 package com.example.recetify.ui.details
 
 import androidx.compose.foundation.*
@@ -8,6 +6,7 @@ import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.AccessTime
+import androidx.compose.material.icons.filled.ArrowBack
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.*
@@ -17,18 +16,19 @@ import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import androidx.navigation.NavController
 import coil.compose.AsyncImage
 import com.example.recetify.data.remote.RetrofitClient
 import com.example.recetify.data.remote.model.RecipeResponse
 import com.example.recetify.util.obtenerEmoji
-
 
 @Composable
 fun RecipeDetailContent(
     receta: RecipeResponse,
     padding: PaddingValues,
     showIngredients: MutableState<Boolean>,
-    currentStep: MutableState<Int>
+    currentStep: MutableState<Int>,
+    navController: NavController
 ) {
     val primaryTextColor = Color(0xFF042628)
     val selectedButtonColor = Color(0xFF042628)
@@ -48,12 +48,29 @@ fun RecipeDetailContent(
             .padding(padding)
             .verticalScroll(rememberScrollState())
     ) {
-        AsyncImage(
-            model = fullUrl,
-            contentDescription = receta.nombre,
-            modifier = Modifier.fillMaxWidth().height(260.dp),
-            contentScale = ContentScale.Crop
-        )
+        Box(modifier = Modifier.fillMaxWidth().height(260.dp)) {
+            AsyncImage(
+                model = fullUrl,
+                contentDescription = receta.nombre,
+                modifier = Modifier.fillMaxSize(),
+                contentScale = ContentScale.Crop
+            )
+
+            IconButton(
+                onClick = { navController.popBackStack() },
+                modifier = Modifier
+                    .padding(16.dp)
+                    .size(40.dp)
+                    .background(Color.Black.copy(alpha = 0.4f), shape = CircleShape)
+                    .align(Alignment.TopStart)
+            ) {
+                Icon(
+                    imageVector = Icons.Filled.ArrowBack,
+                    contentDescription = "Volver",
+                    tint = Color.White
+                )
+            }
+        }
 
         Surface(
             modifier = Modifier.offset(y = (-24).dp),

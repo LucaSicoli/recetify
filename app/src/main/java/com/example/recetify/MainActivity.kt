@@ -30,7 +30,16 @@ import com.example.recetify.ui.details.RecipeDetailScreen
 class MainActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
-        enableEdgeToEdge()
+
+        // Evita que el sistema reserve espacio para barras del sistema
+        WindowCompat.setDecorFitsSystemWindows(window, false)
+
+        // Oculta las barras del sistema permanentemente
+        val controller = WindowInsetsControllerCompat(window, window.decorView).apply {
+            systemBarsBehavior = WindowInsetsControllerCompat.BEHAVIOR_SHOW_TRANSIENT_BARS_BY_SWIPE
+            hide(WindowInsetsCompat.Type.systemBars()) // Oculta status bar y navigation bar
+        }
+
         setContent {
             RecetifyTheme {
                 Surface(
@@ -41,13 +50,9 @@ class MainActivity : ComponentActivity() {
                 }
             }
         }
-        WindowCompat.setDecorFitsSystemWindows(window, false)
-        val controller = WindowInsetsControllerCompat(window, window.decorView)
-        controller.systemBarsBehavior =
-            WindowInsetsControllerCompat.BEHAVIOR_SHOW_TRANSIENT_BARS_BY_SWIPE
-        controller.hide(WindowInsetsCompat.Type.navigationBars())
     }
 }
+
 
 
 @Composable
@@ -77,8 +82,8 @@ fun AppNavGraph() {
             }
             composable("home") { HomeScreen(navController = nav) }
             composable("recipe/{id}") {
-                val id = it.arguments?.getString("id")
-                if (id != null) RecipeDetailScreen(id)
+                val id = it.arguments?.getString("id")?.toLongOrNull()
+                if (id != null) RecipeDetailScreen(recipeId = id, navController = nav)
             }
         }
 

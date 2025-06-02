@@ -1,8 +1,10 @@
 package com.example.recetify.data.remote
 import com.example.recetify.data.remote.model.CodeDTO
+import com.example.recetify.data.remote.model.CreateRatingRequest
 import com.example.recetify.data.remote.model.EmailDTO
 import com.example.recetify.data.remote.model.JwtResponse
 import com.example.recetify.data.remote.model.LoginRequest
+import com.example.recetify.data.remote.model.RatingResponse
 import com.example.recetify.data.remote.model.RecipeResponse
 import com.example.recetify.data.remote.model.ResetDTO
 import retrofit2.http.Body
@@ -28,5 +30,11 @@ interface ApiService {
 
     @GET("recipes")
     suspend fun getAllRecipes(): List<RecipeResponse>
+
+    @GET("ratings/recipe/{recipeId}")
+    suspend fun getRatingsForRecipe(@Path("recipeId") id: Long): List<RatingResponse>
+
+    @POST("ratings")
+    suspend fun addRating(@Body req: CreateRatingRequest): RatingResponse
 }
 

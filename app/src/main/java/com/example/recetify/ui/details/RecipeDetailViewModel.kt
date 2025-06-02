@@ -4,9 +4,11 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.example.recetify.data.remote.RetrofitClient
 import com.example.recetify.data.remote.model.RecipeResponse
+import com.example.recetify.data.remote.model.RatingResponse
+import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 import androidx.compose.runtime.*
-import kotlinx.coroutines.delay
+import com.example.recetify.data.remote.model.CreateRatingRequest
 
 class RecipeDetailViewModel : ViewModel() {
 
@@ -16,12 +18,16 @@ class RecipeDetailViewModel : ViewModel() {
     var loading by mutableStateOf(true)
         private set
 
-    fun fetchRecipe(id: Long) {
+    var ratings by mutableStateOf<List<RatingResponse>>(emptyList())
+        private set
+
+    fun fetchRecipe(recipeId: Long) {
+        loading = true
         viewModelScope.launch {
-            loading = true
             val start = System.currentTimeMillis()
             try {
-                recipe = RetrofitClient.api.getRecipeById(id)
+                recipe = RetrofitClient.api.getRecipeById(recipeId)
+                ratings = RetrofitClient.api.getRatingsForRecipe(recipeId)
             } catch (e: Exception) {
                 e.printStackTrace()
             } finally {
@@ -32,4 +38,21 @@ class RecipeDetailViewModel : ViewModel() {
             }
         }
     }
+
+    fun postRating(recipeId: Long, comentario: String, puntos: Int) {
+        viewModelScope.launch {
+            try {
+                val nuevo = CreateRatingRequest(
+                    recipeId = recipeId,
+                    comentario = comentario,
+                    puntos = puntos
+                )
+                RetrofitClient.api.addRating(nuevo)
+                ratings = RetrofitClient.api.getRatingsForRecipe(recipeId)
+            } catch (e: Exception) {
+                e.printStackTrace()
+            }
+        }
+    }
+
 }
