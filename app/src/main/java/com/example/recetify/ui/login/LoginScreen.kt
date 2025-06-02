@@ -79,7 +79,7 @@ fun LoginScreen(
                 prefs.clearLoginData()
             }
             // Luego navegamos
-            SessionManager.authToken = token
+            SessionManager.saveToken(token)
             onLoginSuccess(token)
         }
     }
