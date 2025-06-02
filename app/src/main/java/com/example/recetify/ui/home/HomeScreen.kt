@@ -33,13 +33,14 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import androidx.compose.ui.zIndex
 import androidx.lifecycle.viewmodel.compose.viewModel
 import coil.compose.AsyncImage
 import com.example.recetify.R
 import com.example.recetify.data.remote.RetrofitClient
 import com.example.recetify.data.remote.model.RecipeResponse
 import java.net.URI
+import androidx.compose.foundation.clickable
+import androidx.navigation.NavController
 
 private val Sen = FontFamily(
     Font(R.font.pacifico_regular, weight = FontWeight.Light)
@@ -51,104 +52,69 @@ private val Destacado = FontFamily(
 
 @OptIn(ExperimentalFoundationApi::class)
 @Composable
-fun HomeScreen(
-    homeVm: HomeViewModel = viewModel()
-) {
-    val recipes   by homeVm.recipes.collectAsState()
+fun HomeScreen(homeVm: HomeViewModel = viewModel(), navController: NavController) {
+    val recipes by homeVm.recipes.collectAsState()
     val isLoading by homeVm.isLoading.collectAsState()
     val listState = rememberLazyListState()
 
-    // distancia de fade en px
     val fadeDistancePx = with(LocalDensity.current) { 80.dp.toPx() }
-    // alpha bruto
     val rawAlpha = remember {
         derivedStateOf {
             if (listState.firstVisibleItemIndex > 0) 0f
-            else {
-                val fraction = listState.firstVisibleItemScrollOffset / fadeDistancePx
-                (1f - fraction).coerceIn(0f, 1f)
-            }
+            else (1f - listState.firstVisibleItemScrollOffset / fadeDistancePx).coerceIn(0f, 1f)
         }
     }.value
-    // animamos el alpha para que sea más lento
-    val logoAlpha by animateFloatAsState(
-        targetValue = rawAlpha,
-        animationSpec = tween(durationMillis = 500)
-    )
+    val logoAlpha by animateFloatAsState(targetValue = rawAlpha, animationSpec = tween(500))
 
     Surface(modifier = Modifier.fillMaxSize(), color = Color(0xFFF5F5F5)) {
         if (isLoading) {
-            Box(
-                Modifier.fillMaxSize(),
-                contentAlignment = Alignment.Center
-            ) {
+            Box(Modifier.fillMaxSize(), Alignment.Center) {
                 CircularProgressIndicator()
             }
-            return@Surface
-        }
-
-        LazyColumn(
-            state = listState,
-            modifier = Modifier.fillMaxSize(),
-            contentPadding = PaddingValues(top = 0.dp, bottom = 100.dp),
-            verticalArrangement = Arrangement.spacedBy(16.dp)
-        ) {
-            // 1) Logo con fade más lento
-            item {
-                Box(
-                    Modifier
-                        .fillMaxWidth()
-                        .padding(horizontal = 24.dp)
-                ) {
-                    Image(
-                        painter = painterResource(id = R.drawable.homecheflogo),
-                        contentDescription = "Logo Recetify",
-                        modifier = Modifier
-                            .size(210.dp)
-                            .align(Alignment.TopCenter)
-                            .padding(top = 58.dp)
-                            .graphicsLayer { alpha = logoAlpha },
-                        contentScale = ContentScale.Fit
-                    )
+        } else {
+            LazyColumn(
+                state = listState,
+                modifier = Modifier.fillMaxSize(),
+                contentPadding = PaddingValues(top = 0.dp, bottom = 100.dp),
+                verticalArrangement = Arrangement.spacedBy(16.dp)
+            ) {
+                item {
+                    Box(Modifier.fillMaxWidth()) {
+                        Image(
+                            painter = painterResource(id = R.drawable.homecheflogo),
+                            contentDescription = "Logo",
+                            modifier = Modifier
+                                .size(210.dp)
+                                .align(Alignment.Center)
+                                .padding(top = 58.dp)
+                                .graphicsLayer { alpha = logoAlpha }
+                        )
+                    }
                 }
-            }
 
-            // 2) Sticky header siempre sin bordes redondeados
-            stickyHeader {
-                val isStuck by remember { derivedStateOf { listState.firstVisibleItemIndex > 0 } }
-                Box(
-                    Modifier
-                        .fillMaxWidth()
-                        .offset(y = if (!isStuck) (-24).dp else 0.dp)
-                        .padding(horizontal = if (isStuck) 0.dp else 24.dp)
-                        .background(Color.White)
-                        .zIndex(10f)
-                ) {
+                stickyHeader {
                     FeaturedHeader(
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .height(if (isStuck) 100.dp else 90.dp),
-                        shape = if (isStuck)
-                            RoundedCornerShape(0.dp)
-                        else
-                            RoundedCornerShape(8.dp)
+                        modifier = Modifier.fillMaxWidth(),
+                        title = "DESTACADOS",
+                        subtitle = "del día"
                     )
                 }
-            }
 
-            // 3) Recipes
-            items(recipes, key = { it.id }) { recipe ->
-                Box(
-                    Modifier
-                        .fillMaxWidth()
-                        .padding(horizontal = 24.dp)
-                ) {
-                    RecipeCard(recipe)
+                items(recipes, key = { it.id }) { recipe ->
+                    Box(
+                        Modifier
+                            .fillMaxWidth()
+                            .padding(horizontal = 24.dp)
+                            .clickable { navController.navigate("recipe/${recipe.id}") }
+                    ) {
+                        RecipeCard(recipe)
+                    }
                 }
             }
         }
     }
 }
+
 
 @Composable
 private fun FeaturedHeader(

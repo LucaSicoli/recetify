@@ -20,11 +20,13 @@ import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.compose.currentBackStackEntryAsState
 import androidx.navigation.compose.rememberNavController
+import com.example.recetify.data.remote.model.RecipeResponse
 import com.example.recetify.data.remote.model.SessionManager
 import com.example.recetify.ui.home.HomeScreen
 import com.example.recetify.ui.login.*
 import com.example.recetify.ui.navigation.BottomNavBar
 import com.example.recetify.ui.theme.RecetifyTheme
+import com.example.recetify.ui.home.RecipeDetailScreen
 
 class MainActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -34,7 +36,7 @@ class MainActivity : ComponentActivity() {
             RecetifyTheme {
                 Surface(
                     modifier = Modifier.fillMaxSize(),
-                    color    = MaterialTheme.colorScheme.background
+                    color = MaterialTheme.colorScheme.background
                 ) {
                     AppNavGraph()
                 }
@@ -55,56 +57,35 @@ fun AppNavGraph() {
     val passwordVm: PasswordResetViewModel = viewModel()
 
     Box(modifier = Modifier.fillMaxSize()) {
-        NavHost(
-            navController    = nav,
-            startDestination = "login",
-            modifier         = Modifier.fillMaxSize()
-        ) {
+        NavHost(navController = nav, startDestination = "login", modifier = Modifier.fillMaxSize()) {
             composable("login") {
                 val loginVm = viewModel<LoginViewModel>()
                 LoginScreen(
-                    viewModel      = loginVm,
-                    onLoginSuccess = { token ->
-                        SessionManager.authToken = token
-                        nav.navigate("home") {
-                            popUpTo("login") { inclusive = true }
-                        }
+                    viewModel = loginVm,
+                    onLoginSuccess = {
+                        SessionManager.authToken = it
+                        nav.navigate("home") { popUpTo("login") { inclusive = true } }
                     },
-                    onForgot       = { nav.navigate("forgot") }
+                    onForgot = { nav.navigate("forgot") }
                 )
             }
-            composable("forgot") {
-                ForgotPasswordScreen(
-                    viewModel = passwordVm,
-                    onNext    = { nav.navigate("verify") }
-                )
-            }
-            composable("verify") {
-                VerifyCodeScreen(
-                    viewModel = passwordVm,
-                    onNext    = { nav.navigate("reset") }
-                )
-            }
+            composable("forgot") { ForgotPasswordScreen(viewModel = passwordVm, onNext = { nav.navigate("verify") }) }
+            composable("verify") { VerifyCodeScreen(viewModel = passwordVm, onNext = { nav.navigate("reset") }) }
             composable("reset") {
-                ResetPasswordScreen(
-                    viewModel = passwordVm,
-                    onFinish  = {
-                        nav.navigate("login") {
-                            popUpTo("forgot") { inclusive = true }
-                        }
-                    }
-                )
+                ResetPasswordScreen(viewModel = passwordVm, onFinish = {
+                    nav.navigate("login") { popUpTo("forgot") { inclusive = true } }
+                })
             }
-            composable("home") {
-                HomeScreen()
+            composable("home") { HomeScreen(navController = nav) }
+            composable("recipe/{id}") {
+                val id = it.arguments?.getString("id")
+                if (id != null) RecipeDetailScreen(id)
             }
         }
 
         val backStack by nav.currentBackStackEntryAsState()
         if (backStack?.destination?.route == "home") {
-            Box(modifier = Modifier
-                .align(Alignment.BottomCenter)
-            ) {
+            Box(Modifier.align(Alignment.BottomCenter)) {
                 BottomNavBar(navController = nav)
             }
         }
