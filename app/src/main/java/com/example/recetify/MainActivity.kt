@@ -25,6 +25,7 @@ import com.example.recetify.ui.home.HomeScreen
 import com.example.recetify.ui.login.*
 import com.example.recetify.ui.navigation.BottomNavBar
 import com.example.recetify.ui.theme.RecetifyTheme
+import com.example.recetify.ui.favorites.FavoritesScreen
 
 class MainActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -97,6 +98,9 @@ fun AppNavGraph() {
             }
             composable("home") {
                 HomeScreen()
+            }
+            composable("favorites") {
+                FavoritesScreen()
             }
         }
 
