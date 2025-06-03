@@ -29,18 +29,16 @@ import androidx.compose.material.icons.filled.AccessTime
 import androidx.compose.material.icons.outlined.StarBorder
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
-import androidx.compose.material3.Divider
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
-import androidx.compose.material3.TextFieldDefaults
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
+import androidx.compose.material3.Divider
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.MutableState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
@@ -51,6 +49,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.layout.ContentScale
+import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.TextFieldValue
 import androidx.compose.ui.unit.dp
@@ -163,17 +162,11 @@ fun ReviewsAndCommentSection(
 
         // ── Lista de reseñas (hasta 2 si no expandido) ────────────────────────
         Column(modifier = Modifier.fillMaxWidth()) {
-            displayList.forEach { rating ->
-                Card(
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .padding(vertical = 4.dp),
-                    shape = RoundedCornerShape(12.dp),
-                    colors = CardDefaults.cardColors(containerColor = Color.White),
-                    elevation = CardDefaults.cardElevation(defaultElevation = 4.dp)
-                ) {
-                    RatingItem(rating)
+            displayList.forEachIndexed { index, rating ->
+                if (index > 0) {
+                    Spacer(modifier = Modifier.height(8.dp))
                 }
+                CommentCard(rating = rating)
             }
             if (ratings.size > previewCount) {
                 Row(
@@ -199,8 +192,14 @@ fun ReviewsAndCommentSection(
             }
         }
 
-        // ── Separador visual ──────────────────────────────────────────────────
-        Divider(color = Color.LightGray, thickness = 1.dp)
+        Spacer(modifier = Modifier.height(12.dp)) // espacio extra antes del divider
+        Divider(
+            color = Color(0xFFE0E0E0),
+            thickness = 1.dp,
+            modifier = Modifier.fillMaxWidth()
+        )
+
+
 
         // ── Card: “Dejá tu comentario” ────────────────────────────────────────
         Card(
@@ -259,15 +258,12 @@ fun ReviewsAndCommentSection(
                         placeholder = { Text("Contanos qué te pareció la receta…") },
                         modifier = Modifier
                             .fillMaxWidth()
-                            .height(120.dp),
+                            .height(100.dp),
                         maxLines = 4,
-                        colors = TextFieldDefaults.colors(
-                            focusedContainerColor = Color(0xFFF0F0F0),
-                            unfocusedContainerColor = Color(0xFFF0F0F0),
-                            focusedIndicatorColor = Color(0xFF042628),
-                            unfocusedIndicatorColor = Color.Gray
-                        )
+                        textStyle = TextStyle(color = Color.Black) // fuerza texto negro
+                        // <-- quito “colors = …”
                     )
+
 
                     Text(
                         text = "${textComment.text.length}/$maxChars",
@@ -369,7 +365,7 @@ fun RecipeDetailContent(
             modifier = Modifier.offset(y = (-24).dp),
             shape = RoundedCornerShape(topStart = 24.dp, topEnd = 24.dp),
             color = Color.White,
-            tonalElevation = 4.dp
+            tonalElevation = 0.dp
         ) {
             Column(Modifier.padding(24.dp)) {
                 // Título y descripción de la receta
