@@ -9,6 +9,7 @@ import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
@@ -26,9 +27,11 @@ import androidx.compose.material.icons.filled.ArrowDropDown
 import androidx.compose.material.icons.filled.ArrowDropUp
 import androidx.compose.material.icons.filled.Star
 import androidx.compose.material.icons.filled.AccessTime
+import androidx.compose.material.icons.outlined.Person
 import androidx.compose.material.icons.outlined.StarBorder
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
+import androidx.compose.material3.Divider
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
@@ -37,7 +40,6 @@ import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
-import androidx.compose.material3.Divider
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.MutableState
 import androidx.compose.runtime.getValue
@@ -59,10 +61,8 @@ import coil.compose.AsyncImage
 import com.example.recetify.data.remote.RetrofitClient
 import com.example.recetify.data.remote.model.RecipeResponse
 import com.example.recetify.data.remote.model.RatingResponse
-import com.example.recetify.ui.details.RatingItem
 import com.example.recetify.ui.details.RecipeDetailViewModel
 import com.example.recetify.util.obtenerEmoji
-import kotlinx.coroutines.launch
 
 /**
  * Selector de estrellas para puntaje (1..5).
@@ -192,14 +192,12 @@ fun ReviewsAndCommentSection(
             }
         }
 
-        Spacer(modifier = Modifier.height(12.dp)) // espacio extra antes del divider
+        Spacer(modifier = Modifier.height(12.dp))
         Divider(
             color = Color(0xFFE0E0E0),
             thickness = 1.dp,
             modifier = Modifier.fillMaxWidth()
         )
-
-
 
         // ── Card: “Dejá tu comentario” ────────────────────────────────────────
         Card(
@@ -260,10 +258,8 @@ fun ReviewsAndCommentSection(
                             .fillMaxWidth()
                             .height(100.dp),
                         maxLines = 4,
-                        textStyle = TextStyle(color = Color.Black) // fuerza texto negro
-                        // <-- quito “colors = …”
+                        textStyle = TextStyle(color = Color.Black)
                     )
-
 
                     Text(
                         text = "${textComment.text.length}/$maxChars",
@@ -320,7 +316,6 @@ fun RecipeDetailContent(
     val ingredientIconBackground = Color(0xFFE6EBF2)
     val unitBackgroundColor = Color(0xFF995850)
     val unitTextColor = Color.White
-    val cardBackgroundColor = Color(0xFFF0F0F0)
 
     val ratings = viewModel.ratings
     val baseUrl = RetrofitClient.BASE_URL.trimEnd('/')
@@ -383,64 +378,95 @@ fun RecipeDetailContent(
 
                 Spacer(Modifier.height(16.dp))
 
-                // Tiempo + Porciones + Botón “Personalizar”
-                Row(
-                    modifier = Modifier.fillMaxWidth(),
-                    horizontalArrangement = Arrangement.SpaceBetween,
-                    verticalAlignment = Alignment.CenterVertically
-                ) {
-                    Row(verticalAlignment = Alignment.CenterVertically) {
-                        Icon(
-                            imageVector = Icons.Default.AccessTime,
-                            contentDescription = null,
-                            tint = primaryTextColor
-                        )
-                        Spacer(Modifier.width(6.dp))
-                        Text("${receta.tiempo} min", color = primaryTextColor)
-                    }
-                    Text("Porciones: ${receta.porciones}", color = primaryTextColor)
-                    Button(
-                        onClick = { /* No implementado */ },
-                        enabled = false,
-                        shape = RoundedCornerShape(10.dp),
-                        colors = ButtonDefaults.buttonColors(containerColor = selectedButtonColor)
-                    ) {
-                        Text("Personalizar", color = Color.White)
-                    }
+                // Tiempo, creador y promedio
+                Row(verticalAlignment = Alignment.CenterVertically) {
+                    Icon(
+                        imageVector = Icons.Outlined.Person,
+                        contentDescription = "Creador",
+                        tint = Color.Gray,
+                        modifier = Modifier.size(16.dp)
+                    )
+                    Spacer(Modifier.width(4.dp))
+                    Text(
+                        text = receta.usuarioCreadorAlias.orEmpty(),
+                        style = MaterialTheme.typography.bodySmall.copy(color = Color.Gray)
+                    )
+                    Spacer(Modifier.width(16.dp))
+                    Icon(
+                        imageVector = Icons.Filled.Star,
+                        contentDescription = "Promedio",
+                        tint = Color(0xFFFFD700),
+                        modifier = Modifier.size(18.dp)
+                    )
+                    Spacer(Modifier.width(4.dp))
+                    Text(
+                        text = "%,.1f".format(receta.promedioRating ?: 0.0),
+                        style = MaterialTheme.typography.bodyMedium.copy(color = Color.Black)
+                    )
                 }
 
                 Spacer(Modifier.height(20.dp))
 
                 // Botones para alternar Ingredientes / Instrucciones
-                Row(
-                    modifier = Modifier.fillMaxWidth(),
-                    horizontalArrangement = Arrangement.SpaceEvenly
+                Box(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .height(50.dp)
+                        .clip(RoundedCornerShape(8.dp))
+                        .background(unselectedButtonColor)
                 ) {
-                    Button(
-                        onClick = {
-                            showIngredients.value = true
-                            currentStep.value = 0
-                        },
-                        colors = ButtonDefaults.buttonColors(
-                            containerColor = if (showIngredients.value) selectedButtonColor else unselectedButtonColor,
-                            contentColor = if (showIngredients.value) Color.White else unselectedTextColor
-                        ),
-                        shape = RoundedCornerShape(12.dp)
-                    ) {
-                        Text("Ingredientes")
-                    }
-                    Button(
-                        onClick = {
-                            showIngredients.value = false
-                            currentStep.value = 0
-                        },
-                        colors = ButtonDefaults.buttonColors(
-                            containerColor = if (!showIngredients.value) selectedButtonColor else unselectedButtonColor,
-                            contentColor = if (!showIngredients.value) Color.White else unselectedTextColor
-                        ),
-                        shape = RoundedCornerShape(12.dp)
-                    ) {
-                        Text("Instrucciones")
+                    Row(modifier = Modifier.fillMaxSize()) {
+                        // Pestaña "Ingredientes"
+                        Box(
+                            modifier = Modifier
+                                .weight(1f)
+                                .fillMaxHeight()
+                                .clip(RoundedCornerShape(topStart = 8.dp, bottomStart = 8.dp))
+                                .background(
+                                    if (showIngredients.value)
+                                        selectedButtonColor
+                                    else
+                                        Color.Transparent
+                                )
+                                .clickable {
+                                    showIngredients.value = true
+                                    currentStep.value = 0
+                                },
+                            contentAlignment = Alignment.Center
+                        ) {
+                            Text(
+                                text = "Ingredientes",
+                                color = if (showIngredients.value) Color.White else unselectedTextColor,
+                                style = MaterialTheme.typography.bodyMedium.copy(fontWeight = FontWeight.Medium),
+                                fontSize = 14.sp
+                            )
+                        }
+
+                        // Pestaña "Instrucciones"
+                        Box(
+                            modifier = Modifier
+                                .weight(1f)
+                                .fillMaxHeight()
+                                .clip(RoundedCornerShape(topEnd = 8.dp, bottomEnd = 8.dp))
+                                .background(
+                                    if (!showIngredients.value)
+                                        selectedButtonColor
+                                    else
+                                        Color.Transparent
+                                )
+                                .clickable {
+                                    showIngredients.value = false
+                                    currentStep.value = 0
+                                },
+                            contentAlignment = Alignment.Center
+                        ) {
+                            Text(
+                                text = "Instrucciones",
+                                color = if (!showIngredients.value) Color.White else unselectedTextColor,
+                                style = MaterialTheme.typography.bodyMedium.copy(fontWeight = FontWeight.Medium),
+                                fontSize = 14.sp
+                            )
+                        }
                     }
                 }
 
@@ -500,7 +526,7 @@ fun RecipeDetailContent(
                                         color = primaryTextColor
                                     )
                                 }
-                                Surface(
+                                androidx.compose.material3.Surface(
                                     shape = RoundedCornerShape(8.dp),
                                     color = unitBackgroundColor
                                 ) {
@@ -553,14 +579,72 @@ fun RecipeDetailContent(
                                     Text(paso.descripcion, color = primaryTextColor)
                                 }
                                 Spacer(Modifier.height(12.dp))
-                                IconButton(
-                                    onClick = { currentStep.value++ },
-                                    enabled = currentStep.value < pasos.lastIndex
-                                ) {
-                                    Text(
-                                        text = "Paso Siguiente",
-                                        color = primaryTextColor
-                                    )
+                                if (currentStep.value > 0) {
+                                    // A partir del segundo paso, mostramos "Anterior" y "Siguiente"
+                                    Row(modifier = Modifier.fillMaxWidth()) {
+                                        Button(
+                                            onClick = { currentStep.value-- },
+                                            enabled = currentStep.value > 0,
+                                            modifier = Modifier
+                                                .weight(1f)
+                                                .height(40.dp),
+                                            shape = RoundedCornerShape(8.dp),
+                                            colors = ButtonDefaults.buttonColors(
+                                                containerColor = Color(0xFF042628),
+                                                contentColor = Color.White
+                                            )
+                                        ) {
+                                            Text(
+                                                text = "Paso Anterior",
+                                                style = MaterialTheme.typography.bodyMedium.copy(
+                                                    fontWeight = FontWeight.Medium
+                                                )
+                                            )
+                                        }
+
+                                        Spacer(modifier = Modifier.width(8.dp))
+
+                                        Button(
+                                            onClick = { currentStep.value++ },
+                                            enabled = currentStep.value < pasos.lastIndex,
+                                            modifier = Modifier
+                                                .weight(1f)
+                                                .height(40.dp),
+                                            shape = RoundedCornerShape(8.dp),
+                                            colors = ButtonDefaults.buttonColors(
+                                                containerColor = Color(0xFF042628),
+                                                contentColor = Color.White
+                                            )
+                                        ) {
+                                            Text(
+                                                text = "Paso Siguiente",
+                                                style = MaterialTheme.typography.bodyMedium.copy(
+                                                    fontWeight = FontWeight.Medium
+                                                )
+                                            )
+                                        }
+                                    }
+                                } else {
+                                    // Solo “Siguiente” en el primer paso
+                                    Button(
+                                        onClick = { currentStep.value++ },
+                                        enabled = currentStep.value < pasos.lastIndex,
+                                        modifier = Modifier
+                                            .fillMaxWidth()
+                                            .height(40.dp),
+                                        shape = RoundedCornerShape(8.dp),
+                                        colors = ButtonDefaults.buttonColors(
+                                            containerColor = Color(0xFF042628),
+                                            contentColor = Color.White
+                                        )
+                                    ) {
+                                        Text(
+                                            text = "Paso Siguiente",
+                                            style = MaterialTheme.typography.bodyMedium.copy(
+                                                fontWeight = FontWeight.Medium
+                                            )
+                                        )
+                                    }
                                 }
                             }
                         }
@@ -571,7 +655,6 @@ fun RecipeDetailContent(
                 ReviewsAndCommentSection(
                     ratings = ratings,
                     onSend = { comentarioTexto, puntosElegidos ->
-                        // Llamamos al ViewModel para crear la reseña
                         viewModel.postRating(
                             recipeId = receta.id,
                             comentario = comentarioTexto,
