@@ -36,5 +36,9 @@ interface ApiService {
 
     @POST("ratings")
     suspend fun addRating(@Body req: CreateRatingRequest): RatingResponse
+
+    @GET("recipes/summary")
+    suspend fun getAllRecipesSummary(): List<RecipeResponse>
+
 }
 
