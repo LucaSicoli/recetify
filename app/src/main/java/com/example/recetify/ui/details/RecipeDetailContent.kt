@@ -565,8 +565,22 @@ fun RecipeDetailContent(
                                 )
                                 if (!paso.urlMedia.isNullOrBlank()) {
                                     Spacer(Modifier.height(8.dp))
+
+                                    // 1) Tomamos la URL que vino del backend:
+                                    val rawUrl = paso.urlMedia!!
+                                    val imageUrl = when {
+                                        rawUrl.startsWith("http://localhost:8080") ->
+                                            rawUrl.replaceFirst("http://localhost:8080", baseUrl)
+
+                                        rawUrl.startsWith(baseUrl) ->
+                                            rawUrl
+
+                                        else ->
+                                            rawUrl
+                                    }
+
                                     AsyncImage(
-                                        model = baseUrl + paso.urlMedia,
+                                        model = imageUrl,
                                         contentDescription = null,
                                         modifier = Modifier
                                             .fillMaxWidth()
