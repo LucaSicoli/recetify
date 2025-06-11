@@ -88,7 +88,7 @@ fun NoConnectionScreen(
                     )
                     Spacer(Modifier.height(8.dp))
                     Text(
-                        text = "Te estás perdiendo poder acceder una colección increíble de recetas",
+                        text = "Te estás perdiendo poder acceder a una increíble colección de recetas",
                         fontSize = 16.sp,
                         color = Color.Gray,
                         lineHeight = 20.sp,
