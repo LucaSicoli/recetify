@@ -51,11 +51,11 @@ fun NoConnectionScreen(
                     contentDescription = "Logo Recetify",
                     modifier = Modifier.size(110.dp)
                 )
-                Spacer(Modifier.height(24.dp))
+                Spacer(Modifier.height(40.dp))
                 Image(
                     painter = painterResource(R.drawable.no_wifi),
                     contentDescription = "Sin conexión",
-                    modifier = Modifier.size(180.dp)
+                    modifier = Modifier.size(190.dp)
                 )
             }
         }
@@ -64,7 +64,7 @@ fun NoConnectionScreen(
         Box(
             modifier = Modifier
                 .fillMaxWidth()
-                .weight(0.35f)
+                .weight(0.25f)
                 .offset(y = (-24).dp)
                 .zIndex(1f)
                 .clip(RoundedCornerShape(topStart = 24.dp, topEnd = 24.dp))
@@ -99,27 +99,6 @@ fun NoConnectionScreen(
 
                 // Botones
                 Column {
-                    Button(
-                        onClick = onRetry,
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .height(48.dp),
-                        shape = RoundedCornerShape(12.dp),
-                        colors = ButtonDefaults.buttonColors(
-                            containerColor = Color(0xFF0D0B1F),
-                            contentColor = Color.White
-                        )
-                    ) {
-                        Text(
-                            text = "REINTENTAR",
-                            fontSize = 14.sp,
-                            fontWeight = FontWeight.SemiBold,
-                            fontFamily = Sen
-                        )
-                    }
-
-                    Spacer(Modifier.height(16.dp))
-
                     Button(
                         onClick = onContinueOffline,
                         modifier = Modifier

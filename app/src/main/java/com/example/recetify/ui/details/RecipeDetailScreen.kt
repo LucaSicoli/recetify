@@ -52,20 +52,6 @@ fun RecipeDetailScreen(
                             navController = navController,
                             viewModel     = viewModel
                         )
-
-                        // ── Aquí ya no hay Divider ni Spacer extra
-                        CommentsSection(
-                            ratings = ratings,
-                            onSend = { comentarioTexto, puntosElegidos ->
-                                scope.launch {
-                                    viewModel.postRating(
-                                        recipeId = receta.id,
-                                        comentario = comentarioTexto,
-                                        puntos = puntosElegidos
-                                    )
-                                }
-                            }
-                        )
                     }
                 }
             }
