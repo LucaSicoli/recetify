@@ -4,8 +4,8 @@ import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
-import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Visibility
 import androidx.compose.material.icons.filled.VisibilityOff
@@ -33,7 +33,6 @@ import com.example.recetify.data.local.UserPreferences
 import com.example.recetify.data.remote.model.SessionManager
 import kotlinx.coroutines.launch
 
-// Fuente "Sen"
 private val Sen = FontFamily(
     Font(R.font.sen_regular, weight = FontWeight.Normal),
     Font(R.font.sen_bold,    weight = FontWeight.Bold)
@@ -138,86 +137,65 @@ fun LoginScreen(
                 OutlinedTextField(
                     value = state.alias,
                     onValueChange = viewModel::onAliasChanged,
-                    label = { Text("Alias", color = Color.Black) },
-                    placeholder = { Text("Tu alias", color = Color.Gray) },
+                    label = { Text("Alias") },
+                    placeholder = { Text("Tu alias") },
                     modifier = Modifier.fillMaxWidth(),
                     shape = RoundedCornerShape(12.dp),
-                    textStyle = TextStyle(fontFamily = Sen, fontSize = 16.sp),
-                    colors = TextFieldDefaults.outlinedTextFieldColors(
-                        textColor            = Color.Black,
-                        cursorColor          = Color(0xCCBC6154),
-                        focusedBorderColor   = Color(0xCCBC6154),
-                        unfocusedBorderColor = Color.Gray,
-                        placeholderColor     = Color.Gray,
-                        focusedLabelColor    = Color(0xCCBC6154),
-                        unfocusedLabelColor  = Color.Gray
-                    )
+                    textStyle = TextStyle(color = Color.Black, fontSize = 16.sp)
                 )
 
                 // Email
                 OutlinedTextField(
                     value = state.email,
                     onValueChange = viewModel::onEmailChanged,
-                    label = { Text("Email", color = Color.Black) },
-                    placeholder = { Text("example@gmail.com", color = Color.Gray) },
+                    label = { Text("Email") },
+                    placeholder = { Text("example@gmail.com") },
                     modifier = Modifier.fillMaxWidth(),
                     shape = RoundedCornerShape(12.dp),
                     keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Email),
-                    textStyle = TextStyle(fontFamily = Sen, fontSize = 16.sp),
-                    colors = TextFieldDefaults.outlinedTextFieldColors(
-                        textColor            = Color.Black,
-                        cursorColor          = Color(0xCCBC6154),
-                        focusedBorderColor   = Color(0xCCBC6154),
-                        unfocusedBorderColor = Color.Gray,
-                        placeholderColor     = Color.Gray,
-                        focusedLabelColor    = Color(0xCCBC6154),
-                        unfocusedLabelColor  = Color.Gray
-                    )
+                    textStyle = TextStyle(color = Color.Black, fontSize = 16.sp)
                 )
 
                 // Contraseña
                 OutlinedTextField(
                     value = state.password,
                     onValueChange = viewModel::onPasswordChanged,
-                    label = { Text("Contraseña", color = Color.Black) },
-                    placeholder = { Text("••••••••", color = Color.Gray) },
+                    label = { Text("Contraseña") },
+                    placeholder = { Text("••••••••") },
                     modifier = Modifier.fillMaxWidth(),
                     shape = RoundedCornerShape(12.dp),
+                    textStyle = TextStyle(color = Color.Black, fontSize = 16.sp),
                     visualTransformation = if (state.isPasswordVisible)
                         VisualTransformation.None
                     else
                         PasswordVisualTransformation(),
                     trailingIcon = {
-                        IconButton(onClick = { viewModel.togglePasswordVisibility() }) {
+                        IconButton(onClick = viewModel::togglePasswordVisibility) {
                             Icon(
                                 imageVector = if (state.isPasswordVisible)
                                     Icons.Filled.Visibility
                                 else
                                     Icons.Filled.VisibilityOff,
-                                contentDescription = null,
-                                tint = Color(0xCCBC6154)
+                                contentDescription = null
                             )
                         }
-                    },
-                    textStyle = TextStyle(fontFamily = Sen, fontSize = 16.sp),
-                    colors = TextFieldDefaults.outlinedTextFieldColors(
-                        textColor            = Color.Black,
-                        cursorColor          = Color(0xCCBC6154),
-                        focusedBorderColor   = Color(0xCCBC6154),
-                        unfocusedBorderColor = Color.Gray,
-                        placeholderColor     = Color.Gray,
-                        focusedLabelColor    = Color(0xCCBC6154),
-                        unfocusedLabelColor  = Color.Gray
-                    )
+                    }
                 )
 
                 // Recordarme
-                Row(verticalAlignment = Alignment.CenterVertically) {
+                Row(
+                    verticalAlignment = Alignment.CenterVertically,
+                    horizontalArrangement = Arrangement.spacedBy(8.dp)
+                ) {
                     Checkbox(
                         checked = rememberMe,
                         onCheckedChange = { rememberMe = it }
                     )
-                    Text("Recordarme", fontSize = 14.sp, fontFamily = Sen, color = Color.Black)
+                    Text(
+                        "Recordarme",
+                        fontSize = 14.sp,
+                        color = Color(0xFF555555)
+                    )
                 }
 
                 // Botón INICIAR SESIÓN
@@ -230,68 +208,65 @@ fun LoginScreen(
                     colors = ButtonDefaults.buttonColors(containerColor = Color(0xCCBC6154))
                 ) {
                     if (state.isLoading) {
-                        CircularProgressIndicator(color = Color.White, strokeWidth = 2.dp)
+                        CircularProgressIndicator(
+                            modifier = Modifier.size(24.dp),
+                            strokeWidth = 2.dp,
+                            color = Color.White
+                        )
                     } else {
-                        Text("INICIAR SESIÓN", color = Color.White, fontFamily = Sen)
+                        Text(
+                            "INICIAR SESIÓN",
+                            color = Color.White,
+                            fontFamily = Sen
+                        )
                     }
                 }
-
-                Spacer(Modifier.height(16.dp))
-
-                // “Ingresar como visitante” como enlace de texto
-                Text(
-                    "Ingresar como visitante",
+                Button(
+                    onClick = {
+                        scope.launch {
+                            SessionManager.setVisitante(context)
+                            onLoginSuccess("")
+                        }
+                    },
                     modifier = Modifier
                         .fillMaxWidth()
-                        .clickable {
-                            scope.launch {
-                                SessionManager.setVisitante(context)
-                                onLoginSuccess("")
-                            }
-                        }
-                        .padding(vertical = 8.dp),
-                    color = Color(0xFFBC6154),
-                    fontFamily = Sen,
-                    textAlign = TextAlign.Center
-                )
-
-                // Mensaje de error
-                state.error?.let { err ->
-                    Text(
-                        text = err,
-                        color = MaterialTheme.colorScheme.error,
-                        fontFamily = Sen,
-                        modifier = Modifier.align(Alignment.CenterHorizontally)
-                    )
+                        .height(48.dp)
+                        .offset(y = (-6).dp),     // <-- esto lo sube 4dp
+                    shape = RoundedCornerShape(12.dp),
+                    colors = ButtonDefaults.buttonColors(containerColor = Color.Gray))
+                {
+                    Text("INGRESAR COMO VISITANTE", color = Color.White, fontFamily = Sen)
                 }
 
-                Spacer(Modifier.height(8.dp))
-
-                // “¿Olvidaste la contraseña?” enlace
-                Text(
-                    "¿Olvidaste la contraseña?",
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .clickable(onClick = onForgot)
-                        .padding(vertical = 4.dp),
-                    color = Color(0xFFBC6154),
-                    fontFamily = Sen,
-                    textAlign = TextAlign.Center
-                )
-
-                // “¿No tenés una cuenta? REGÍSTRATE”
-                Row(
-                    modifier = Modifier.fillMaxWidth(),
-                    horizontalArrangement = Arrangement.Center
-                ) {
-                    Text("¿No tenés una cuenta? ", fontFamily = Sen, color = Color.Black)
+                // — Enlaces pequeños debajo —
+                Column(modifier = Modifier.fillMaxWidth()) {
                     Text(
-                        "REGÍSTRATE",
-                        fontWeight = FontWeight.Bold,
-                        color = Color(0xCCBC6154),
-                        modifier = Modifier.clickable { /* navegar a registro */ },
-                        fontFamily = Sen
+                        "¿Olvidaste la contraseña?",
+                        fontSize = 14.sp,
+                        color = Color(0xFFBC6154),
+                        textAlign = TextAlign.Center,
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .clickable(onClick = onForgot)
+                            .padding(vertical = 2.dp)
                     )
+                    Row(
+                        modifier = Modifier.fillMaxWidth(),
+                        horizontalArrangement = Arrangement.Center
+                    ) {
+                        Text(
+                            "¿No tenés una cuenta? ",
+                            fontSize = 14.sp,
+                            color = Color(0xFF555555)
+                        )
+                        Text(
+                            "REGÍSTRATE",
+                            fontSize = 12.sp,
+                            fontWeight = FontWeight.Bold,
+                            color = Color(0xCCBC6154),
+                            modifier = Modifier.clickable { /* navegar a registro */ }
+                        )
+                    }
                 }
             }
         }
