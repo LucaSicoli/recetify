@@ -85,7 +85,7 @@ fun AppNavGraph() {
                 LoginScreen(
                     viewModel = loginVm,
                     onLoginSuccess = { token ->
-                        SessionManager.saveToken(token)
+                        // ya lo guardamos en LoginScreen, aquí solo navegamos
                         navController.navigate("home") {
                             popUpTo("login") { inclusive = true }
                         }
@@ -140,7 +140,7 @@ fun AppNavGraph() {
         // 6) Overlay "Sin conexión"
         if (showOfflineScreen) {
             NoConnectionScreen(
-                onRetry = { /* RememberIsOnline se re-evalúa */ },
+                onRetry = { /* rememberIsOnline() se reevalúa automáticamente */ },
                 onContinueOffline = { showOfflineScreen = false }
             )
         }

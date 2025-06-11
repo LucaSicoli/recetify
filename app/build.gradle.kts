@@ -54,7 +54,7 @@ android {
 
 dependencies {
     // Compose & UI
-    implementation("androidx.compose.material3:material3:1.2.0")
+    implementation(platform(libs.androidx.compose.bom))
     implementation("io.coil-kt:coil-compose:2.4.0")
     implementation(libs.androidx.core.ktx)
     implementation(libs.androidx.lifecycle.runtime.ktx)
@@ -81,7 +81,7 @@ dependencies {
     implementation(libs.androidx.compose.bom.v20231200)
     implementation("androidx.compose.ui:ui-text:1.8.2")
     implementation("androidx.compose.foundation:foundation:1.8.2")
-    implementation("androidx.compose.material3:material3:1.3.2")
+    implementation("androidx.compose.material3:material3")
     implementation("androidx.lifecycle:lifecycle-viewmodel-compose:2.6.2")
     implementation("androidx.navigation:navigation-compose:2.7.6")
     implementation("androidx.compose.material:material-icons-extended:1.6.0")
