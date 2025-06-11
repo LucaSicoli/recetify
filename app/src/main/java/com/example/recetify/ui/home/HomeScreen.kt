@@ -35,6 +35,7 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.compose.ui.zIndex
 import androidx.lifecycle.viewmodel.compose.viewModel
+import androidx.navigation.NavController
 import coil.compose.AsyncImage
 import com.example.recetify.R
 import com.example.recetify.data.remote.RetrofitClient
@@ -43,7 +44,6 @@ import com.example.recetify.ui.favorites.FavoritesScreen
 import com.example.recetify.ui.profile.ProfileScreen
 import com.example.recetify.ui.searchscreen.SearchScreen
 import java.net.URI
-
 
 private val Sen = FontFamily(Font(R.font.pacifico_regular, weight = FontWeight.Light))
 private val Destacado = FontFamily(Font(R.font.sen_semibold, weight = FontWeight.ExtraBold))
@@ -57,7 +57,10 @@ sealed class BottomNavItem(val label: String, val icon: ImageVector) {
 
 @OptIn(ExperimentalFoundationApi::class)
 @Composable
-fun HomeScreen(homeVm: HomeViewModel = viewModel()) {
+fun HomeScreen(
+    homeVm: HomeViewModel = viewModel(),
+    navController: NavController
+) {
     val recipes by homeVm.recipes.collectAsState()
     val isLoading by homeVm.isLoading.collectAsState()
     var currentScreen by remember { mutableStateOf<BottomNavItem>(BottomNavItem.Home) }
@@ -90,7 +93,7 @@ fun HomeScreen(homeVm: HomeViewModel = viewModel()) {
             when (currentScreen) {
                 is BottomNavItem.Home -> HomeContent(recipes, isLoading)
                 is BottomNavItem.Favorites -> FavoritesScreen()
-                is BottomNavItem.Profile -> ProfileScreen()
+                is BottomNavItem.Profile -> ProfileScreen(navController = navController)
                 is BottomNavItem.Search -> SearchScreen()
             }
         }

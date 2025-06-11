@@ -2,6 +2,9 @@ plugins {
     alias(libs.plugins.android.application)
     alias(libs.plugins.kotlin.android)
     alias(libs.plugins.kotlin.compose)
+
+
+
     id("org.jetbrains.kotlin.plugin.serialization") version "1.9.0"
 }
 
@@ -84,6 +87,9 @@ dependencies {
     implementation("androidx.compose.material3:material3:1.2.1")
     implementation("androidx.navigation:navigation-compose:2.7.5") // Versión más reciente a mayo 2025
     implementation("androidx.datastore:datastore-preferences:1.0.0")
+    implementation("com.google.dagger:hilt-android:2.48")
+
+    implementation("androidx.hilt:hilt-navigation-compose:1.1.0")
 
 
 

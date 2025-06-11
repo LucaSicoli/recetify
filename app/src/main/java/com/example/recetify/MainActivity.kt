@@ -23,17 +23,24 @@ import com.example.recetify.ui.login.PasswordResetViewModel
 import com.example.recetify.ui.login.ResetPasswordScreen
 import com.example.recetify.ui.login.VerifyCodeScreen
 import com.example.recetify.ui.theme.RecetifyTheme
+import android.app.Application
+import androidx.navigation.NavHostController
+import kotlin.text.Typography.dagger
+import com.example.recetify.ui.profile.SavedRecipesScreen
+import com.example.recetify.ui.favorites.FavoritesScreen
+import com.example.recetify.ui.profile.ProfileScreen
+import com.example.recetify.ui.profile.MyRecipesScreen
+import com.example.recetify.ui.profile.ProfileInfoScreen
+
+//import dagger.hilt.android.HiltAndroidApp
+
 
 class MainActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
-        enableEdgeToEdge()
         setContent {
             RecetifyTheme {
-                Surface(
-                    modifier = Modifier.fillMaxSize(),
-                    color    = MaterialTheme.colorScheme.background
-                ) {
+                Surface(color = MaterialTheme.colorScheme.background) {
                     AppNavGraph()
                 }
             }
@@ -41,53 +48,82 @@ class MainActivity : ComponentActivity() {
     }
 }
 
+
+
 @Composable
-fun AppNavGraph() {
-    val nav = rememberNavController()
-    val passwordVm: PasswordResetViewModel = viewModel()
+        fun AppNavGraph() {
+            val nav = rememberNavController()
+            val passwordVm: PasswordResetViewModel = viewModel()
 
-    NavHost(navController = nav, startDestination = "login") {
-        composable("login") {
-            val loginVm: LoginViewModel = viewModel()
-            LoginScreen(
-                viewModel      = loginVm,
-                onLoginSuccess = { token ->
-                    SessionManager.authToken = token
-                    nav.navigate("home") {
-                        popUpTo("login") { inclusive = true }
-                    }
-                },
-                onForgot       = { nav.navigate("forgot") }
-            )
-        }
+            NavHost(navController = nav, startDestination = "login") {
 
-        composable("forgot") {
-            ForgotPasswordScreen(
-                viewModel = passwordVm,
-                onNext    = { nav.navigate("verify") }
-            )
-        }
-
-        composable("verify") {
-            VerifyCodeScreen(
-                viewModel = passwordVm,
-                onNext    = { nav.navigate("reset") }
-            )
-        }
-
-        composable("reset") {
-            ResetPasswordScreen(
-                viewModel  = passwordVm,
-                onFinish   = {
-                    nav.navigate("login") {
-                        popUpTo("forgot") { inclusive = true }
-                    }
+                // Pantalla de login
+                composable("login") {
+                    val loginVm: LoginViewModel = viewModel()
+                    LoginScreen(
+                        viewModel = loginVm,
+                        onLoginSuccess = { token ->
+                            SessionManager.authToken = token
+                            nav.navigate("home") {
+                                popUpTo("login") { inclusive = true }
+                            }
+                        },
+                        onForgot = { nav.navigate("forgot") }
+                    )
                 }
-            )
-        }
 
-        composable("home") {
-            HomeScreen() // ya inyecta su propio HomeViewModel
-        }
-    }
-}
+                // Recuperar contraseña - paso 1
+                composable("forgot") {
+                    ForgotPasswordScreen(
+                        viewModel = passwordVm,
+                        onNext = { nav.navigate("verify") }
+                    )
+                }
+
+                // Recuperar contraseña - paso 2
+                composable("verify") {
+                    VerifyCodeScreen(
+                        viewModel = passwordVm,
+                        onNext = { nav.navigate("reset") }
+                    )
+                }
+
+                // Recuperar contraseña - paso 3 (resetear)
+                composable("reset") {
+                    ResetPasswordScreen(
+                        viewModel = passwordVm,
+                        onFinish = {
+                            nav.navigate("login") {
+                                popUpTo("forgot") { inclusive = true }
+                            }
+                        }
+                    )
+                }
+
+                // Pantalla principal (post login)
+                composable("home") {
+                    HomeScreen(navController = nav)
+                }
+
+                // Perfil del usuario
+                composable("profile") {
+                    ProfileScreen(navController = nav)
+                }
+
+                // Recetas guardadas
+                composable("saved_recipes") {
+                    SavedRecipesScreen(onBack = { nav.popBackStack() })
+                }
+
+                // Mis recetas
+                composable("my_recipes") {
+                    MyRecipesScreen(onBack = { nav.popBackStack() })
+                }
+
+                // Información del perfil
+                composable("profile_info") {
+                    ProfileInfoScreen(onBack = { nav.popBackStack() })
+                }
+            } }
+
+

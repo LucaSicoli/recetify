@@ -14,7 +14,7 @@ import kotlinx.coroutines.launch
 import java.net.URI
 
 class HomeViewModel(app: Application) : AndroidViewModel(app) {
-    private val _recipes   = MutableStateFlow<List<RecipeResponse>>(emptyList())
+    private val _recipes = MutableStateFlow<List<RecipeResponse>>(emptyList())
     val recipes: StateFlow<List<RecipeResponse>> = _recipes
 
     private val _isLoading = MutableStateFlow(true)
@@ -29,25 +29,30 @@ class HomeViewModel(app: Application) : AndroidViewModel(app) {
                 emptyList<RecipeResponse>()
             }
 
-            // 2) Precarga imágenes en Coil
-            val loader = ImageLoader(getApplication())
+            // 2) Precarga imágenes con Coil
+            val context = getApplication<Application>() // <<=== tipado explícito
+            val loader = ImageLoader(context)
+
             fetched.forEach { recipe ->
                 val base     = RetrofitClient.BASE_URL.trimEnd('/')
                 val original = recipe.fotoPrincipal.orEmpty()
+
                 val pathOnly = runCatching {
                     val uri = URI(original)
                     uri.rawPath + uri.rawQuery?.let { "?$it" }.orEmpty()
                 }.getOrNull() ?: original
+
                 val finalUrl = if (pathOnly.startsWith("/")) "$base$pathOnly" else "$base/$pathOnly"
 
-                val request = ImageRequest.Builder(getApplication())
+                val request = ImageRequest.Builder(context) // <<=== pasás el context explícito
                     .data(finalUrl)
                     .build()
-                runCatching { loader.execute(request) }
+
+                runCatching { loader.execute(request) } // precarga sin bloquear
             }
 
-            // 3) Emitir datos ya listos
-            _recipes.value   = fetched
+            // 3) Emitir datos listos
+            _recipes.value = fetched
             _isLoading.value = false
         }
     }
