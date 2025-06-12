@@ -5,6 +5,8 @@ import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
@@ -29,6 +31,10 @@ import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.example.recetify.R
+import androidx.lifecycle.viewmodel.compose.viewModel
+import androidx.compose.material.icons.filled.Sort
+import com.example.recetify.data.remote.model.RecipeResponse
+
 
 //@Composable
 //fun FavoritesScreen() {
@@ -105,63 +111,110 @@ import com.example.recetify.R
 //}
 
 
+//@Composable
+//fun FavoritesScreen() {
+//    var selectedTab by remember { mutableStateOf(0) }
+//    var searchQuery by remember { mutableStateOf("") }
+//    var sortField by remember { mutableStateOf("Nombre") }
+//    var isAscending by remember { mutableStateOf(true) }
+//
+//    val recipes = listOf(
+//        Recipe("Taco Salad", "Natalia Chef", "60 min", "4.2"),
+//        Recipe("Hamburguesa completa americana", "Julieta Gomez", "40 min", "3.5"),
+//        Recipe("Huevo, tomate y pan", "Arturo", "10 min", "3.4")
+//    )
+//
+//    val filteredRecipes = remember(searchQuery, recipes) {
+//        recipes.filter {
+//            it.title.contains(searchQuery, ignoreCase = true) ||
+//                    it.author.contains(searchQuery, ignoreCase = true)
+//        }
+//    }
+//
+//    val sortedRecipes = remember(sortField, isAscending, filteredRecipes) {
+//        when (sortField) {
+//            "Nombre" -> if (isAscending) filteredRecipes.sortedBy { it.title } else filteredRecipes.sortedByDescending { it.title }
+//            "Autor" -> if (isAscending) filteredRecipes.sortedBy { it.author } else filteredRecipes.sortedByDescending { it.author }
+//            "Calificación" -> if (isAscending) filteredRecipes.sortedBy { it.rating.toDoubleOrNull() ?: 0.0 } else filteredRecipes.sortedByDescending { it.rating.toDoubleOrNull() ?: 0.0 }
+//            else -> filteredRecipes
+//        }
+//    }
+//
+//    Column(
+//        modifier = Modifier
+//            .fillMaxSize()
+//            .background(Color.White)
+//            .padding(top = 56.dp, start = 16.dp, end = 16.dp, bottom = 16.dp)
+//    ) {
+//        SearchInput(searchQuery = searchQuery, onSearchQueryChanged = { searchQuery = it })
+//        Spacer(modifier = Modifier.height(16.dp))
+//        BubbleTabs(selectedIndex = selectedTab, onTabSelected = { selectedTab = it })
+//        Spacer(modifier = Modifier.height(16.dp))
+//        SortAndTitleRow(
+//            title = "Recetas",
+//            selectedField = sortField,
+//            isAscending = isAscending,
+//            onFieldSelected = { sortField = it },
+//            onToggleOrder = { isAscending = !isAscending }
+//        )
+//        Spacer(modifier = Modifier.height(8.dp))
+//        sortedRecipes.forEach {
+//            RecipeItem(
+//                title = it.title,
+//                author = it.author,
+//                time = it.time,
+//                rating = it.rating
+//            )
+//        }
+//    }
+//}
+
 @Composable
-fun FavoritesScreen() {
-    var selectedTab by remember { mutableStateOf(0) }
-    var searchQuery by remember { mutableStateOf("") }
-    var sortField by remember { mutableStateOf("Nombre") }
-    var isAscending by remember { mutableStateOf(true) }
-
-    val recipes = listOf(
-        Recipe("Taco Salad", "Natalia Chef", "60 min", "4.2"),
-        Recipe("Hamburguesa completa americana", "Julieta Gomez", "40 min", "3.5"),
-        Recipe("Huevo, tomate y pan", "Arturo", "10 min", "3.4")
-    )
-
-    val filteredRecipes = remember(searchQuery, recipes) {
-        recipes.filter {
-            it.title.contains(searchQuery, ignoreCase = true) ||
-                    it.author.contains(searchQuery, ignoreCase = true)
-        }
-    }
-
-    val sortedRecipes = remember(sortField, isAscending, filteredRecipes) {
-        when (sortField) {
-            "Nombre" -> if (isAscending) filteredRecipes.sortedBy { it.title } else filteredRecipes.sortedByDescending { it.title }
-            "Autor" -> if (isAscending) filteredRecipes.sortedBy { it.author } else filteredRecipes.sortedByDescending { it.author }
-            "Calificación" -> if (isAscending) filteredRecipes.sortedBy { it.rating.toDoubleOrNull() ?: 0.0 } else filteredRecipes.sortedByDescending { it.rating.toDoubleOrNull() ?: 0.0 }
-            else -> filteredRecipes
-        }
-    }
+fun FavoritesScreen(viewModel: FavoritesViewModel = viewModel()) {
+    val searchQuery by viewModel.searchQuery.collectAsState()
+    val sortField by viewModel.sortField.collectAsState()
+    val isAscending by viewModel.isAscending.collectAsState()
+    val selectedTab by viewModel.selectedTab.collectAsState()
+    val recipes by viewModel.filteredAndSortedRecipes.collectAsState()
+    val isLoading by viewModel.isLoading.collectAsState()
 
     Column(
         modifier = Modifier
             .fillMaxSize()
-            .background(Color.White)
-            .padding(top = 56.dp, start = 16.dp, end = 16.dp, bottom = 16.dp)
+            .padding(top = 56.dp, bottom = 16.dp, start = 16.dp, end = 16.dp)
     ) {
-        SearchInput(searchQuery = searchQuery, onSearchQueryChanged = { searchQuery = it })
+        // Search Input
+        SearchInput(searchQuery = searchQuery, onSearchQueryChanged = { viewModel.setSearchQuery(it) })
+
         Spacer(modifier = Modifier.height(16.dp))
-        BubbleTabs(selectedIndex = selectedTab, onTabSelected = { selectedTab = it })
+
+        // Bubble Tabs
+        BubbleTabs(selectedIndex = selectedTab, onTabSelected = { viewModel.setSelectedTab(it) })
+
         Spacer(modifier = Modifier.height(16.dp))
+
+        // Sort and Title Row (usa tu componente personalizado)
         SortAndTitleRow(
-            title = "Recetas",
+            title = if (selectedTab == 0) "Mis Recetas" else "Favoritas",
             selectedField = sortField,
             isAscending = isAscending,
-            onFieldSelected = { sortField = it },
-            onToggleOrder = { isAscending = !isAscending }
+            onFieldSelected = { viewModel.setSortField(it) },
+            onToggleOrder = { viewModel.toggleOrder() }
         )
-        Spacer(modifier = Modifier.height(8.dp))
-        sortedRecipes.forEach {
-            RecipeItem(
-                title = it.title,
-                author = it.author,
-                time = it.time,
-                rating = it.rating
-            )
+
+        Spacer(modifier = Modifier.height(16.dp))
+
+        // Lista de recetas o loader
+        if (isLoading) {
+            Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
+                CircularProgressIndicator()
+            }
+        } else {
+            RecipeList(recipes = recipes)
         }
     }
 }
+
 
 @Composable
 fun SortAndTitleRow(
@@ -281,6 +334,22 @@ fun BubbleTabs(selectedIndex: Int, onTabSelected: (Int) -> Unit) {
         }
     }
 }
+
+@Composable
+fun RecipeList(recipes: List<RecipeResponse>) {
+    LazyColumn {
+        items(recipes) { recipe ->
+            RecipeItem(
+                title = recipe.nombre ?: "Sin nombre",
+                author = recipe.usuarioCreadorAlias ?: "Desconocido",
+                time = recipe.tiempo?.toString() ?: "N/A",
+                rating = recipe.promedioRating?.toString() ?: "0"
+            )
+        }
+    }
+}
+
+
 
 @Composable
 fun RecipeItem(
