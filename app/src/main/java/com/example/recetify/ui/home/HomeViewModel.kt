@@ -24,7 +24,7 @@ class HomeViewModel(app: Application) : AndroidViewModel(app) {
         viewModelScope.launch(Dispatchers.IO) {
             // 1) Descarga JSON
             val fetched = try {
-                RetrofitClient.api.getAllRecipes()
+                RetrofitClient.api.getAllRecipesSummary()
             } catch (e: Throwable) {
                 emptyList<RecipeResponse>()
             }

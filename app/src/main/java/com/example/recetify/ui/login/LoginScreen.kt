@@ -54,7 +54,11 @@ fun LoginScreen(
     val savedPwd      by prefs.passwordFlow.collectAsState(initial = "")
 
     // 3) Local: checkbox “Recordarme”
-    var rememberMe by remember { mutableStateOf(savedRemember) }
+    var rememberMe by remember { mutableStateOf(false) }
+
+    LaunchedEffect(savedRemember) {
+        rememberMe = savedRemember
+    }
 
     // 4) Si ya había guardado datos, los precargamos en el ViewModel
     LaunchedEffect(savedRemember) {
@@ -79,7 +83,7 @@ fun LoginScreen(
                 prefs.clearLoginData()
             }
             // Luego navegamos
-            SessionManager.authToken = token
+            SessionManager.saveToken(token)
             onLoginSuccess(token)
         }
     }
