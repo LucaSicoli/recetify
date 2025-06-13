@@ -26,6 +26,7 @@ import androidx.navigation.compose.rememberNavController
 import com.example.recetify.data.remote.model.SessionManager
 import com.example.recetify.ui.common.NoConnectionScreen
 import com.example.recetify.ui.common.rememberIsOnline
+import com.example.recetify.ui.create.CreateRecipeScreen
 import com.example.recetify.ui.details.RecipeDetailScreen
 import com.example.recetify.ui.home.HomeScreen
 import com.example.recetify.ui.login.ForgotPasswordScreen
@@ -118,6 +119,7 @@ fun AppNavGraph() {
             composable("home") {
                 HomeScreen(navController = navController)
             }
+
             composable("recipe/{id}") { back ->
                 back.arguments
                     ?.getString("id")
@@ -125,6 +127,9 @@ fun AppNavGraph() {
                     ?.let { id ->
                         RecipeDetailScreen(recipeId = id, navController = navController)
                     }
+            }
+            composable("chef") {
+                CreateRecipeScreen(navController = navController)
             }
         }
 
