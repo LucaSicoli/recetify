@@ -33,6 +33,7 @@ import androidx.compose.material.icons.filled.People
 import androidx.compose.material.icons.filled.Schedule
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.sp
+import androidx.lifecycle.viewmodel.compose.viewModel
 
 
 data class Ingredient(val emoji: String, val name: String, var unit: String = "")
@@ -41,6 +42,8 @@ data class InstructionStep(var title: String = "", var description: String = "",
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun CreateRecipeScreen(navController: NavController) {
+    val viewModel: CreateRecipeViewModel = viewModel()
+
     val ingredients = remember { mutableStateListOf<Ingredient>() }
     val steps = remember { mutableStateListOf<InstructionStep>() }
     val sheetState = rememberModalBottomSheetState()
