@@ -33,144 +33,13 @@ import androidx.compose.ui.unit.sp
 import com.example.recetify.R
 import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.compose.material.icons.filled.Sort
+import androidx.compose.ui.draw.shadow
+import androidx.compose.ui.text.style.TextOverflow
 import coil.compose.AsyncImage
 import com.example.recetify.data.remote.RetrofitClient
 import com.example.recetify.data.remote.model.RecipeResponse
 import java.net.URI
 
-
-//@Composable
-//fun FavoritesScreen() {
-//    var selectedTab by remember { mutableStateOf(0) }
-//
-//    Column(
-//        modifier = Modifier
-//            .fillMaxSize()
-//            .background(Color.White)
-//            .padding(16.dp)
-//    ) {
-//        SearchBar()
-//        Spacer(modifier = Modifier.height(16.dp))
-//        BubbleTabs(selectedIndex = selectedTab, onTabSelected = { selectedTab = it })
-//        Spacer(modifier = Modifier.height(16.dp))
-//
-//        Row(
-//            modifier = Modifier.fillMaxWidth(),
-//            horizontalArrangement = Arrangement.SpaceBetween,
-//            verticalAlignment = Alignment.CenterVertically
-//        ) {
-//            Text("Recetas", fontWeight = FontWeight.Bold, fontSize = 20.sp)
-//            Text("Nombre", fontSize = 14.sp)
-//        }
-//
-//        Spacer(modifier = Modifier.height(8.dp))
-//
-//        Column {
-//            RecipeItem(
-//                title = "Taco Salad",
-//                author = "Natalia Chef",
-//                time = "60 min",
-//                rating = "4.2"
-//            )
-//            RecipeItem(
-//                title = "Hamburguesa completa americana",
-//                author = "Julieta Gomez",
-//                time = "40 min",
-//                rating = "3.5"
-//            )
-//            RecipeItem(
-//                title = "Huevo, tomate y pan",
-//                author = "Arturo",
-//                time = "10 min",
-//                rating = "3.4"
-//            )
-//        }
-//    }
-//}
-//
-//@Composable
-//fun SearchBar(modifier: Modifier = Modifier) {
-//    Row(
-//        modifier = modifier
-//            .fillMaxWidth()
-//            .height(56.dp)
-//            .background(Color(0xFFF8F8F8), shape = RoundedCornerShape(16.dp))
-//            .border(
-//                width = 1.dp,
-//                color = Color(0xFFE0E0E0), // Gris clarito
-//                shape = RoundedCornerShape(16.dp)
-//            )
-//            .padding(horizontal = 16.dp),
-//        verticalAlignment = Alignment.CenterVertically,
-//        horizontalArrangement = Arrangement.SpaceBetween
-//    ) {
-//        Row(verticalAlignment = Alignment.CenterVertically) {
-//            Icon(Icons.Default.Search, contentDescription = null, tint = Color.Gray)
-//            Spacer(modifier = Modifier.width(8.dp))
-//            Text("Buscar", color = Color.Gray)
-//        }
-//        Icon(Icons.Default.FilterList, contentDescription = "Filtro", tint = Color.Black)
-//    }
-//}
-
-
-//@Composable
-//fun FavoritesScreen() {
-//    var selectedTab by remember { mutableStateOf(0) }
-//    var searchQuery by remember { mutableStateOf("") }
-//    var sortField by remember { mutableStateOf("Nombre") }
-//    var isAscending by remember { mutableStateOf(true) }
-//
-//    val recipes = listOf(
-//        Recipe("Taco Salad", "Natalia Chef", "60 min", "4.2"),
-//        Recipe("Hamburguesa completa americana", "Julieta Gomez", "40 min", "3.5"),
-//        Recipe("Huevo, tomate y pan", "Arturo", "10 min", "3.4")
-//    )
-//
-//    val filteredRecipes = remember(searchQuery, recipes) {
-//        recipes.filter {
-//            it.title.contains(searchQuery, ignoreCase = true) ||
-//                    it.author.contains(searchQuery, ignoreCase = true)
-//        }
-//    }
-//
-//    val sortedRecipes = remember(sortField, isAscending, filteredRecipes) {
-//        when (sortField) {
-//            "Nombre" -> if (isAscending) filteredRecipes.sortedBy { it.title } else filteredRecipes.sortedByDescending { it.title }
-//            "Autor" -> if (isAscending) filteredRecipes.sortedBy { it.author } else filteredRecipes.sortedByDescending { it.author }
-//            "Calificación" -> if (isAscending) filteredRecipes.sortedBy { it.rating.toDoubleOrNull() ?: 0.0 } else filteredRecipes.sortedByDescending { it.rating.toDoubleOrNull() ?: 0.0 }
-//            else -> filteredRecipes
-//        }
-//    }
-//
-//    Column(
-//        modifier = Modifier
-//            .fillMaxSize()
-//            .background(Color.White)
-//            .padding(top = 56.dp, start = 16.dp, end = 16.dp, bottom = 16.dp)
-//    ) {
-//        SearchInput(searchQuery = searchQuery, onSearchQueryChanged = { searchQuery = it })
-//        Spacer(modifier = Modifier.height(16.dp))
-//        BubbleTabs(selectedIndex = selectedTab, onTabSelected = { selectedTab = it })
-//        Spacer(modifier = Modifier.height(16.dp))
-//        SortAndTitleRow(
-//            title = "Recetas",
-//            selectedField = sortField,
-//            isAscending = isAscending,
-//            onFieldSelected = { sortField = it },
-//            onToggleOrder = { isAscending = !isAscending }
-//        )
-//        Spacer(modifier = Modifier.height(8.dp))
-//        sortedRecipes.forEach {
-//            RecipeItem(
-//                title = it.title,
-//                author = it.author,
-//                time = it.time,
-//                rating = it.rating
-//            )
-//        }
-//    }
-//}
 
 @Composable
 fun FavoritesScreen(viewModel: FavoritesViewModel = viewModel()) {
@@ -196,7 +65,7 @@ fun FavoritesScreen(viewModel: FavoritesViewModel = viewModel()) {
 
         Spacer(modifier = Modifier.height(16.dp))
 
-        // Sort and Title Row (usa tu componente personalizado)
+        // Sort and Title Row
         SortAndTitleRow(
             title = if (selectedTab == 0) "Mis Recetas" else "Favoritas",
             selectedField = sortField,
@@ -299,15 +168,6 @@ fun SearchInput(searchQuery: String, onSearchQueryChanged: (String) -> Unit) {
     )
 }
 
-data class Recipe(
-    val title: String,
-    val author: String,
-    val time: String,
-    val rating: String
-)
-
-
-
 @Composable
 fun BubbleTabs(selectedIndex: Int, onTabSelected: (Int) -> Unit) {
     val tabTitles = listOf("Mis Recetas", "Favoritos")
@@ -375,23 +235,24 @@ fun RecipeItem(
     modifier: Modifier = Modifier
 ) {
     Card(
-        shape = RoundedCornerShape(24.dp),
+        shape = RoundedCornerShape(12.dp),
         modifier = modifier
             .fillMaxWidth()
             .height(110.dp)
             .padding(horizontal = 0.dp, vertical = 8.dp),
         colors = CardDefaults.cardColors(containerColor = Color(0xFFF8F8F8)),
-        elevation = CardDefaults.cardElevation(8.dp)
+        elevation = CardDefaults.cardElevation(4.dp)
     ) {
         Row(
             modifier = Modifier
                 .fillMaxSize()
-                .padding(12.dp)
+                .padding(8.dp)
         ) {
             val imageUrl = getRecipeImageUrl(recipe)
 
             // Imagen + Rating
-            Box(modifier = Modifier.size(76.dp)) {
+            Box() {
+//                modifier = Modifier.size(76.dp)
 //                Image(
 //                    painter = painterResource(id = R.drawable.logo_chef),
 //                    contentDescription = null,
@@ -400,22 +261,32 @@ fun RecipeItem(
 //                        .clip(RoundedCornerShape(16.dp)),
 //                    contentScale = ContentScale.Crop
 //                )
+                val aspectRatio = 3f / 4f
                 AsyncImage(
                     model = imageUrl,
                     contentDescription = recipe.nombre ?: "Imagen de receta",
                     modifier = Modifier
-                        .size(76.dp)
-                        .clip(RoundedCornerShape(16.dp)),
+                        .fillMaxHeight()
+                        .width(94.dp / aspectRatio)
+//                        .size(76.dp)
+                        .clip(RoundedCornerShape(12.dp)),
                     contentScale = ContentScale.Crop
                 )
                 Box(
                     modifier = Modifier
                         .align(Alignment.BottomStart)
+                        .shadow(
+                            elevation = 4.dp,
+                            shape = RoundedCornerShape(topEnd = 6.dp, bottomStart = 12.dp),
+                            clip = false
+                        )
                         .background(
                             color = Color(0xFFE26D5A),
                             shape = RoundedCornerShape(topEnd = 6.dp, bottomStart = 12.dp)
                         )
-                        .padding(horizontal = 6.dp, vertical = 2.dp)
+                        .padding(horizontal = 4.dp, vertical = 2.dp)
+                        .height(20.dp)
+                        .width(30.dp)
                 ) {
                     Row(verticalAlignment = Alignment.CenterVertically) {
                         Text(
@@ -428,7 +299,9 @@ fun RecipeItem(
                             imageVector = Icons.Default.Star,
                             contentDescription = null,
                             tint = Color.White,
-                            modifier = Modifier.size(10.dp)
+                            modifier = Modifier
+                                .size(10.dp)
+                                .offset(y = (1).dp)
                         )
                     }
                 }
@@ -440,7 +313,8 @@ fun RecipeItem(
             Column(
                 modifier = Modifier
                     .weight(1f)
-                    .fillMaxHeight(),
+                    .fillMaxHeight()
+                    .padding(start = 8.dp),
                 verticalArrangement = Arrangement.SpaceBetween
             ) {
                 // Primera fila: Título + Corazón
@@ -453,6 +327,9 @@ fun RecipeItem(
                         fontWeight = FontWeight.Bold,
                         fontSize = 16.sp,
                         color = Color.Black,
+                        maxLines = 2,
+                        overflow = TextOverflow.Ellipsis,
+                        softWrap = true,
                         modifier = Modifier.weight(1f)
                     )
                     IconButton(
@@ -477,11 +354,12 @@ fun RecipeItem(
                 ) {
                     Row(verticalAlignment = Alignment.CenterVertically) {
                         Image(
-                            painter = painterResource(id = R.drawable.logo_chef),
+                            painter = painterResource(id = R.drawable.profile_image),
                             contentDescription = null,
                             modifier = Modifier
-                                .size(20.dp)
+                                .size(18.dp)
                                 .clip(CircleShape)
+                                .border(1.dp, Color(0xFFE26D5A), CircleShape)
                         )
                         Spacer(modifier = Modifier.width(6.dp))
                         Text(text = recipe.usuarioCreadorAlias ?: "Desconocido", fontSize = 12.sp, color = Color.Gray)
@@ -498,6 +376,7 @@ fun RecipeItem(
                         )
                         Spacer(modifier = Modifier.width(4.dp))
                         Text(text = recipe.tiempo?.toString() ?: "n/a", fontSize = 12.sp, color = Color.Gray)
+                        Text(text = " min", fontSize = 12.sp, color = Color.Gray)
                     }
                 }
             }
