@@ -135,7 +135,7 @@ fun AppNavGraph() {
         // 5) BottomNavBar solo en home/recipe y si hay conexión
         val backStack by navController.currentBackStackEntryAsState()
         val route = backStack?.destination?.route ?: ""
-        if (!showOfflineScreen && (route == "home" || route.startsWith("recipe/"))) {
+        if (!showOfflineScreen && (route == "home" || route.startsWith("recipe/") || route == "favorites" || route == "profile")) {
             Box(Modifier.align(Alignment.BottomCenter)) {
                 BottomNavBar(navController = navController)
             }

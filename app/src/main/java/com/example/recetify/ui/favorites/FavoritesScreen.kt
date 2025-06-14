@@ -33,7 +33,10 @@ import androidx.compose.ui.unit.sp
 import com.example.recetify.R
 import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.compose.material.icons.filled.Sort
+import coil.compose.AsyncImage
+import com.example.recetify.data.remote.RetrofitClient
 import com.example.recetify.data.remote.model.RecipeResponse
+import java.net.URI
 
 
 //@Composable
@@ -335,15 +338,26 @@ fun BubbleTabs(selectedIndex: Int, onTabSelected: (Int) -> Unit) {
     }
 }
 
+fun getRecipeImageUrl(recipe: RecipeResponse): String {
+    val base = RetrofitClient.BASE_URL.trimEnd('/')
+    val original = recipe.fotoPrincipal.orEmpty()
+    val pathOnly = runCatching {
+        val uri = URI(original)
+        uri.rawPath + uri.rawQuery?.let { "?$it" }.orEmpty()
+    }.getOrNull() ?: original
+    return if (pathOnly.startsWith("/")) "$base$pathOnly" else "$base/$pathOnly"
+}
+
 @Composable
 fun RecipeList(recipes: List<RecipeResponse>) {
     LazyColumn {
         items(recipes) { recipe ->
             RecipeItem(
-                title = recipe.nombre ?: "Sin nombre",
-                author = recipe.usuarioCreadorAlias ?: "Desconocido",
-                time = recipe.tiempo?.toString() ?: "N/A",
-                rating = recipe.promedioRating?.toString() ?: "0"
+//                title = recipe.nombre ?: "Sin nombre",
+//                author = recipe.usuarioCreadorAlias ?: "Desconocido",
+//                time = recipe.tiempo?.toString() ?: "N/A",
+//                rating = recipe.promedioRating?.toString() ?: "0"
+                recipe = recipe
             )
         }
     }
@@ -353,10 +367,11 @@ fun RecipeList(recipes: List<RecipeResponse>) {
 
 @Composable
 fun RecipeItem(
-    title: String,
-    author: String,
-    time: String,
-    rating: String,
+    recipe: RecipeResponse,
+//    title: String,
+//    author: String,
+//    time: String,
+//    rating: String,
     modifier: Modifier = Modifier
 ) {
     Card(
@@ -373,13 +388,23 @@ fun RecipeItem(
                 .fillMaxSize()
                 .padding(12.dp)
         ) {
+            val imageUrl = getRecipeImageUrl(recipe)
+
             // Imagen + Rating
             Box(modifier = Modifier.size(76.dp)) {
-                Image(
-                    painter = painterResource(id = R.drawable.logo_chef),
-                    contentDescription = null,
+//                Image(
+//                    painter = painterResource(id = R.drawable.logo_chef),
+//                    contentDescription = null,
+//                    modifier = Modifier
+//                        .fillMaxSize()
+//                        .clip(RoundedCornerShape(16.dp)),
+//                    contentScale = ContentScale.Crop
+//                )
+                AsyncImage(
+                    model = imageUrl,
+                    contentDescription = recipe.nombre ?: "Imagen de receta",
                     modifier = Modifier
-                        .fillMaxSize()
+                        .size(76.dp)
                         .clip(RoundedCornerShape(16.dp)),
                     contentScale = ContentScale.Crop
                 )
@@ -394,7 +419,7 @@ fun RecipeItem(
                 ) {
                     Row(verticalAlignment = Alignment.CenterVertically) {
                         Text(
-                            text = rating,
+                            text = recipe.promedioRating?.toString() ?: "N/A",
                             color = Color.White,
                             fontSize = 10.sp
                         )
@@ -424,7 +449,7 @@ fun RecipeItem(
                     verticalAlignment = Alignment.Top
                 ) {
                     Text(
-                        text = title,
+                        text = recipe.nombre,
                         fontWeight = FontWeight.Bold,
                         fontSize = 16.sp,
                         color = Color.Black,
@@ -459,7 +484,7 @@ fun RecipeItem(
                                 .clip(CircleShape)
                         )
                         Spacer(modifier = Modifier.width(6.dp))
-                        Text(text = author, fontSize = 12.sp, color = Color.Gray)
+                        Text(text = recipe.usuarioCreadorAlias ?: "Desconocido", fontSize = 12.sp, color = Color.Gray)
                     }
 
                     Spacer(modifier = Modifier.weight(1f))
@@ -472,7 +497,7 @@ fun RecipeItem(
                             tint = Color.Gray
                         )
                         Spacer(modifier = Modifier.width(4.dp))
-                        Text(text = time, fontSize = 12.sp, color = Color.Gray)
+                        Text(text = recipe.tiempo?.toString() ?: "n/a", fontSize = 12.sp, color = Color.Gray)
                     }
                 }
             }
