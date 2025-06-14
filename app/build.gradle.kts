@@ -39,12 +39,12 @@ android {
     }
 
     compileOptions {
-        sourceCompatibility = JavaVersion.VERSION_11
-        targetCompatibility = JavaVersion.VERSION_11
+        sourceCompatibility = JavaVersion.VERSION_1_8
+        targetCompatibility = JavaVersion.VERSION_1_8
     }
-
     kotlinOptions {
-        jvmTarget = "11"
+        jvmTarget = "1.8"
+        freeCompilerArgs += listOf("-Xjava-parameters")
     }
 
     buildFeatures {
@@ -65,6 +65,7 @@ dependencies {
     implementation(libs.androidx.ui.tooling.preview)
     implementation(libs.androidx.material3)
     implementation(libs.firebase.appdistribution.gradle)
+    implementation(libs.androidx.room.common.jvm)
 
     // Testing
     testImplementation(libs.junit)

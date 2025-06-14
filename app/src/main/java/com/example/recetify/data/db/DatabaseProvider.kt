@@ -1,3 +1,4 @@
+// data/db/DatabaseProvider.kt
 package com.example.recetify.data.db
 
 import android.content.Context
@@ -8,15 +9,15 @@ object DatabaseProvider {
 
     fun getInstance(context: Context): AppDatabase =
         INSTANCE ?: synchronized(this) {
-            INSTANCE ?: buildDatabase(context).also { INSTANCE = it }
+            INSTANCE ?: build(context).also { INSTANCE = it }
         }
 
-    private fun buildDatabase(context: Context) =
+    private fun build(context: Context) =
         Room.databaseBuilder(
             context.applicationContext,
             AppDatabase::class.java,
             "recetify-db"
         )
-            .fallbackToDestructiveMigration()  // para desarrollo
+            .fallbackToDestructiveMigration()
             .build()
 }

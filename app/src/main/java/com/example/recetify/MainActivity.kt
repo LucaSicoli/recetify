@@ -1,3 +1,4 @@
+// app/src/main/java/com/example/recetify/MainActivity.kt
 package com.example.recetify
 
 import android.os.Bundle
@@ -5,16 +6,11 @@ import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.fillMaxSize
-import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.Surface
-import androidx.compose.runtime.Composable
-import androidx.compose.runtime.LaunchedEffect
-import androidx.compose.runtime.getValue
-import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.*
 import androidx.compose.runtime.saveable.rememberSaveable
-import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.platform.LocalContext
 import androidx.core.view.WindowCompat
 import androidx.core.view.WindowInsetsCompat
 import androidx.core.view.WindowInsetsControllerCompat
@@ -36,11 +32,11 @@ import com.example.recetify.ui.login.ResetPasswordScreen
 import com.example.recetify.ui.login.VerifyCodeScreen
 import com.example.recetify.ui.navigation.BottomNavBar
 import com.example.recetify.ui.theme.RecetifyTheme
+import kotlinx.coroutines.launch
 
 class MainActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
-
         // Fullscreen edge-to-edge
         WindowCompat.setDecorFitsSystemWindows(window, false)
         WindowInsetsControllerCompat(window, window.decorView).apply {
@@ -48,15 +44,9 @@ class MainActivity : ComponentActivity() {
                 WindowInsetsControllerCompat.BEHAVIOR_SHOW_TRANSIENT_BARS_BY_SWIPE
             hide(WindowInsetsCompat.Type.systemBars())
         }
-
         setContent {
             RecetifyTheme {
-                Surface(
-                    modifier = Modifier.fillMaxSize(),
-                    color = MaterialTheme.colorScheme.background
-                ) {
-                    AppNavGraph()
-                }
+                AppNavGraph()
             }
         }
     }
@@ -64,87 +54,94 @@ class MainActivity : ComponentActivity() {
 
 @Composable
 fun AppNavGraph() {
-    // 1) NavController
-    val navController = rememberNavController()
-    // 2) ViewModels
-    val passwordVm: PasswordResetViewModel = viewModel()
-    val loginVm: LoginViewModel = viewModel()
-    // 3) Conectividad
-    val isOnline by rememberIsOnline()
-    var showOfflineScreen by rememberSaveable { mutableStateOf(!isOnline) }
-    LaunchedEffect(isOnline) { showOfflineScreen = !isOnline }
+    val context = LocalContext.current
+    val nav = rememberNavController()
+    val scope = rememberCoroutineScope()
 
-    Box(modifier = Modifier.fillMaxSize()) {
-        // 4) NavHost
+    // 1) ¿Ya guardamos token (alumno o visitante)?
+    val isAlumno by SessionManager.isAlumnoFlow(context)
+        .collectAsState(initial = false)
+
+    // 2) ViewModels compartidos
+    val loginVm: LoginViewModel = viewModel()
+    val passwordVm: PasswordResetViewModel = viewModel()
+
+    // 3) Estado de la red
+    val isOnline by rememberIsOnline()
+    var offline by rememberSaveable { mutableStateOf(!isOnline) }
+    LaunchedEffect(isOnline) { offline = !isOnline }
+
+    Box(Modifier.fillMaxSize()) {
+        // NavHost
         NavHost(
-            navController = navController,
-            startDestination = "login",
-            modifier = Modifier.fillMaxSize()
+            navController = nav,
+            startDestination = if (isAlumno) "home" else "login"
         ) {
             composable("login") {
-                // ① VM se crea aquí, y se destruye cuando salís de "login"
-                val loginVm: LoginViewModel = viewModel()
-
                 LoginScreen(
-                    viewModel      = loginVm,
+                    viewModel = loginVm,
                     onLoginSuccess = { token ->
-                        // Al navegar, VM de login se descarta
-                        navController.navigate("home") {
-                            popUpTo("login") { inclusive = true }
+                        scope.launch {
+                            SessionManager.setAlumno(context, token)
+                            nav.navigate("home") {
+                                popUpTo("login") { inclusive = true }
+                            }
                         }
                     },
-                    onForgot       = { navController.navigate("forgot") }
+                    onForgot = { nav.navigate("forgot") }
                 )
             }
             composable("forgot") {
                 ForgotPasswordScreen(
                     viewModel = passwordVm,
-                    onNext = { navController.navigate("verify") }
+                    onNext = { nav.navigate("verify") }
                 )
             }
             composable("verify") {
                 VerifyCodeScreen(
                     viewModel = passwordVm,
-                    onNext = { navController.navigate("reset") }
+                    onNext = { nav.navigate("reset") }
                 )
             }
             composable("reset") {
                 ResetPasswordScreen(
                     viewModel = passwordVm,
                     onFinish = {
-                        navController.navigate("login") {
+                        nav.navigate("login") {
                             popUpTo("forgot") { inclusive = true }
                         }
                     }
                 )
             }
             composable("home") {
-                HomeScreen(navController = navController)
+                HomeScreen(navController = nav)
             }
             composable("recipe/{id}") { back ->
                 back.arguments
                     ?.getString("id")
                     ?.toLongOrNull()
                     ?.let { id ->
-                        RecipeDetailScreen(recipeId = id, navController = navController)
+                        RecipeDetailScreen(recipeId = id, navController = nav)
                     }
             }
         }
 
-        // 5) BottomNavBar solo en home/recipe y si hay conexión
-        val backStack by navController.currentBackStackEntryAsState()
-        val route = backStack?.destination?.route ?: ""
-        if (!showOfflineScreen && (route == "home" || route.startsWith("recipe/"))) {
+        // Extraer la ruta actual
+        val backStackEntry by nav.currentBackStackEntryAsState()
+        val route = backStackEntry?.destination?.route ?: ""
+
+        // BottomNavBar (solo en home/recipe y online)
+        if (!offline && (route == "home" || route.startsWith("recipe/"))) {
             Box(Modifier.align(Alignment.BottomCenter)) {
-                BottomNavBar(navController = navController)
+                BottomNavBar(nav)
             }
         }
 
-        // 6) Overlay "Sin conexión"
-        if (showOfflineScreen) {
+        // Overlay "Sin conexión"
+        if (offline) {
             NoConnectionScreen(
-                onRetry = { /* rememberIsOnline() se reevalúa automáticamente */ },
-                onContinueOffline = { showOfflineScreen = false }
+                onRetry = { /* el hook rememberIsOnline reaccionará */ },
+                onContinueOffline = { offline = false }
             )
         }
     }

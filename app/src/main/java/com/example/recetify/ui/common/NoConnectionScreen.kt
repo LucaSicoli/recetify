@@ -5,6 +5,8 @@ import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.material3.Button
+import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
@@ -35,10 +37,10 @@ fun NoConnectionScreen(
     Box(
         modifier = Modifier
             .fillMaxSize()
-            .clickable(enabled = true, onClick = {}) // Captura toques para bloquear interacción trasera
+            .clickable(enabled = true, onClick = {}) // bloquea clicks “detrás”
     ) {
         Column(modifier = Modifier.fillMaxSize()) {
-            // Sección oscura (60% alto)
+            // ── Sección superior oscura ─────────────────────────────────
             Box(
                 modifier = Modifier
                     .fillMaxWidth()
@@ -64,11 +66,11 @@ fun NoConnectionScreen(
                 }
             }
 
-            // Sección blanca (40% alto) superpuesta con esquinas redondeadas
+            // ── Sección inferior blanca ─────────────────────────────────
             Box(
                 modifier = Modifier
                     .fillMaxWidth()
-                    .weight(0.15f)
+                    .weight(0.4f)
                     .offset(y = (-24).dp)
                     .zIndex(1f)
                     .clip(RoundedCornerShape(topStart = 24.dp, topEnd = 24.dp))
@@ -81,7 +83,7 @@ fun NoConnectionScreen(
                     verticalArrangement = Arrangement.SpaceBetween,
                     horizontalAlignment = Alignment.CenterHorizontally
                 ) {
-                    // Mensaje central
+                    // Mensaje
                     Column(horizontalAlignment = Alignment.CenterHorizontally) {
                         Text(
                             text = "NO TIENES CONEXIÓN",
@@ -99,6 +101,30 @@ fun NoConnectionScreen(
                             textAlign = TextAlign.Center,
                             modifier = Modifier.padding(horizontal = 12.dp)
                         )
+                    }
+
+                    // Botones
+                    Column(horizontalAlignment = Alignment.CenterHorizontally) {
+                        Button(
+                            onClick = onRetry,
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .height(48.dp),
+                            shape = RoundedCornerShape(8.dp)
+                        ) {
+                            Text("Reintentar")
+                        }
+                        Spacer(Modifier.height(12.dp))
+                        Button(
+                            onClick = onContinueOffline,
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .height(48.dp),
+                            shape = RoundedCornerShape(8.dp),
+                            colors = ButtonDefaults.buttonColors(containerColor = Color.DarkGray)
+                        ) {
+                            Text("Continuar offline", color = Color.White)
+                        }
                     }
                 }
             }

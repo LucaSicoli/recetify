@@ -1,16 +1,12 @@
-// data/db/RecipeEntity.kt
-package com.example.recetify.data.db
+// data/remote/model/RecipeSummaryResponse.kt
+package com.example.recetify.data.remote.model
 
-import androidx.room.Entity
-import androidx.room.PrimaryKey
-
-@Entity("recipes")
-data class RecipeEntity(
-    @PrimaryKey val id: Long,
+data class RecipeSummaryResponse(
+    val id: Long,
     val nombre: String,
     val descripcion: String?,
     val fotoPrincipal: String?,
-    val tiempo: Int,
+    val tiempo: Long,
     val porciones: Int,
     val tipoPlato: String,
     val categoria: String,

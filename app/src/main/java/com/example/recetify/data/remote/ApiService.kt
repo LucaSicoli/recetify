@@ -1,12 +1,6 @@
 package com.example.recetify.data.remote
-import com.example.recetify.data.remote.model.CodeDTO
-import com.example.recetify.data.remote.model.CreateRatingRequest
-import com.example.recetify.data.remote.model.EmailDTO
-import com.example.recetify.data.remote.model.JwtResponse
-import com.example.recetify.data.remote.model.LoginRequest
-import com.example.recetify.data.remote.model.RatingResponse
-import com.example.recetify.data.remote.model.RecipeResponse
-import com.example.recetify.data.remote.model.ResetDTO
+
+import com.example.recetify.data.remote.model.*
 import retrofit2.http.Body
 import retrofit2.http.GET
 import retrofit2.http.POST
@@ -37,8 +31,7 @@ interface ApiService {
     @POST("ratings")
     suspend fun addRating(@Body req: CreateRatingRequest): RatingResponse
 
+    // ← Este es el cambio: devolvemos RecipeSummaryResponse, no RecipeResponse
     @GET("recipes/summary")
-    suspend fun getAllRecipesSummary(): List<RecipeResponse>
-
+    suspend fun getAllRecipesSummary(): List<RecipeSummaryResponse>
 }
-
