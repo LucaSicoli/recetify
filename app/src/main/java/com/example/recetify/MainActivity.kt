@@ -82,15 +82,18 @@ fun AppNavGraph() {
             modifier = Modifier.fillMaxSize()
         ) {
             composable("login") {
+                // ① VM se crea aquí, y se destruye cuando salís de "login"
+                val loginVm: LoginViewModel = viewModel()
+
                 LoginScreen(
-                    viewModel = loginVm,
+                    viewModel      = loginVm,
                     onLoginSuccess = { token ->
-                        // ya lo guardamos en LoginScreen, aquí solo navegamos
+                        // Al navegar, VM de login se descarta
                         navController.navigate("home") {
                             popUpTo("login") { inclusive = true }
                         }
                     },
-                    onForgot = { navController.navigate("forgot") }
+                    onForgot       = { navController.navigate("forgot") }
                 )
             }
             composable("forgot") {

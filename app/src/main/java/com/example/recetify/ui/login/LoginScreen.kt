@@ -67,6 +67,7 @@ fun LoginScreen(
     }
     LaunchedEffect(state.token) {
         state.token?.let { token ->
+            // 1) Guardar o limpiar credenciales
             if (rememberMe) {
                 prefs.saveLoginData(
                     alias    = state.alias,
@@ -77,10 +78,12 @@ fun LoginScreen(
             } else {
                 prefs.clearLoginData()
             }
-            scope.launch {
-                SessionManager.setAlumno(context, token)
-                onLoginSuccess(token)
-            }
+
+            // 2) Setear el token de alumno
+            SessionManager.setAlumno(context, token)
+
+            // 3) Navegar a Home
+            onLoginSuccess(token)
         }
     }
 

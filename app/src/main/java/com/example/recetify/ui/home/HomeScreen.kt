@@ -1,5 +1,6 @@
 package com.example.recetify.ui.home
 
+import androidx.activity.compose.BackHandler
 import androidx.compose.animation.core.animateFloatAsState
 import androidx.compose.animation.core.tween
 import androidx.compose.foundation.ExperimentalFoundationApi
@@ -40,8 +41,11 @@ import com.example.recetify.data.remote.RetrofitClient
 import com.example.recetify.data.remote.model.RecipeResponse
 import java.net.URI
 import androidx.compose.foundation.clickable
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.zIndex
 import androidx.navigation.NavController
+import com.example.recetify.data.remote.model.SessionManager
+import kotlinx.coroutines.launch
 
 private val Sen = FontFamily(
     Font(R.font.pacifico_regular, weight = FontWeight.Light)
@@ -54,9 +58,12 @@ private val Destacado = FontFamily(
 @OptIn(ExperimentalFoundationApi::class)
 @Composable
 fun HomeScreen(homeVm: HomeViewModel = viewModel(), navController: NavController) {
+    val context = LocalContext.current
+    val scope = rememberCoroutineScope()
     val recipes by homeVm.recipes.collectAsState()
     val isLoading by homeVm.isLoading.collectAsState()
     val listState = rememberLazyListState()
+    var showLogoutDialog by remember { mutableStateOf(false) }
 
     val fadeDistancePx = with(LocalDensity.current) { 80.dp.toPx() }
     val rawAlpha = remember {
@@ -66,6 +73,10 @@ fun HomeScreen(homeVm: HomeViewModel = viewModel(), navController: NavController
         }
     }.value
     val logoAlpha by animateFloatAsState(targetValue = rawAlpha, animationSpec = tween(500))
+
+    BackHandler {
+        showLogoutDialog = true
+    }
 
     Surface(modifier = Modifier.fillMaxSize(), color = Color(0xFFF5F5F5)) {
         if (isLoading) {
@@ -130,6 +141,38 @@ fun HomeScreen(homeVm: HomeViewModel = viewModel(), navController: NavController
             }
         }
     }
+    if (showLogoutDialog) {
+        AlertDialog(
+            onDismissRequest = { showLogoutDialog = false },
+            title           = { Text("Cerrar sesión") },
+            text            = { Text("¿Estás seguro de que querés cerrar la sesión y volver al login?") },
+            confirmButton   = {
+                TextButton(onClick = {
+                    showLogoutDialog = false
+                    scope.launch {
+                        // 1) Limpiar la sesión
+                        SessionManager.setVisitante(context)
+
+                        // 2) Vaciar TODO el back-stack y navegar solo a "login"
+                        navController.navigate("login") {
+                            popUpTo(navController.graph.startDestinationId) {
+                                inclusive = true
+                            }
+                            launchSingleTop = true
+                        }
+                    }
+                }) {
+                    Text("Sí")
+                }
+            },
+            dismissButton   = {
+                TextButton(onClick = { showLogoutDialog = false }) {
+                    Text("No")
+                }
+            }
+        )
+    }
+
 }
 
 @Composable
