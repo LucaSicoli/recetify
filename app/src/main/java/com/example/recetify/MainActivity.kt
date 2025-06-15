@@ -50,6 +50,9 @@ fun AppNavGraph() {
     val navController = rememberNavController()
     val scope         = rememberCoroutineScope()
 
+    // — ViewModel único para todo el flow de password reset —
+    val passwordVm: PasswordResetViewModel = viewModel()
+
     // 1) Flujos de sesión y conexión
     val isAlumno by SessionManager.isAlumnoFlow(context).collectAsState(initial = false)
     val isOnline by rememberIsOnline()
@@ -61,7 +64,6 @@ fun AppNavGraph() {
         NavHost(navController, startDestination = "login") {
 
             composable("login") {
-                // Si ya tenemos sesión, navegamos directo a home
                 if (isAlumno) {
                     LaunchedEffect(Unit) {
                         navController.navigate("home") {
@@ -79,26 +81,30 @@ fun AppNavGraph() {
                                 }
                             }
                         },
-                        onForgot = { navController.navigate("forgot") }
+                        onForgot = {
+                            // cuando pulsan “Olvidaste la contraseña”,
+                            // pasamos al flow de reset usando passwordVm
+                            navController.navigate("forgot")
+                        }
                     )
                 }
             }
 
             composable("forgot") {
                 ForgotPasswordScreen(
-                    viewModel = viewModel<PasswordResetViewModel>(),
+                    viewModel = passwordVm,
                     onNext    = { navController.navigate("verify") }
                 )
             }
             composable("verify") {
                 VerifyCodeScreen(
-                    viewModel = viewModel<PasswordResetViewModel>(),
+                    viewModel = passwordVm,
                     onNext    = { navController.navigate("reset") }
                 )
             }
             composable("reset") {
                 ResetPasswordScreen(
-                    viewModel = viewModel<PasswordResetViewModel>(),
+                    viewModel = passwordVm,
                     onFinish  = {
                         navController.navigate("login") {
                             popUpTo("forgot") { inclusive = true }
@@ -108,7 +114,6 @@ fun AppNavGraph() {
             }
 
             composable("home") {
-                // Si perdimos sesión, volvemos a login
                 if (!isAlumno) {
                     LaunchedEffect(Unit) {
                         navController.navigate("login") {
@@ -130,18 +135,16 @@ fun AppNavGraph() {
             }
         }
 
-        // 3) Extraer ruta actual para BottomNavBar
+        // 3) BottomNavBar solo en home/recipe y online
         val backStackEntry by navController.currentBackStackEntryAsState()
         val route = backStackEntry?.destination?.route ?: ""
-
-        // 4) Mostrar BottomNavBar sólo en home/recipe y online
         if (!offline && (route == "home" || route.startsWith("recipe/"))) {
             Box(Modifier.align(Alignment.BottomCenter)) {
                 BottomNavBar(navController)
             }
         }
 
-        // 5) Overlay "Sin conexión"
+        // 4) Overlay "Sin conexión"
         if (offline) {
             NoConnectionScreen(
                 onRetry           = { /* rememberIsOnline reacciona */ },
