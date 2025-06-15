@@ -76,10 +76,32 @@ fun FavoritesScreen(viewModel: FavoritesViewModel = viewModel()) {
 
         Spacer(modifier = Modifier.height(16.dp))
 
-        // Lista de recetas o loader
+        // Lista de recetas o loader o empty state
         if (isLoading) {
             Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
                 CircularProgressIndicator()
+            }
+        } else if (recipes.isEmpty()) {
+            Box(
+                modifier = Modifier.fillMaxSize(),
+                contentAlignment = Alignment.Center
+            ) {
+                Column(
+                    horizontalAlignment = Alignment.CenterHorizontally,
+                    verticalArrangement = Arrangement.Center
+                ) {
+                    Icon(
+                        imageVector = Icons.Default.FavoriteBorder,
+                        contentDescription = "No favorites",
+                        tint = Color.LightGray,
+                        modifier = Modifier.size(48.dp)
+                    )
+                    Spacer(modifier = Modifier.height(16.dp))
+                    Text(
+                        text = if (selectedTab == 0) "No tienes recetas propias" else "No tienes recetas favoritas",
+                        color = Color.Gray
+                    )
+                }
             }
         } else {
             RecipeList(recipes = recipes)
