@@ -1,3 +1,4 @@
+// app/src/main/java/com/example/recetify/ui/common/NoConnectionScreen.kt
 package com.example.recetify.ui.common
 
 import androidx.compose.foundation.Image
@@ -26,12 +27,11 @@ import com.example.recetify.R
 // Declaramos la fuente igual que en Login
 private val Sen = FontFamily(
     Font(R.font.sen_regular, weight = FontWeight.Normal),
-    Font(R.font.sen_bold, weight = FontWeight.Bold)
+    Font(R.font.sen_bold,     weight = FontWeight.Bold)
 )
 
 @Composable
 fun NoConnectionScreen(
-    onRetry: () -> Unit = {},
     onContinueOffline: () -> Unit = {}
 ) {
     Box(
@@ -44,7 +44,7 @@ fun NoConnectionScreen(
             Box(
                 modifier = Modifier
                     .fillMaxWidth()
-                    .weight(0.6f)
+                    .weight(0.7f)
                     .background(Color(0xFF0D0B1F)),
                 contentAlignment = Alignment.Center
             ) {
@@ -66,11 +66,11 @@ fun NoConnectionScreen(
                 }
             }
 
-            // ── Sección inferior blanca ─────────────────────────────────
+            // ── Sección inferior blanca (30% alto) ────────────────────────
             Box(
                 modifier = Modifier
                     .fillMaxWidth()
-                    .weight(0.4f)
+                    .weight(0.25f)
                     .offset(y = (-24).dp)
                     .zIndex(1f)
                     .clip(RoundedCornerShape(topStart = 24.dp, topEnd = 24.dp))
@@ -90,12 +90,14 @@ fun NoConnectionScreen(
                             fontSize = 24.sp,
                             fontWeight = FontWeight.SemiBold,
                             fontFamily = Sen,
-                            color = Color(0xFF0D0B1F)
+                            color = Color(0xFF0D0B1F),
+                            textAlign = TextAlign.Center
                         )
                         Spacer(Modifier.height(8.dp))
                         Text(
                             text = "Te estás perdiendo poder acceder a una increíble colección de recetas",
                             fontSize = 16.sp,
+                            fontFamily = Sen,
                             color = Color.Gray,
                             lineHeight = 20.sp,
                             textAlign = TextAlign.Center,
@@ -103,28 +105,21 @@ fun NoConnectionScreen(
                         )
                     }
 
-                    // Botones
-                    Column(horizontalAlignment = Alignment.CenterHorizontally) {
-                        Button(
-                            onClick = onRetry,
-                            modifier = Modifier
-                                .fillMaxWidth()
-                                .height(48.dp),
-                            shape = RoundedCornerShape(8.dp)
-                        ) {
-                            Text("Reintentar")
-                        }
-                        Spacer(Modifier.height(12.dp))
-                        Button(
-                            onClick = onContinueOffline,
-                            modifier = Modifier
-                                .fillMaxWidth()
-                                .height(48.dp),
-                            shape = RoundedCornerShape(8.dp),
-                            colors = ButtonDefaults.buttonColors(containerColor = Color.DarkGray)
-                        ) {
-                            Text("Continuar offline", color = Color.White)
-                        }
+                    // Botón "Continuar offline"
+                    Button(
+                        onClick = onContinueOffline,
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .height(48.dp),
+                        shape = RoundedCornerShape(8.dp),
+                        colors = ButtonDefaults.buttonColors(containerColor = Color(0xCCBC6154))
+                    ) {
+                        Text(
+                            text = "Continuar offline",
+                            fontFamily = Sen,
+                            color = Color.White,
+                            fontSize = 18.sp
+                        )
                     }
                 }
             }

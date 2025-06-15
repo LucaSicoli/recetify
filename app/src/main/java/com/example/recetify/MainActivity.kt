@@ -147,7 +147,6 @@ fun AppNavGraph() {
         // 4) Overlay "Sin conexión"
         if (offline) {
             NoConnectionScreen(
-                onRetry           = { /* rememberIsOnline reacciona */ },
                 onContinueOffline = { offline = false }
             )
         }
