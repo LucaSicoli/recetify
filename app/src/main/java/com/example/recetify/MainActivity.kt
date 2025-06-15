@@ -1,6 +1,7 @@
 // app/src/main/java/com/example/recetify/MainActivity.kt
 package com.example.recetify
 
+import android.app.Application
 import android.os.Bundle
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
@@ -15,10 +16,16 @@ import androidx.core.view.WindowCompat
 import androidx.core.view.WindowInsetsCompat
 import androidx.core.view.WindowInsetsControllerCompat
 import androidx.lifecycle.viewmodel.compose.viewModel
-import androidx.navigation.compose.*
+import androidx.navigation.compose.NavHost
+import androidx.navigation.compose.composable
+import androidx.navigation.compose.currentBackStackEntryAsState
+import androidx.navigation.compose.rememberNavController
 import com.example.recetify.data.remote.model.SessionManager
 import com.example.recetify.ui.common.NoConnectionScreen
 import com.example.recetify.ui.common.rememberIsOnline
+import com.example.recetify.ui.createRecipe.CreateRecipeScreen
+import com.example.recetify.ui.createRecipe.CreateRecipeViewModel
+import com.example.recetify.ui.createRecipe.CreateRecipeViewModelFactory
 import com.example.recetify.ui.details.RecipeDetailScreen
 import com.example.recetify.ui.home.HomeScreen
 import com.example.recetify.ui.login.*
@@ -50,19 +57,19 @@ fun AppNavGraph() {
     val navController = rememberNavController()
     val scope         = rememberCoroutineScope()
 
-    // — ViewModel único para todo el flow de password reset —
+    // ViewModel único para todo el flow de password reset
     val passwordVm: PasswordResetViewModel = viewModel()
 
-    // 1) Flujos de sesión y conexión
+    // Flujos de sesión y conexión
     val isAlumno by SessionManager.isAlumnoFlow(context).collectAsState(initial = false)
     val isOnline by rememberIsOnline()
     var offline by rememberSaveable { mutableStateOf(!isOnline) }
     LaunchedEffect(isOnline) { offline = !isOnline }
 
     Box(Modifier.fillMaxSize()) {
-        // 2) NavHost siempre arranca en "login"
         NavHost(navController, startDestination = "login") {
 
+            // 1) Login / Home guardado
             composable("login") {
                 if (isAlumno) {
                     LaunchedEffect(Unit) {
@@ -81,15 +88,12 @@ fun AppNavGraph() {
                                 }
                             }
                         },
-                        onForgot = {
-                            // cuando pulsan “Olvidaste la contraseña”,
-                            // pasamos al flow de reset usando passwordVm
-                            navController.navigate("forgot")
-                        }
+                        onForgot = { navController.navigate("forgot") }
                     )
                 }
             }
 
+            // 2) Password reset flow
             composable("forgot") {
                 ForgotPasswordScreen(
                     viewModel = passwordVm,
@@ -113,6 +117,7 @@ fun AppNavGraph() {
                 )
             }
 
+            // 3) Home y Detail
             composable("home") {
                 if (!isAlumno) {
                     LaunchedEffect(Unit) {
@@ -124,7 +129,6 @@ fun AppNavGraph() {
                     HomeScreen(navController = navController)
                 }
             }
-
             composable("recipe/{id}") { back ->
                 back.arguments
                     ?.getString("id")
@@ -133,9 +137,24 @@ fun AppNavGraph() {
                         RecipeDetailScreen(recipeId = id, navController = navController)
                     }
             }
+
+            // 4) Create Recipe
+            composable("createRecipe") {
+                val vm: CreateRecipeViewModel = viewModel(
+                    factory = CreateRecipeViewModelFactory(
+                        context.applicationContext as Application
+                    )
+                )
+                CreateRecipeScreen(
+                    viewModel   = vm,
+                    onClose     = { navController.popBackStack() },
+                    onSaved     = { navController.popBackStack() },
+                    onPublished = { navController.popBackStack() }
+                )
+            }
         }
 
-        // 3) BottomNavBar solo en home/recipe y online
+        // BottomNavBar sólo en home/recipe y online
         val backStackEntry by navController.currentBackStackEntryAsState()
         val route = backStackEntry?.destination?.route ?: ""
         if (!offline && (route == "home" || route.startsWith("recipe/"))) {
@@ -144,7 +163,7 @@ fun AppNavGraph() {
             }
         }
 
-        // 4) Overlay "Sin conexión"
+        // Overlay "Sin conexión"
         if (offline) {
             NoConnectionScreen(
                 onContinueOffline = { offline = false }
