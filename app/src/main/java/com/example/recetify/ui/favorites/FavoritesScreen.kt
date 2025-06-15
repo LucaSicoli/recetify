@@ -14,7 +14,6 @@ import androidx.compose.material.icons.filled.ArrowDownward
 import androidx.compose.material.icons.filled.ArrowUpward
 import androidx.compose.material.icons.filled.Favorite
 import androidx.compose.material.icons.filled.FavoriteBorder
-import androidx.compose.material.icons.filled.FilterList
 import androidx.compose.material.icons.filled.Search
 import androidx.compose.material.icons.filled.Star
 import androidx.compose.material.icons.filled.Timer
@@ -32,7 +31,6 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.example.recetify.R
 import androidx.lifecycle.viewmodel.compose.viewModel
-import androidx.compose.material.icons.filled.Sort
 import androidx.compose.ui.draw.shadow
 import androidx.compose.ui.text.style.TextOverflow
 import coil.compose.AsyncImage
@@ -104,7 +102,7 @@ fun FavoritesScreen(viewModel: FavoritesViewModel = viewModel()) {
                 }
             }
         } else {
-            RecipeList(recipes = recipes)
+            RecipeList(recipes = recipes, viewModel = viewModel)
         }
     }
 }
@@ -231,7 +229,7 @@ fun getRecipeImageUrl(recipe: RecipeResponse): String {
 }
 
 @Composable
-fun RecipeList(recipes: List<RecipeResponse>) {
+fun RecipeList(recipes: List<RecipeResponse>, viewModel: FavoritesViewModel) {
     LazyColumn {
         items(recipes) { recipe ->
             RecipeItem(
@@ -239,7 +237,8 @@ fun RecipeList(recipes: List<RecipeResponse>) {
 //                author = recipe.usuarioCreadorAlias ?: "Desconocido",
 //                time = recipe.tiempo?.toString() ?: "N/A",
 //                rating = recipe.promedioRating?.toString() ?: "0"
-                recipe = recipe
+                recipe = recipe,
+                viewModel = viewModel
             )
         }
     }
@@ -250,12 +249,22 @@ fun RecipeList(recipes: List<RecipeResponse>) {
 @Composable
 fun RecipeItem(
     recipe: RecipeResponse,
+    viewModel: FavoritesViewModel,
+
 //    title: String,
 //    author: String,
 //    time: String,
 //    rating: String,
     modifier: Modifier = Modifier
 ) {
+    // Get the current favorite state (initially false)
+    var isFavorite by remember { mutableStateOf(false) }
+
+    // Check if this recipe is favorited by the user
+    LaunchedEffect(recipe.id) {
+        isFavorite = viewModel.isRecipeFavorited(recipe.id)
+    }
+
     Card(
         shape = RoundedCornerShape(12.dp),
         modifier = modifier
@@ -355,12 +364,15 @@ fun RecipeItem(
                         modifier = Modifier.weight(1f)
                     )
                     IconButton(
-                        onClick = { /* favorito */ },
+                        onClick = {
+                            viewModel.toggleFavorite(recipe.id, isFavorite)
+                            isFavorite = !isFavorite
+                        },
                         modifier = Modifier.size(24.dp)
                     ) {
                         Icon(
-                            imageVector = Icons.Default.FavoriteBorder,
-                            contentDescription = null,
+                            imageVector = if (isFavorite) Icons.Default.Favorite else Icons.Default.FavoriteBorder,
+                            contentDescription = if (isFavorite) "Remove from favorites" else "Add to favorites",
                             tint = Color(0xFFE26D5A),
                             modifier = Modifier.size(20.dp)
                         )

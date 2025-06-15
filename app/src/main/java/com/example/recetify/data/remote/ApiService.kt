@@ -1,4 +1,5 @@
 package com.example.recetify.data.remote
+import com.example.recetify.data.remote.model.AddFavoriteRequest
 import com.example.recetify.data.remote.model.CodeDTO
 import com.example.recetify.data.remote.model.CreateRatingRequest
 import com.example.recetify.data.remote.model.EmailDTO
@@ -8,7 +9,9 @@ import com.example.recetify.data.remote.model.RatingResponse
 import com.example.recetify.data.remote.model.RecipeResponse
 import com.example.recetify.data.remote.model.ResetDTO
 import com.example.recetify.data.remote.model.UserSavedRecipeDTO
+import okhttp3.Response
 import retrofit2.http.Body
+import retrofit2.http.DELETE
 import retrofit2.http.GET
 import retrofit2.http.POST
 import retrofit2.http.Path
@@ -53,9 +56,12 @@ interface ApiService {
     @GET("user-saved-recipes/user/{userId}")
     suspend fun getSavedRecipes(@Path("userId") userId: Int): List<UserSavedRecipeDTO>
 
-//    @POST("user-saved-recipes")
-//    suspend fun addFavorite(@Body request: AddFavoriteRequest): UserSavedRecipe
-//
+    @POST("user-saved-recipes")
+    suspend fun addFavorite(@Body request: AddFavoriteRequest): UserSavedRecipeDTO
+
+    @DELETE("user-saved-recipes/{id}")
+    suspend fun removeFavorite(@Path("id") id: Long): Unit
+
 //    @DELETE("user-saved-recipes/{id}")
 //    suspend fun removeFavorite(@Path("id") id: Long): Response<Unit>
 

@@ -1,12 +1,17 @@
 package com.example.recetify.ui.favorites
 
 import android.app.Application
+import androidx.compose.runtime.mutableStateMapOf
 import androidx.lifecycle.AndroidViewModel
 import androidx.lifecycle.viewModelScope
 import coil.ImageLoader
 import coil.request.ImageRequest
 import com.example.recetify.data.remote.RetrofitClient
+import com.example.recetify.data.remote.RetrofitClient.api
+import com.example.recetify.data.remote.model.AddFavoriteRequest
+import com.example.recetify.data.remote.model.IdWrapper
 import com.example.recetify.data.remote.model.RecipeResponse
+import com.example.recetify.data.remote.model.UserSavedRecipeDTO
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.*
 import kotlinx.coroutines.launch
@@ -34,6 +39,8 @@ class FavoritesViewModel(app: Application) : AndroidViewModel(app) {
 
     private val userId = 1 // getUserIdFromAuth() Implement this based on your auth system HARDCODEADO, FALTA
 
+    private val _favoriteRecipes: MutableMap<Long, Boolean> = mutableStateMapOf()
+    val favoriteRecipes: Map<Long, Boolean> get() = _favoriteRecipes
 
     val filteredAndSortedRecipes: StateFlow<List<RecipeResponse>> = combine(
         _allRecipes, _searchQuery, _sortField, _isAscending
@@ -85,10 +92,16 @@ class FavoritesViewModel(app: Application) : AndroidViewModel(app) {
                     0 -> RetrofitClient.api.getRecipesByAuthor(userId)      //getMyRecipes()
                     1 -> {
                         val favorites = RetrofitClient.api.getSavedRecipes(userId)
+                        updateFavoriteStates(favorites) // Actualizamos cache interna
+
                         // You might need to fetch full recipe details for each favorite
-                        favorites.map { favorite ->
-                            RetrofitClient.api.getRecipeById(favorite.recipeId) // Assuming you have this endpoint
-                        }      //getFavoriteRecipes()
+                        favorites.mapNotNull { favorite ->
+                            try {
+                                RetrofitClient.api.getRecipeById(favorite.recipeId)
+                            } catch (e: Exception) {
+                                null
+                            }
+                        }
                     }
                     else -> emptyList()
                 }
@@ -120,4 +133,57 @@ class FavoritesViewModel(app: Application) : AndroidViewModel(app) {
             _isLoading.value = false
         }
     }
+    // Call this when loading favorites
+    private fun updateFavoriteStates(recipes: List<UserSavedRecipeDTO>) {
+        _favoriteRecipes.clear()
+        recipes.forEach {
+            _favoriteRecipes[it.recipeId] = true
+        }
+    }
+
+    suspend fun isRecipeFavorited(recipeId: Long): Boolean {
+        return _favoriteRecipes[recipeId] ?: run {
+            // Optional: Verify with backend if not in cache
+            val favorites = api.getSavedRecipes(userId)    // getUserId()
+            updateFavoriteStates(favorites)
+            favorites.any { it.recipeId == recipeId }
+        }
+    }
+
+    suspend fun addFavorite(recipeId: Long) {
+        val body = AddFavoriteRequest(
+            user = IdWrapper(userId.toLong()),
+            recipe = IdWrapper(recipeId)
+        )
+        RetrofitClient.api.addFavorite(body)
+        _favoriteRecipes[recipeId] = true
+    }
+
+    suspend fun removeFavorite(recipeId: Long) {
+        val savedRecipe = api.getSavedRecipes(userId)
+            .firstOrNull { it.recipeId == recipeId }
+
+        savedRecipe?.id?.let { savedId ->
+            api.removeFavorite(savedId)
+            _favoriteRecipes.remove(recipeId)
+        }
+    }
+
+    fun toggleFavorite(recipeId: Long, isCurrentlyFavorite: Boolean) {
+        viewModelScope.launch {
+            try {
+                if (isCurrentlyFavorite) {
+                    removeFavorite(recipeId)
+                } else {
+                    addFavorite(recipeId)
+                }
+                refresh() //  Forzamos recarga
+
+
+            } catch (e: Exception) {
+                // Manejar error
+            }
+        }
+    }
+
 }
