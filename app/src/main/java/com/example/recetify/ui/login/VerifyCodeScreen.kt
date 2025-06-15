@@ -133,19 +133,20 @@ fun VerifyCodeScreen(
                 ) {
                     Text(
                         "CÓDIGO DE VERIFICACIÓN",
-                        fontFamily = Sen, fontSize = 14.sp, color = Color.Black
+                        fontFamily = Sen,
+                        fontSize = 14.sp,
+                        color = Color.Black
                     )
                     Text(
                         "Reenviar",
-                        fontFamily = Sen, fontSize = 14.sp,
+                        fontFamily = Sen,
+                        fontSize = 14.sp,
                         fontWeight = FontWeight.Bold,
                         color = Color(0xCCBC6154),
                         modifier = Modifier.clickable {
-                            // 1) Limpiar estado
                             viewModel.clearError()
                             validationState = null
                             otp = ""
-                            // 2) Reenviar mail
                             viewModel.requestReset { /* no navega */ }
                         }
                     )
@@ -234,34 +235,6 @@ fun VerifyCodeScreen(
                 }
 
                 Spacer(Modifier.height(24.dp))
-
-                // Botón manual (opcional)
-                Button(
-                    onClick = {
-                        viewModel.clearError()
-                        validationState = null
-                        viewModel.verifyCode(
-                            code = otp,
-                            onSuccess = onNext,
-                            onError = { validationState = Validation.Invalid }
-                        )
-                    },
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .height(48.dp),
-                    shape = RoundedCornerShape(12.dp),
-                    colors = ButtonDefaults.buttonColors(containerColor = Color(0xCCBC6154))
-                ) {
-                    if (state.isLoading) {
-                        CircularProgressIndicator(
-                            Modifier.size(24.dp),
-                            color = Color.White,
-                            strokeWidth = 2.dp
-                        )
-                    } else {
-                        Text("VERIFICAR", color = Color.White, fontFamily = Sen)
-                    }
-                }
 
                 // Mostrar error si existe
                 state.error?.let { err ->
