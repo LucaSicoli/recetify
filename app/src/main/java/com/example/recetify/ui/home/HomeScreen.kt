@@ -250,7 +250,6 @@ private fun FeaturedHeader(
         }
     }
 }
-
 @Composable
 private fun RecipeCard(
     recipe: RecipeEntity,
@@ -265,84 +264,90 @@ private fun RecipeCard(
     val finalUrl = if (pathOnly.startsWith("/")) "$base$pathOnly" else "$base/$pathOnly"
 
     Card(
-        modifier = modifier.fillMaxWidth(),
-        shape = RoundedCornerShape(8.dp),
+        modifier  = modifier.fillMaxWidth(),
+        shape     = RoundedCornerShape(8.dp),
         elevation = CardDefaults.cardElevation(defaultElevation = 4.dp),
-        colors = CardDefaults.cardColors(containerColor = Color.White)
+        colors    = CardDefaults.cardColors(containerColor = Color.White)
     ) {
         Column {
             AsyncImage(
-                model = finalUrl,
+                model           = finalUrl,
                 contentDescription = recipe.nombre,
-                modifier = Modifier
+                modifier        = Modifier
                     .fillMaxWidth()
                     .height(180.dp)
                     .clip(RoundedCornerShape(topStart = 8.dp, topEnd = 8.dp)),
-                contentScale = ContentScale.Crop
+                contentScale    = ContentScale.Crop
             )
 
             Spacer(Modifier.height(12.dp))
 
             Column(Modifier.padding(horizontal = 16.dp)) {
+                // Título un poco más grande
                 Text(
-                    text = recipe.nombre,
-                    style = MaterialTheme.typography.titleMedium.copy(fontWeight = FontWeight.SemiBold),
-                    color = Color.Black
+                    text      = recipe.nombre,
+                    style     = MaterialTheme.typography.titleLarge.copy(fontWeight = FontWeight.SemiBold),
+                    color     = Color.Black,
+                    maxLines  = 1,
+                    overflow  = TextOverflow.Ellipsis
                 )
 
-                Spacer(Modifier.height(4.dp))
+                Spacer(Modifier.height(8.dp))
 
+                // Una única fila con perfil, rating y tiempo
                 Row(verticalAlignment = Alignment.CenterVertically) {
+                    // Icono y alias del chef
                     Icon(
-                        Icons.Outlined.Person,
+                        imageVector     = Icons.Outlined.Person,
                         contentDescription = "Chef",
-                        tint = Color.Black,
-                        modifier = Modifier.size(16.dp)
+                        tint            = Color.Black,
+                        modifier        = Modifier.size(16.dp)
                     )
                     Spacer(Modifier.width(4.dp))
                     Text(
-                        text = recipe.usuarioCreadorAlias.orEmpty(),
+                        text  = recipe.usuarioCreadorAlias.orEmpty(),
+                        style = MaterialTheme.typography.bodySmall.copy(color = Color.Black)
+                    )
+
+                    Spacer(Modifier.width(16.dp))
+
+                    // Rating
+                    Icon(
+                        imageVector     = Icons.Filled.Star,
+                        contentDescription = "Rating",
+                        tint            = Color(0xFFe29587),
+                        modifier        = Modifier.size(18.dp)
+                    )
+                    Spacer(Modifier.width(4.dp))
+                    Text(
+                        text  = "%,.1f".format(recipe.promedioRating ?: 0.0),
+                        style = MaterialTheme.typography.bodySmall.copy(color = Color(0xFFe29587))
+                    )
+
+                    Spacer(Modifier.width(16.dp))
+
+                    // Tiempo
+                    Icon(
+                        imageVector     = Icons.Filled.Timer,
+                        contentDescription = "Tiempo",
+                        tint            = Color.Black,
+                        modifier        = Modifier.size(18.dp)
+                    )
+                    Spacer(Modifier.width(4.dp))
+                    Text(
+                        text  = "${recipe.tiempo} min",
                         style = MaterialTheme.typography.bodySmall.copy(color = Color.Black)
                     )
                 }
 
                 Spacer(Modifier.height(8.dp))
 
-                Row(verticalAlignment = Alignment.CenterVertically) {
-                    Icon(
-                        Icons.Filled.Star,
-                        contentDescription = "Rating",
-                        tint = Color(0xFFe29587),
-                        modifier = Modifier.size(18.dp)
-                    )
-                    Spacer(Modifier.width(4.dp))
-                    Text(
-                        text = "%,.1f".format(recipe.promedioRating ?: 0.0),
-                        style = MaterialTheme.typography.bodyMedium.copy(color = Color.Black)
-                    )
-
-                    Spacer(Modifier.width(16.dp))
-
-                    Icon(
-                        Icons.Filled.Timer,
-                        contentDescription = "Tiempo",
-                        tint = Color.Black,
-                        modifier = Modifier.size(18.dp)
-                    )
-                    Spacer(Modifier.width(4.dp))
-                    Text(
-                        text = "${recipe.tiempo} min",
-                        style = MaterialTheme.typography.bodyMedium.copy(color = Color.Black)
-                    )
-                }
-
-                Spacer(Modifier.height(8.dp))
-
+                // Descripción
                 Text(
-                    text = recipe.descripcion.orEmpty(),
-                    style = MaterialTheme.typography.bodyMedium.copy(color = Color.Black),
-                    maxLines = 2,
-                    overflow = TextOverflow.Ellipsis
+                    text      = recipe.descripcion.orEmpty(),
+                    style     = MaterialTheme.typography.bodyMedium.copy(color = Color.Black),
+                    maxLines  = 2,
+                    overflow  = TextOverflow.Ellipsis
                 )
             }
 
