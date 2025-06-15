@@ -32,6 +32,9 @@ class FavoritesViewModel(app: Application) : AndroidViewModel(app) {
     private val _isLoading = MutableStateFlow(false)
     val isLoading: StateFlow<Boolean> = _isLoading
 
+    private val userId = 1 // getUserIdFromAuth() Implement this based on your auth system HARDCODEADO, FALTA
+
+
     val filteredAndSortedRecipes: StateFlow<List<RecipeResponse>> = combine(
         _allRecipes, _searchQuery, _sortField, _isAscending
     ) { recipes, query, field, ascending ->
@@ -79,8 +82,14 @@ class FavoritesViewModel(app: Application) : AndroidViewModel(app) {
             _isLoading.value = true
             val fetched = try {
                 when (index) {
-                    0 -> RetrofitClient.api.getAllRecipes()      //getMyRecipes()
-                    1 -> RetrofitClient.api.getAllRecipes()      //getFavoriteRecipes()
+                    0 -> RetrofitClient.api.getRecipesByAuthor(userId)      //getMyRecipes()
+                    1 -> {
+                        val favorites = RetrofitClient.api.getSavedRecipes(userId)
+                        // You might need to fetch full recipe details for each favorite
+                        favorites.map { favorite ->
+                            RetrofitClient.api.getRecipeById(favorite.recipeId) // Assuming you have this endpoint
+                        }      //getFavoriteRecipes()
+                    }
                     else -> emptyList()
                 }
             } catch (e: Exception) {

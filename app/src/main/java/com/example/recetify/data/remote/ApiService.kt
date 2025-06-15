@@ -7,6 +7,7 @@ import com.example.recetify.data.remote.model.LoginRequest
 import com.example.recetify.data.remote.model.RatingResponse
 import com.example.recetify.data.remote.model.RecipeResponse
 import com.example.recetify.data.remote.model.ResetDTO
+import com.example.recetify.data.remote.model.UserSavedRecipeDTO
 import retrofit2.http.Body
 import retrofit2.http.GET
 import retrofit2.http.POST
@@ -39,6 +40,24 @@ interface ApiService {
 
     @GET("recipes/summary")
     suspend fun getAllRecipesSummary(): List<RecipeResponse>
+
+    // For getting a single recipe with creator details
+    @GET("recipes/{id}/full")
+    suspend fun getRecipeWithCreator(@Path("id") id: Long): RecipeResponse
+
+    // For getting all recipes by a user
+    @GET("recipes/author/{userId}")
+    suspend fun getRecipesByAuthor(@Path("userId") userId: Int): List<RecipeResponse>
+
+
+    @GET("user-saved-recipes/user/{userId}")
+    suspend fun getSavedRecipes(@Path("userId") userId: Int): List<UserSavedRecipeDTO>
+
+//    @POST("user-saved-recipes")
+//    suspend fun addFavorite(@Body request: AddFavoriteRequest): UserSavedRecipe
+//
+//    @DELETE("user-saved-recipes/{id}")
+//    suspend fun removeFavorite(@Path("id") id: Long): Response<Unit>
 
 }
 
