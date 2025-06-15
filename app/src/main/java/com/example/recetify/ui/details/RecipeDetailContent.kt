@@ -57,6 +57,7 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.TextFieldValue
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.navigation.NavController
 import coil.compose.AsyncImage
 import com.example.recetify.data.remote.RetrofitClient
@@ -64,6 +65,7 @@ import com.example.recetify.data.remote.model.RecipeResponse
 import com.example.recetify.data.remote.model.RatingResponse
 import com.example.recetify.ui.details.RecipeDetailViewModel
 import com.example.recetify.util.obtenerEmoji
+
 
 /**
  * Selector de estrellas para puntaje (1..5).
@@ -303,11 +305,12 @@ fun ReviewsAndCommentSection(
 @Composable
 fun RecipeDetailContent(
     receta: RecipeResponse,
+    ratings: List<RatingResponse>,
     padding: PaddingValues,
     showIngredients: MutableState<Boolean>,
     currentStep: MutableState<Int>,
     navController: NavController,
-    viewModel: RecipeDetailViewModel
+    onSendRating: (comentario: String, puntos: Int) -> Unit
 ) {
     val primaryTextColor = Color(0xFF042628)
     val selectedButtonColor = Color(0xFF042628)
@@ -318,7 +321,6 @@ fun RecipeDetailContent(
     val unitBackgroundColor = Color(0xFF995850)
     val unitTextColor = Color.White
 
-    val ratings = viewModel.ratings
     val baseUrl = RetrofitClient.BASE_URL.trimEnd('/')
     val imgPath = receta.fotoPrincipal?.removePrefix("http://localhost:8080") ?: ""
     val fullUrl = "$baseUrl$imgPath"
@@ -693,13 +695,7 @@ fun RecipeDetailContent(
                 // ── Sección de reseñas + comentarios ─────────────────────────────
                 ReviewsAndCommentSection(
                     ratings = ratings,
-                    onSend = { comentarioTexto, puntosElegidos ->
-                        viewModel.postRating(
-                            recipeId = receta.id,
-                            comentario = comentarioTexto,
-                            puntos = puntosElegidos
-                        )
-                    }
+                    onSend  = onSendRating
                 )
             }
         }
