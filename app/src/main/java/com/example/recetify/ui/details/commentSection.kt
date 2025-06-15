@@ -1,13 +1,16 @@
 package com.example.recetify.ui.details
 
 import androidx.compose.animation.animateContentSize
+import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.automirrored.filled.ArrowForwardIos
 import androidx.compose.material.icons.filled.ArrowDropDown
 import androidx.compose.material.icons.filled.ArrowDropUp
+import androidx.compose.material.icons.filled.ArrowForwardIos
 import androidx.compose.material.icons.filled.Star
 import androidx.compose.material.icons.outlined.StarBorder
 import androidx.compose.material3.*
@@ -16,10 +19,13 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.shadow
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.text.font.Font
+import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.TextFieldValue
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import com.example.recetify.R
 import com.example.recetify.data.remote.model.RatingResponse
 
 /**
@@ -31,6 +37,11 @@ import com.example.recetify.data.remote.model.RatingResponse
  * 4) Botón “Ver más / Ver menos” si hay más de 2 reseñas.
  * 5) Debajo del Card de reseñas, otro Card independiente para “Dejá tu comentario”.
  */
+
+private val Destacado = FontFamily(
+    Font(R.font.sen_semibold, weight = FontWeight.ExtraBold)
+)
+
 @Composable
 fun CommentsSection(
     ratings: List<RatingResponse>,
@@ -38,14 +49,10 @@ fun CommentsSection(
 ) {
     var expanded by remember { mutableStateOf(false) }
     val previewCount = 2
-
-    // Si está expandido o hay 2 o menos, muestro todas; si no, tomo sólo las primeras dos
     val displayList = remember(ratings, expanded) {
         if (expanded || ratings.size <= previewCount) ratings
         else ratings.take(previewCount)
     }
-
-    // Promedio en 1 decimal
     val averageRating = remember(ratings) {
         if (ratings.isEmpty()) 0.0 else String.format("%.1f", ratings.map { it.puntos }.average()).toDouble()
     }
@@ -53,25 +60,26 @@ fun CommentsSection(
     Column(
         modifier = Modifier
             .fillMaxWidth()
-            .padding(horizontal = 16.dp) // margen externo
+            .padding(horizontal = 24.dp, vertical = 16.dp) // <-- ahora con padding vertical
     ) {
-        // ── 1) Card principal para la sección “Reseñas” ────────────────────
+        // ── 1) Card principal para la sección “Reseñas”
         Card(
+            modifier = Modifier.fillMaxWidth(),
             shape = RoundedCornerShape(12.dp),
             colors = CardDefaults.cardColors(containerColor = Color.White),
-            elevation = CardDefaults.cardElevation(defaultElevation = 2.dp),
-            modifier = Modifier.fillMaxWidth()
+            border = BorderStroke(1.dp, Color(0xFFE0E0E0)),      // <-- agregamos borde
+            elevation = CardDefaults.cardElevation(defaultElevation = 2.dp)
         ) {
             Column(
                 modifier = Modifier
                     .fillMaxWidth()
-                    .animateContentSize() // anima al expandir/colapsar
+                    .animateContentSize()
             ) {
-                // ── Encabezado “Reseñas” ───────────────────────────────────
+                // Encabezado
                 Row(
                     modifier = Modifier
                         .fillMaxWidth()
-                        .padding(start = 16.dp, end = 16.dp, top = 12.dp, bottom = 8.dp),
+                        .padding(horizontal = 16.dp, vertical = 8.dp),
                     verticalAlignment = Alignment.CenterVertically
                 ) {
                     Text(
@@ -79,20 +87,20 @@ fun CommentsSection(
                         style = MaterialTheme.typography.titleMedium.copy(fontWeight = FontWeight.Bold),
                         color = Color(0xFF042628)
                     )
-                    Spacer(modifier = Modifier.weight(1f))
+                    Spacer(Modifier.weight(1f))
                     Text(
                         text = "%.1f".format(averageRating),
                         style = MaterialTheme.typography.bodyMedium.copy(fontWeight = FontWeight.SemiBold),
                         color = Color(0xFF042628)
                     )
-                    Spacer(modifier = Modifier.width(4.dp))
+                    Spacer(Modifier.width(4.dp))
                     Icon(
                         imageVector = Icons.Default.Star,
-                        contentDescription = "Estrella promedio",
+                        contentDescription = null,
                         tint = Color(0xFFFFC107),
                         modifier = Modifier.size(20.dp)
                     )
-                    Spacer(modifier = Modifier.width(4.dp))
+                    Spacer(Modifier.width(4.dp))
                     Text(
                         text = "(${ratings.size} reseñas)",
                         style = MaterialTheme.typography.bodySmall,
@@ -100,21 +108,18 @@ fun CommentsSection(
                     )
                 }
 
-                // ── Lista de CommentCard ────────────────────────────────────
+                // Lista de CommentCard
                 Column(modifier = Modifier.fillMaxWidth()) {
-                    displayList.forEachIndexed { index, rating ->
-                        if (index > 0) {
-                            Spacer(modifier = Modifier.height(8.dp))
-                        }
+                    displayList.forEachIndexed { idx, rating ->
+                        if (idx > 0) Spacer(Modifier.height(8.dp))
                         CommentCard(rating = rating)
                     }
-
                     if (ratings.size > previewCount) {
                         Row(
                             modifier = Modifier
                                 .fillMaxWidth()
                                 .clickable { expanded = !expanded }
-                                .padding(top = 8.dp, bottom = 12.dp),
+                                .padding(vertical = 8.dp),
                             horizontalArrangement = Arrangement.Center,
                             verticalAlignment = Alignment.CenterVertically
                         ) {
@@ -124,7 +129,7 @@ fun CommentsSection(
                                 color = Color(0xFF042628),
                                 fontSize = 14.sp
                             )
-                            Spacer(modifier = Modifier.width(4.dp))
+                            Spacer(Modifier.width(4.dp))
                             Icon(
                                 imageVector = if (expanded) Icons.Default.ArrowDropUp else Icons.Default.ArrowDropDown,
                                 contentDescription = null,
@@ -149,9 +154,9 @@ fun CommentsSection(
                 hoveredElevation = 0.dp,
                 draggedElevation = 0.dp
             ),
-            modifier = Modifier.fillMaxWidth()
+            modifier = Modifier.fillMaxWidth(),
         ) {
-            Column(modifier = Modifier.padding(16.dp)) {
+            Column(modifier = Modifier.padding(18.dp)) {
                 Text(
                     text = "Dejá tu comentario",
                     style = MaterialTheme.typography.titleSmall.copy(fontWeight = FontWeight.Bold),
@@ -238,46 +243,49 @@ fun CommentsSection(
 @Composable
 fun CommentCard(rating: RatingResponse) {
     Card(
-        shape = RoundedCornerShape(8.dp),
-        colors = CardDefaults.cardColors(containerColor = Color(0xFFF7F7F7)),
-        elevation = CardDefaults.cardElevation(defaultElevation = 1.dp),
+        shape = RoundedCornerShape(12.dp),
+        colors = CardDefaults.cardColors(containerColor = Color.White),
+        elevation = CardDefaults.cardElevation(defaultElevation = 2.dp),
         modifier = Modifier
             .fillMaxWidth()
-            .padding(vertical = 4.dp) // separación entre tarjetas
+            .padding(horizontal = 1.dp, vertical = 4.dp)
     ) {
         Column(modifier = Modifier.padding(16.dp)) {
             Row(verticalAlignment = Alignment.CenterVertically) {
+                // Flechita antes del alias
+                Icon(
+                    imageVector = Icons.Default.ArrowForwardIos,
+                    contentDescription = null,
+                    tint = Color(0xFF042628),
+                    modifier = Modifier.size(16.dp)
+                )
+                Spacer(Modifier.width(8.dp))
+
+                // Alias con la fuente Destacado
                 Text(
                     text = rating.userAlias,
-                    color = Color(0xFF042628),
-                    fontWeight = FontWeight.Bold,
-                    style = MaterialTheme.typography.bodyMedium
+                    fontFamily = Destacado,
+                    style = MaterialTheme.typography.bodyLarge.copy(fontWeight = FontWeight.Bold),
+                    color = Color(0xFF042628)
                 )
-                Spacer(modifier = Modifier.weight(1f))
+
+                Spacer(Modifier.weight(1f))
+
+                // Estrellitas
                 StarRow(puntos = rating.puntos)
             }
 
-            Spacer(modifier = Modifier.height(8.dp))
+            Spacer(Modifier.height(8.dp))
 
             Text(
                 text = rating.comentario,
+                style = MaterialTheme.typography.bodyMedium,
                 color = Color(0xFF424242),
-                style = MaterialTheme.typography.bodySmall,
                 lineHeight = 18.sp
-            )
-
-            Spacer(modifier = Modifier.height(8.dp))
-
-            Text(
-                text = "Publicado el ${rating.fecha.substring(0, 10)}",
-                style = MaterialTheme.typography.bodySmall,
-                color = Color(0xFF757575).copy(alpha = 0.8f),
-                fontSize = 12.sp
             )
         }
     }
 }
-
 
 @Composable
 fun StarRow(puntos: Int) {

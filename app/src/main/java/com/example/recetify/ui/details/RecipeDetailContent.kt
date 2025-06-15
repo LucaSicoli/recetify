@@ -1,6 +1,7 @@
 package com.example.recetify.ui.details
 
 import androidx.compose.animation.animateContentSize
+import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
@@ -203,10 +204,10 @@ fun ReviewsAndCommentSection(
         Card(
             modifier = Modifier
                 .fillMaxWidth()
-                .padding(vertical = 16.dp),
+                .padding(horizontal = 4.dp, vertical = 16.dp),
             shape = RoundedCornerShape(12.dp),
             colors = CardDefaults.cardColors(containerColor = Color.White),
-            elevation = CardDefaults.cardElevation(defaultElevation = 1.dp)
+            elevation = CardDefaults.cardElevation(defaultElevation = 3.dp)
         ) {
             Column(modifier = Modifier.padding(16.dp)) {
                 // Encabezado con “Dejá tu comentario” + estrellas
@@ -470,6 +471,7 @@ fun RecipeDetailContent(
                     }
                 }
 
+
                 Spacer(Modifier.height(16.dp))
 
                 // ── Mostrar lista de ingredientes o paso a paso ────────────────
@@ -498,7 +500,8 @@ fun RecipeDetailContent(
                                 .padding(vertical = 6.dp),
                             shape = RoundedCornerShape(16.dp),
                             colors = CardDefaults.cardColors(containerColor = ingredientCardColor),
-                            elevation = CardDefaults.cardElevation(defaultElevation = 4.dp)
+                            elevation = CardDefaults.cardElevation(defaultElevation = 2.dp)
+
                         ) {
                             Row(
                                 modifier = Modifier
@@ -548,81 +551,69 @@ fun RecipeDetailContent(
                         color = primaryTextColor
                     )
                     Spacer(Modifier.height(12.dp))
+
                     val pasos = receta.steps.sortedBy { it.numeroPaso }
+                    val lastIndex = pasos.lastIndex
+
                     if (currentStep.value in pasos.indices) {
                         val paso = pasos[currentStep.value]
+
                         Card(
-                            modifier = Modifier.fillMaxWidth(),
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .padding(vertical = 8.dp),
                             shape = RoundedCornerShape(16.dp),
+                            border = BorderStroke(1.dp, Color(0xFFE0E0E0)),
                             colors = CardDefaults.cardColors(containerColor = Color.White),
-                            elevation = CardDefaults.cardElevation(defaultElevation = 0.dp)
+                            elevation = CardDefaults.cardElevation(defaultElevation = 4.dp)
                         ) {
                             Column(Modifier.padding(16.dp)) {
+                                // Título del paso
                                 Text(
                                     text = "${paso.numeroPaso}. ${paso.titulo}",
                                     fontWeight = FontWeight.Bold,
                                     color = primaryTextColor
                                 )
+
+                                // Imagen del paso, con borde redondeado de 8dp
                                 if (!paso.urlMedia.isNullOrBlank()) {
                                     Spacer(Modifier.height(8.dp))
-
-                                    // 1) Tomamos la URL que vino del backend:
                                     val rawUrl = paso.urlMedia!!
                                     val imageUrl = when {
                                         rawUrl.startsWith("http://localhost:8080") ->
                                             rawUrl.replaceFirst("http://localhost:8080", baseUrl)
-
                                         rawUrl.startsWith(baseUrl) ->
                                             rawUrl
-
                                         else ->
                                             rawUrl
                                     }
-
                                     AsyncImage(
                                         model = imageUrl,
                                         contentDescription = null,
                                         modifier = Modifier
                                             .fillMaxWidth()
-                                            .height(180.dp),
+                                            .height(180.dp)
+                                            .clip(RoundedCornerShape(8.dp)),
                                         contentScale = ContentScale.Crop
                                     )
                                 }
+
+                                // Descripción del paso
                                 if (!paso.descripcion.isNullOrBlank()) {
                                     Spacer(Modifier.height(8.dp))
                                     Text(paso.descripcion, color = primaryTextColor)
                                 }
+
                                 Spacer(Modifier.height(12.dp))
-                                if (currentStep.value > 0) {
-                                    // A partir del segundo paso, mostramos "Anterior" y "Siguiente"
-                                    Row(modifier = Modifier.fillMaxWidth()) {
-                                        Button(
-                                            onClick = { currentStep.value-- },
-                                            enabled = currentStep.value > 0,
-                                            modifier = Modifier
-                                                .weight(1f)
-                                                .height(40.dp),
-                                            shape = RoundedCornerShape(8.dp),
-                                            colors = ButtonDefaults.buttonColors(
-                                                containerColor = Color(0xFF042628),
-                                                contentColor = Color.White
-                                            )
-                                        ) {
-                                            Text(
-                                                text = "Paso Anterior",
-                                                style = MaterialTheme.typography.bodyMedium.copy(
-                                                    fontWeight = FontWeight.Medium
-                                                )
-                                            )
-                                        }
 
-                                        Spacer(modifier = Modifier.width(8.dp))
-
+                                // Navegación entre pasos
+                                when {
+                                    // Primer paso: solo “Siguiente”
+                                    currentStep.value == 0 -> {
                                         Button(
                                             onClick = { currentStep.value++ },
-                                            enabled = currentStep.value < pasos.lastIndex,
                                             modifier = Modifier
-                                                .weight(1f)
+                                                .fillMaxWidth()
                                                 .height(40.dp),
                                             shape = RoundedCornerShape(8.dp),
                                             colors = ButtonDefaults.buttonColors(
@@ -632,32 +623,66 @@ fun RecipeDetailContent(
                                         ) {
                                             Text(
                                                 text = "Paso Siguiente",
-                                                style = MaterialTheme.typography.bodyMedium.copy(
-                                                    fontWeight = FontWeight.Medium
-                                                )
+                                                style = MaterialTheme.typography.bodyMedium.copy(fontWeight = FontWeight.Medium)
                                             )
                                         }
                                     }
-                                } else {
-                                    // Solo “Siguiente” en el primer paso
-                                    Button(
-                                        onClick = { currentStep.value++ },
-                                        enabled = currentStep.value < pasos.lastIndex,
-                                        modifier = Modifier
-                                            .fillMaxWidth()
-                                            .height(40.dp),
-                                        shape = RoundedCornerShape(8.dp),
-                                        colors = ButtonDefaults.buttonColors(
-                                            containerColor = Color(0xFF042628),
-                                            contentColor = Color.White
-                                        )
-                                    ) {
-                                        Text(
-                                            text = "Paso Siguiente",
-                                            style = MaterialTheme.typography.bodyMedium.copy(
-                                                fontWeight = FontWeight.Medium
+                                    // Último paso: solo “Anterior”
+                                    currentStep.value == lastIndex -> {
+                                        Button(
+                                            onClick = { currentStep.value-- },
+                                            modifier = Modifier
+                                                .fillMaxWidth()
+                                                .height(40.dp),
+                                            shape = RoundedCornerShape(8.dp),
+                                            colors = ButtonDefaults.buttonColors(
+                                                containerColor = Color(0xFF042628),
+                                                contentColor = Color.White
                                             )
-                                        )
+                                        ) {
+                                            Text(
+                                                text = "Paso Anterior",
+                                                style = MaterialTheme.typography.bodyMedium.copy(fontWeight = FontWeight.Medium)
+                                            )
+                                        }
+                                    }
+                                    // Pasos intermedios: ambos botones
+                                    else -> {
+                                        Row(modifier = Modifier.fillMaxWidth()) {
+                                            Button(
+                                                onClick = { currentStep.value-- },
+                                                modifier = Modifier
+                                                    .weight(1f)
+                                                    .height(40.dp),
+                                                shape = RoundedCornerShape(8.dp),
+                                                colors = ButtonDefaults.buttonColors(
+                                                    containerColor = Color(0xFF042628),
+                                                    contentColor = Color.White
+                                                )
+                                            ) {
+                                                Text(
+                                                    text = "Paso Anterior",
+                                                    style = MaterialTheme.typography.bodyMedium.copy(fontWeight = FontWeight.Medium)
+                                                )
+                                            }
+                                            Spacer(modifier = Modifier.width(8.dp))
+                                            Button(
+                                                onClick = { currentStep.value++ },
+                                                modifier = Modifier
+                                                    .weight(1f)
+                                                    .height(40.dp),
+                                                shape = RoundedCornerShape(8.dp),
+                                                colors = ButtonDefaults.buttonColors(
+                                                    containerColor = Color(0xFF042628),
+                                                    contentColor = Color.White
+                                                )
+                                            ) {
+                                                Text(
+                                                    text = "Paso Siguiente",
+                                                    style = MaterialTheme.typography.bodyMedium.copy(fontWeight = FontWeight.Medium)
+                                                )
+                                            }
+                                        }
                                     }
                                 }
                             }
