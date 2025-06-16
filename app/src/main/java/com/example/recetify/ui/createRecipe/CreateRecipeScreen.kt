@@ -43,6 +43,7 @@ import com.example.recetify.data.remote.model.RecipeStepRequest
 import com.example.recetify.util.FileUtil
 import com.example.recetify.util.obtenerEmoji
 import android.webkit.MimeTypeMap
+import com.example.recetify.util.listaIngredientesConEmoji
 
 private val Accent = Color(0xFFBC6154)
 private val GrayBg  = Color(0xFFF8F8F8)
@@ -220,6 +221,7 @@ fun CreateRecipeScreen(
                             .clickable { showIngredientDialog = true },
                         shape     = RoundedCornerShape(12.dp),
                         border    = BorderStroke(1.dp, Accent),
+                        colors    = CardDefaults.cardColors(containerColor = Color(0xFFE6EBF2)),
                         elevation = CardDefaults.cardElevation(4.dp)
                     ) {
                         Row(Modifier.padding(16.dp), verticalAlignment = Alignment.CenterVertically) {
@@ -252,8 +254,9 @@ fun CreateRecipeScreen(
                             .clickable { showStepDialog = true },
                         shape     = RoundedCornerShape(12.dp),
                         border    = BorderStroke(1.dp, Accent),
+                        colors    = CardDefaults.cardColors(containerColor = Color(0xFFE6EBF2)),
                         elevation = CardDefaults.cardElevation(4.dp)
-                    ) {
+                    ){
                         Row(Modifier.padding(16.dp), verticalAlignment = Alignment.CenterVertically) {
                             Icon(Icons.Default.Add, contentDescription = null, tint = Accent)
                             Spacer(Modifier.width(8.dp))
@@ -295,37 +298,58 @@ fun CreateRecipeScreen(
 
         // Dialogo Ingrediente
         if (showIngredientDialog) {
-            var selectedIng by remember { mutableStateOf("") }
+            var searchQuery by remember { mutableStateOf("") }
+            val allIngredients = listaIngredientesConEmoji()
+            // Filtramos por el texto ingresado:
+            val filteredIngredients = remember(searchQuery) {
+                allIngredients.filter { it.contains(searchQuery, ignoreCase = true) }
+            }
+
             AlertDialog(
                 onDismissRequest = { showIngredientDialog = false },
                 title   = { Text("Seleccionar ingrediente") },
                 text    = {
-                    LazyColumn {
-                        items(listOf("Tomate","Queso","Harina","Huevos","Leche")) { ing ->
-                            Row(
-                                Modifier
-                                    .fillMaxWidth()
-                                    .clickable {
-                                        ingredients += RecipeIngredientRequest(
-                                            ingredientId = null,
-                                            nombre       = ing,
-                                            cantidad     = 1.0,
-                                            unidadMedida = "un"
-                                        )
-                                        showIngredientDialog = false
-                                    }
-                                    .padding(vertical = 12.dp, horizontal = 8.dp),
-                                verticalAlignment = Alignment.CenterVertically
-                            ) {
-                                Text(obtenerEmoji(ing), fontSize = 20.sp)
-                                Spacer(Modifier.width(12.dp))
-                                Text(ing, fontSize = 16.sp)
+                    Column {
+                        // 1) Campo de búsqueda
+                        OutlinedTextField(
+                            value = searchQuery,
+                            onValueChange = { searchQuery = it },
+                            placeholder   = { Text("Buscar…") },
+                            modifier      = Modifier
+                                .fillMaxWidth()
+                                .padding(bottom = 8.dp),
+                            singleLine    = true
+                        )
+                        // 2) Lista filtrada
+                        LazyColumn {
+                            items(filteredIngredients) { ing ->
+                                Row(
+                                    Modifier
+                                        .fillMaxWidth()
+                                        .clickable {
+                                            ingredients += RecipeIngredientRequest(
+                                                ingredientId = null,
+                                                nombre       = ing,
+                                                cantidad     = 1.0,
+                                                unidadMedida = "un"
+                                            )
+                                            showIngredientDialog = false
+                                        }
+                                        .padding(vertical = 12.dp, horizontal = 8.dp),
+                                    verticalAlignment = Alignment.CenterVertically
+                                ) {
+                                    Text(obtenerEmoji(ing), fontSize = 20.sp)
+                                    Spacer(Modifier.width(12.dp))
+                                    Text(ing, fontSize = 16.sp)
+                                }
                             }
                         }
                     }
                 },
                 confirmButton = {
-                    TextButton(onClick = { showIngredientDialog = false }) { Text("Cancelar") }
+                    TextButton(onClick = { showIngredientDialog = false }) {
+                        Text("Cancelar")
+                    }
                 }
             )
         }
