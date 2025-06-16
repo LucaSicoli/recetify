@@ -29,7 +29,6 @@ object RecipeRepositoryProvider {
         val connectivity =
             context.getSystemService(Context.CONNECTIVITY_SERVICE) as ConnectivityManager
 
-        // RetrofitClient.api es una instancia de ApiService
         return RecipeRepository(
             dao = dao,
             api = RetrofitClient.api,
@@ -73,8 +72,9 @@ class CreateRecipeViewModel(
     private val _error = MutableStateFlow<String?>(null)
     val error = _error.asStateFlow()
 
-    // Aquí guardamos la URL tras subir la foto
-    var photoUrl: String? = null
+    // ← Cambiado a StateFlow para poder hacer collectAsState()
+    private val _photoUrl = MutableStateFlow<String?>(null)
+    val photoUrl = _photoUrl.asStateFlow()
 
     /**
      * Sube la foto seleccionada y guarda la URL devuelta.
@@ -83,7 +83,8 @@ class CreateRecipeViewModel(
         _uploading.value = true
         _error.value = null
         try {
-            photoUrl = repo.uploadPhoto(file)
+            val url = repo.uploadPhoto(file)
+            _photoUrl.value = url
         } catch (t: Throwable) {
             _error.value = t.localizedMessage
         } finally {
@@ -109,15 +110,15 @@ class CreateRecipeViewModel(
         _error.value = null
         try {
             val req = RecipeRequest(
-                nombre = nombre,
-                descripcion = descripcion,
-                tiempo = tiempo,
-                porciones = porciones,
-                fotoPrincipal = photoUrl,
-                tipoPlato = tipoPlato,
-                categoria = categoria,
-                ingredients = ingredients,
-                steps = steps
+                nombre        = nombre,
+                descripcion   = descripcion,
+                tiempo        = tiempo,
+                porciones     = porciones,
+                fotoPrincipal = _photoUrl.value,
+                tipoPlato     = tipoPlato,
+                categoria     = categoria,
+                ingredients   = ingredients,
+                steps         = steps
             )
             repo.createRecipe(req)
             onSuccess()
