@@ -16,6 +16,7 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Star
 import androidx.compose.material.icons.filled.Timer
 import androidx.compose.material.icons.outlined.Person
+import androidx.compose.material.icons.outlined.Star
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
@@ -23,6 +24,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.Color.Companion.Gray
 import androidx.compose.ui.graphics.Shape
 import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.layout.ContentScale
@@ -289,7 +291,8 @@ private fun RecipeCard(
                     style     = MaterialTheme.typography.titleLarge.copy(fontWeight = FontWeight.SemiBold),
                     color     = Color.Black,
                     maxLines  = 1,
-                    overflow  = TextOverflow.Ellipsis
+                    overflow  = TextOverflow.Ellipsis,
+                    fontFamily = Destacado
                 )
 
                 Spacer(Modifier.height(8.dp))
@@ -306,14 +309,15 @@ private fun RecipeCard(
                     Spacer(Modifier.width(4.dp))
                     Text(
                         text  = recipe.usuarioCreadorAlias.orEmpty(),
-                        style = MaterialTheme.typography.bodySmall.copy(color = Color.Black)
+                        style = MaterialTheme.typography.bodySmall.copy(color = Color.Black),
+                        fontFamily = Destacado
                     )
 
                     Spacer(Modifier.width(16.dp))
 
                     // Rating
                     Icon(
-                        imageVector     = Icons.Filled.Star,
+                        imageVector     = Icons.Outlined.Star,
                         contentDescription = "Rating",
                         tint            = Color(0xFFe29587),
                         modifier        = Modifier.size(18.dp)
@@ -347,7 +351,10 @@ private fun RecipeCard(
                     text      = recipe.descripcion.orEmpty(),
                     style     = MaterialTheme.typography.bodyMedium.copy(color = Color.Black),
                     maxLines  = 2,
-                    overflow  = TextOverflow.Ellipsis
+                    overflow  = TextOverflow.Ellipsis,
+                    fontFamily = Destacado,
+                    color = Color(0xFF333333)
+
                 )
             }
 

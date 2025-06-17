@@ -44,6 +44,7 @@ import com.example.recetify.data.remote.model.RecipeStepRequest
 import com.example.recetify.util.FileUtil
 import com.example.recetify.util.obtenerEmoji
 import android.webkit.MimeTypeMap
+import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material.icons.filled.AccessTime
 import androidx.compose.material.icons.filled.Restaurant
 import androidx.compose.ui.graphics.Color.Companion.Black
@@ -54,6 +55,7 @@ import androidx.compose.ui.graphics.Color.Companion.White
 import androidx.compose.ui.graphics.SolidColor
 import androidx.compose.ui.text.font.Font
 import androidx.compose.ui.text.font.FontFamily
+import androidx.compose.ui.text.input.KeyboardType
 import com.example.recetify.util.listaIngredientesConEmoji
 
 private val Accent = Color(0xFFBC6154)
@@ -213,7 +215,7 @@ fun CreateRecipeScreen(
                             .fillMaxWidth()
                             .height(120.dp),
                         maxLines = 4,
-                        shape = RoundedCornerShape(12.dp)
+                        shape = RoundedCornerShape(12.dp),
                     )
 
                     Divider(
@@ -488,68 +490,190 @@ fun CreateRecipeScreen(
                     }
 
 // ——————————
-// Editor inline para nuevo paso
+// Editor inline para nuevo paso con contador y visor de fotos
 // ——————————
                     editingStep?.let { draft ->
+                        var showImagePreview by remember { mutableStateOf(false) }
+
+                        // ← Aquí, justo antes de tu Card, declara el launcher de paso:
+                        val stepImageLauncher = rememberLauncherForActivityResult(GetContent()) { uri: Uri? ->
+                            uri?.let {
+                                // Actualiza sólo el draft de este paso, manteniendo el resto intacto
+                                editingStep = draft.copy(urlMedia = it.toString())
+                            }
+                        }
+
                         Card(
                             modifier  = Modifier
                                 .fillMaxWidth()
-                                .background(Color.White, RoundedCornerShape(12.dp))
-                                .padding(8.dp),
+                                .padding(vertical = 8.dp),
                             shape     = RoundedCornerShape(12.dp),
                             colors    = CardDefaults.cardColors(containerColor = Color.White),
                             elevation = CardDefaults.cardElevation(4.dp)
                         ) {
-                            Column(Modifier.padding(16.dp), verticalArrangement = Arrangement.spacedBy(12.dp)) {
-                                OutlinedTextField(
-                                    value         = draft.titulo.orEmpty(),
-                                    onValueChange = { editingStep = draft.copy(titulo = it) },
-                                    label         = { Text("Nombre del Paso") },
-                                    singleLine    = true,
-                                    modifier      = Modifier.fillMaxWidth()
-                                )
-                                OutlinedTextField(
-                                    value         = draft.descripcion,
-                                    onValueChange = { editingStep = draft.copy(descripcion = it) },
-                                    label         = { Text("Descripción del Paso") },
-                                    modifier      = Modifier.fillMaxWidth().height(100.dp),
-                                    maxLines      = 4
-                                )
+                            Column(
+                                Modifier.padding(16.dp),
+                                verticalArrangement = Arrangement.spacedBy(12.dp)
+                            ) {
+                                // --- TÍTULO ---
+                                Box(
+                                    Modifier
+                                        .fillMaxWidth()
+                                        .background(Color(0xFFF8F8F8), RoundedCornerShape(6.dp))
+                                        .border(1.dp, Color.LightGray, RoundedCornerShape(6.dp))
+                                        .padding(12.dp)
+                                ) {
+                                    BasicTextField(
+                                        value         = draft.titulo.orEmpty(),
+                                        onValueChange = { editingStep = draft.copy(titulo = it) },
+                                        singleLine    = true,
+                                        textStyle     = LocalTextStyle.current.copy(
+                                            color      = Color.Black,
+                                            fontFamily = Destacado,
+                                            fontSize   = 16.sp
+                                        ),
+                                        decorationBox = { inner ->
+                                            if (draft.titulo.isNullOrEmpty()) {
+                                                Text("Nombre del Paso", color = Gray, fontFamily = Destacado)
+                                            }
+                                            inner()
+                                        },
+                                        modifier = Modifier.fillMaxWidth()
+                                    )
+                                }
+
+                                // --- DESCRIPCIÓN ---
+                                Box(
+                                    Modifier
+                                        .fillMaxWidth()
+                                        .height(100.dp)
+                                        .background(Color(0xFFF8F8F8), RoundedCornerShape(6.dp))
+                                        .border(1.dp, Color.LightGray, RoundedCornerShape(6.dp))
+                                        .padding(12.dp)
+                                ) {
+                                    BasicTextField(
+                                        value         = draft.descripcion,
+                                        onValueChange = { editingStep = draft.copy(descripcion = it) },
+                                        textStyle     = LocalTextStyle.current.copy(
+                                            color      = Color.Black,
+                                            fontFamily = Destacado,
+                                            fontSize   = 14.sp
+                                        ),
+                                        decorationBox = { inner ->
+                                            if (draft.descripcion.isEmpty()) {
+                                                Text("Descripción del Paso", color = Gray, fontFamily = Destacado)
+                                            }
+                                            inner()
+                                        },
+                                        modifier = Modifier.fillMaxSize()
+                                    )
+                                }
+
+                                if (!draft.urlMedia.isNullOrBlank()) {
+                                    Column(
+                                        modifier = Modifier
+                                            .padding(top = 8.dp)
+                                            .fillMaxWidth(),
+                                        verticalArrangement = Arrangement.spacedBy(4.dp)
+                                    ) {
+                                        Text(
+                                            text = "Imagen cargada:",
+                                            color = Color.Gray,
+                                            fontSize = 14.sp,
+                                            fontWeight = FontWeight.Medium,
+                                            fontFamily = Destacado
+                                        )
+                                        AsyncImage(
+                                            model = draft.urlMedia,
+                                            contentDescription = null,
+                                            modifier = Modifier
+                                                .fillMaxWidth()
+                                                .height(140.dp)
+                                                .clip(RoundedCornerShape(8.dp)),
+                                            contentScale = ContentScale.Crop
+                                        )
+                                    }
+                                }
+
+                                // --- AVISO DE FOTOS ---
+                                draft.urlMedia?.let { url ->
+                                    Row(
+                                        verticalAlignment = Alignment.CenterVertically,
+                                        horizontalArrangement = Arrangement.spacedBy(4.dp)
+                                    ) {
+                                        Text(
+                                            text = "Fotos: 1",
+                                            fontFamily = Destacado,
+                                            color = Accent
+                                        )
+                                        IconButton(onClick = { showImagePreview = true }) {
+                                            Icon(
+                                                painter = painterResource(R.drawable.ic_chef_hat),
+                                                contentDescription = "Ver foto",
+                                                tint = Accent
+                                            )
+                                        }
+                                    }
+                                }
+
+                                // --- BOTONES ---
                                 Row(
                                     Modifier.fillMaxWidth(),
                                     horizontalArrangement = Arrangement.SpaceBetween,
                                     verticalAlignment     = Alignment.CenterVertically
                                 ) {
                                     OutlinedButton(
-                                        onClick = { launcher.launch("image/*") },
+                                        onClick = { stepImageLauncher.launch("image/*") },
                                         shape   = RoundedCornerShape(8.dp),
-                                        border  = BorderStroke(1.dp, Accent)
+                                        border  = BorderStroke(1.dp, Accent),
+                                        colors  = ButtonDefaults.outlinedButtonColors(contentColor = Accent)
                                     ) {
-                                        Icon(Icons.Default.CameraAlt, contentDescription = null, tint = Accent)
+                                        Icon(Icons.Default.CameraAlt, contentDescription = null)
                                         Spacer(Modifier.width(4.dp))
-                                        Text("Foto", color = Accent)
+                                        Text("Foto", fontFamily = Destacado)
                                     }
-                                    Row {
-                                        TextButton(onClick = { editingStep = null }) {
-                                            Text("Cancelar")
-                                        }
-                                        Spacer(Modifier.width(8.dp))
-                                        Button(onClick = {
+
+                                    TextButton(onClick = { editingStep = null }) {
+                                        Text("Cancelar", color = Accent, fontFamily = Destacado)
+                                    }
+
+                                    Button(
+                                        onClick = {
                                             steps += draft.copy(numeroPaso = steps.size + 1)
                                             editingStep = null
-                                        }) {
-                                            Text("Agregar Paso")
-                                        }
+                                        },
+                                        shape  = RoundedCornerShape(8.dp),
+                                        colors = ButtonDefaults.buttonColors(containerColor = Accent)
+                                    ) {
+                                        Text("Agregar Paso", color = Color.White, fontFamily = Destacado)
                                     }
                                 }
                             }
                         }
                         Spacer(Modifier.height(12.dp))
-                    }
 
-// ——————————
-// Botón para iniciar edición de un nuevo paso
-// ——————————
+                        // --- DIALOGO DE PREVIEW ---
+                        if (showImagePreview) {
+                            AlertDialog(
+                                onDismissRequest = { showImagePreview = false },
+                                confirmButton = {
+                                    TextButton(onClick = { showImagePreview = false }) {
+                                        Text("Cerrar", color = Accent)
+                                    }
+                                },
+                                text = {
+                                    AsyncImage(
+                                        model = draft.urlMedia,
+                                        contentDescription = "Foto del paso",
+                                        modifier = Modifier
+                                            .fillMaxWidth()
+                                            .height(200.dp),
+                                        contentScale = ContentScale.Crop
+                                    )
+                                }
+                            )
+                        }
+                    }
                     if (editingStep == null) {
                         Card(
                             modifier  = Modifier
@@ -657,31 +781,44 @@ fun CreateRecipeScreen(
         if (showIngredientDialog) {
             var searchQuery by remember { mutableStateOf("") }
             val allIngredients = listaIngredientesConEmoji()
-            // Filtramos por el texto ingresado:
             val filteredIngredients = remember(searchQuery) {
                 allIngredients.filter { it.contains(searchQuery, ignoreCase = true) }
             }
 
             AlertDialog(
                 onDismissRequest = { showIngredientDialog = false },
-                title   = { Text("Seleccionar ingrediente") },
-                text    = {
-                    Column {
-                        // 1) Campo de búsqueda
+                // Le ponemos un shape y fondo blanco
+                shape = RoundedCornerShape(12.dp),
+                containerColor = Color.White,
+                tonalElevation = 4.dp,
+                // El texto y los botones en negro
+                title = {
+                    Text(
+                        "Seleccionar ingrediente",
+                        color = Color.Black,
+                        fontFamily = Destacado,
+                        fontWeight = FontWeight.SemiBold
+                    )
+                },
+                text = {
+                    Column(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .background(Color.White) // opcional, para asegurarnos
+                    ) {
                         OutlinedTextField(
                             value = searchQuery,
                             onValueChange = { searchQuery = it },
-                            placeholder   = { Text("Buscar…") },
-                            modifier      = Modifier
+                            placeholder = { Text("Buscar…", fontFamily = Destacado) },
+                            modifier = Modifier
                                 .fillMaxWidth()
                                 .padding(bottom = 8.dp),
-                            singleLine    = true
+                            singleLine = true
                         )
-                        // 2) Lista filtrada
                         LazyColumn {
                             items(filteredIngredients) { ing ->
                                 Row(
-                                    Modifier
+                                    modifier = Modifier
                                         .fillMaxWidth()
                                         .clickable {
                                             ingredients += RecipeIngredientRequest(
@@ -692,12 +829,18 @@ fun CreateRecipeScreen(
                                             )
                                             showIngredientDialog = false
                                         }
+                                        .background(Color.White) // filas blancas
                                         .padding(vertical = 12.dp, horizontal = 8.dp),
                                     verticalAlignment = Alignment.CenterVertically
                                 ) {
                                     Text(obtenerEmoji(ing), fontSize = 20.sp)
                                     Spacer(Modifier.width(12.dp))
-                                    Text(ing, fontSize = 16.sp)
+                                    Text(
+                                        ing,
+                                        fontSize = 16.sp,
+                                        color = Color.Black,
+                                        fontFamily = Destacado
+                                    )
                                 }
                             }
                         }
@@ -705,7 +848,7 @@ fun CreateRecipeScreen(
                 },
                 confirmButton = {
                     TextButton(onClick = { showIngredientDialog = false }) {
-                        Text("Cancelar")
+                        Text("Cancelar", color = Accent)
                     }
                 }
             )
@@ -825,21 +968,16 @@ private fun IngredientRow(
     ingredient: RecipeIngredientRequest,
     onUpdate: (RecipeIngredientRequest) -> Unit
 ) {
-    // estado local para cantidad y unidad
-    var cantidad by remember { mutableStateOf(ingredient.cantidad.toInt()) }
-    var unidad by remember { mutableStateOf(ingredient.unidadMedida) }
-
-    // opciones de unidad; ajusta a tus necesidades
-    val unidades = listOf("un", "g", "kg", "ml", "l", "tsp", "tbsp", "cup")
-
-    // para desplegar el menú
-    var expanded by remember { mutableStateOf(false) }
+    var cantidadText by remember { mutableStateOf(ingredient.cantidad.toInt().toString()) }
+    var unidad      by remember { mutableStateOf(ingredient.unidadMedida) }
+    var expanded    by remember { mutableStateOf(false) }
 
     Card(
-        modifier = Modifier
+        modifier  = Modifier
             .fillMaxWidth()
             .padding(vertical = 4.dp),
-        shape = RoundedCornerShape(12.dp),
+        shape     = RoundedCornerShape(6.dp),
+        colors    = CardDefaults.cardColors(containerColor = Color.White),
         elevation = CardDefaults.cardElevation(2.dp)
     ) {
         Row(
@@ -847,69 +985,120 @@ private fun IngredientRow(
                 .padding(12.dp),
             verticalAlignment = Alignment.CenterVertically
         ) {
-            // emoji
+            // Emoji
             Text(
-                text = obtenerEmoji(ingredient.nombre.orEmpty()),
-                fontSize = 24.sp
+                text       = obtenerEmoji(ingredient.nombre.orEmpty()),
+                fontSize   = 24.sp,
+                color      = Color.Black,
+                fontFamily = Destacado
             )
             Spacer(Modifier.width(8.dp))
-            // nombre
+
+            // Nombre
             Text(
-                text = ingredient.nombre.orEmpty(),
-                modifier = Modifier.weight(1f),
-                fontWeight = FontWeight.Medium
+                text       = ingredient.nombre.orEmpty(),
+                modifier   = Modifier.weight(1f),
+                fontSize   = 16.sp,
+                fontWeight = FontWeight.Medium,
+                color      = Color.Black,
+                fontFamily = Destacado
             )
             Spacer(Modifier.width(8.dp))
-            // decrement
-            IconButton(onClick = {
-                if (cantidad > 1) {
-                    cantidad--
-                    onUpdate(ingredient.copy(cantidad = cantidad.toDouble(), unidadMedida = unidad))
-                }
-            }) {
-                Icon(Icons.Default.Remove, contentDescription = null, tint = Accent)
+
+            // Botón “−”
+            IconButton(
+                onClick = {
+                    val current = cantidadText.toIntOrNull() ?: 1
+                    if (current > 1) {
+                        cantidadText = (current - 1).toString()
+                        onUpdate(ingredient.copy(cantidad = (current - 1).toDouble(), unidadMedida = unidad))
+                    }
+                },
+                modifier = Modifier.size(28.dp)
+            ) {
+                Icon(Icons.Default.Remove, contentDescription = null, tint = Color.Red)
             }
-            // cantidad
-            Text(
-                text = "$cantidad",
+            Spacer(Modifier.width(4.dp))
+
+            // Caja de cantidad editable
+            Box(
                 modifier = Modifier
-                    .width(32.dp)
-                    .wrapContentHeight(),
-                fontWeight = FontWeight.Bold,
-                textAlign = TextAlign.Center
-            )
-            // increment
-            IconButton(onClick = {
-                cantidad++
-                onUpdate(ingredient.copy(cantidad = cantidad.toDouble(), unidadMedida = unidad))
-            }) {
-                Icon(Icons.Default.Add, contentDescription = null, tint = Accent)
+                    .width(64.dp)
+                    .height(36.dp)
+                    .background(Color.White, RoundedCornerShape(6.dp))
+                    .border(1.dp, Color.LightGray, RoundedCornerShape(6.dp)),
+                contentAlignment = Alignment.Center
+            ) {
+                BasicTextField(
+                    value         = cantidadText,
+                    onValueChange = { new ->
+                        if (new.all(Char::isDigit)) {
+                            cantidadText = new
+                            val parsed = new.toIntOrNull() ?: 0
+                            onUpdate(ingredient.copy(cantidad = parsed.toDouble(), unidadMedida = unidad))
+                        }
+                    },
+                    singleLine = true,
+                    keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
+                    textStyle = LocalTextStyle.current.copy(
+                        color      = Color.Black,
+                        fontSize   = 18.sp,
+                        fontWeight = FontWeight.Bold,
+                        textAlign  = TextAlign.Center,
+                        fontFamily = Destacado
+                    ),
+                    cursorBrush = SolidColor(Color.Black),
+                    decorationBox = { inner ->
+                        Box(Modifier.fillMaxSize(), contentAlignment = Alignment.Center) { inner() }
+                    }
+                )
             }
             Spacer(Modifier.width(8.dp))
-            // menú de unidad
-            Box {
-                Text(
-                    text = unidad,
-                    modifier = Modifier
-                        .border(BorderStroke(1.dp, Accent), RoundedCornerShape(8.dp))
-                        .clickable { expanded = true }
-                        .padding(horizontal = 8.dp, vertical = 4.dp)
-                )
+
+            // Caja de unidad
+            Box(
+                modifier = Modifier
+                    .width(56.dp)
+                    .height(36.dp)
+                    .background(Color.White, RoundedCornerShape(6.dp))
+                    .border(1.dp, Color.LightGray, RoundedCornerShape(6.dp))
+                    .clickable { expanded = true },
+                contentAlignment = Alignment.Center
+            ) {
+                Text(unidad, color = Color.Black, fontFamily = Destacado)
+
                 DropdownMenu(
-                    expanded = expanded,
-                    onDismissRequest = { expanded = false }
+                    expanded         = expanded,
+                    onDismissRequest = { expanded = false },
+                    // ↓ aquí forzamos el fondo blanco y un radio
+                    modifier = Modifier
+                        .background(Color.White, shape = RoundedCornerShape(6.dp))
                 ) {
-                    unidades.forEach { u ->
+                    listOf("un","g","kg","ml","l","tsp","tbsp","cup").forEach { u ->
                         DropdownMenuItem(
-                            text = { Text(u) },
+                            text = { Text(u, color = Color.Black, fontFamily = Destacado) },
                             onClick = {
-                                unidad = u
+                                unidad   = u
                                 expanded = false
-                                onUpdate(ingredient.copy(cantidad = cantidad.toDouble(), unidadMedida = unidad))
+                                val qty = cantidadText.toIntOrNull() ?: 0
+                                onUpdate(ingredient.copy(cantidad = qty.toDouble(), unidadMedida = unidad))
                             }
                         )
                     }
                 }
+            }
+            Spacer(Modifier.width(4.dp))
+
+            // Botón “+”
+            IconButton(
+                onClick = {
+                    val current = cantidadText.toIntOrNull() ?: 0
+                    cantidadText = (current + 1).toString()
+                    onUpdate(ingredient.copy(cantidad = (current + 1).toDouble(), unidadMedida = unidad))
+                },
+                modifier = Modifier.size(28.dp)
+            ) {
+                Icon(Icons.Default.Add, contentDescription = null, tint = Color(0xFF00C853))
             }
         }
     }

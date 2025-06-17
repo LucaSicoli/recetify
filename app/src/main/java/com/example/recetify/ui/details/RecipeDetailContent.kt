@@ -53,6 +53,8 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.text.TextStyle
+import androidx.compose.ui.text.font.Font
+import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.TextFieldValue
 import androidx.compose.ui.unit.dp
@@ -60,6 +62,7 @@ import androidx.compose.ui.unit.sp
 import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.navigation.NavController
 import coil.compose.AsyncImage
+import com.example.recetify.R
 import com.example.recetify.data.remote.RetrofitClient
 import com.example.recetify.data.remote.model.RecipeResponse
 import com.example.recetify.data.remote.model.RatingResponse
@@ -67,6 +70,10 @@ import com.example.recetify.ui.details.RecipeDetailViewModel
 import com.example.recetify.util.obtenerEmoji
 
 
+
+private val Destacado = FontFamily(
+    Font(R.font.sen_semibold, weight = FontWeight.ExtraBold)
+)
 /**
  * Selector de estrellas para puntaje (1..5).
  */
@@ -140,7 +147,8 @@ fun ReviewsAndCommentSection(
             Text(
                 text = "Reseñas",
                 style = MaterialTheme.typography.titleMedium.copy(fontWeight = FontWeight.Bold),
-                color = Color.Black
+                color = Color.Black,
+                fontFamily = Destacado
             )
             Spacer(Modifier.weight(1f))
             Text(
@@ -159,7 +167,8 @@ fun ReviewsAndCommentSection(
             Text(
                 text = "(${ratings.size} reseñas)",
                 style = MaterialTheme.typography.bodySmall,
-                color = Color.Gray
+                color = Color.Gray,
+                fontFamily = Destacado
             )
         }
 
@@ -220,7 +229,8 @@ fun ReviewsAndCommentSection(
                     Text(
                         text = "Dejá tu comentario",
                         style = MaterialTheme.typography.titleMedium.copy(fontWeight = FontWeight.Bold),
-                        color = Color.Black
+                        color = Color.Black,
+                        fontFamily = Destacado
                     )
                     Spacer(Modifier.weight(1f))
                     for (i in 1..5) {
@@ -251,17 +261,16 @@ fun ReviewsAndCommentSection(
 
                 // Cuadro de texto con contador de caracteres
                 Box(modifier = Modifier.fillMaxWidth()) {
-                    OutlinedTextField(
+                    StyledBasicField(
                         value = textComment,
                         onValueChange = {
                             if (it.text.length <= maxChars) textComment = it
                         },
-                        placeholder = { Text("Contanos qué te pareció la receta…") },
+                        placeholder = { Text("Contanos qué te pareció la receta…", color = Color.Gray)},
+                        maxLines = 4,
                         modifier = Modifier
                             .fillMaxWidth()
-                            .height(100.dp),
-                        maxLines = 4,
-                        textStyle = TextStyle(color = Color.Black)
+                            .height(100.dp)
                     )
 
                     Text(
@@ -370,13 +379,16 @@ fun RecipeDetailContent(
                 Text(
                     text = receta.nombre,
                     style = MaterialTheme.typography.headlineSmall.copy(fontWeight = FontWeight.Bold),
-                    color = primaryTextColor
+                    color = primaryTextColor,
+                    fontFamily = Destacado
+
                 )
                 Spacer(Modifier.height(4.dp))
                 Text(
                     text = receta.descripcion ?: "",
                     style = MaterialTheme.typography.bodyMedium,
-                    color = primaryTextColor
+                    color = primaryTextColor,
+                    fontFamily = Destacado
                 )
 
                 Spacer(Modifier.height(16.dp))
@@ -386,13 +398,14 @@ fun RecipeDetailContent(
                     Icon(
                         imageVector = Icons.Outlined.Person,
                         contentDescription = "Creador",
-                        tint = Color.Gray,
-                        modifier = Modifier.size(16.dp)
+                        tint = Color.Black,
+                        modifier = Modifier.size(16.dp),
                     )
                     Spacer(Modifier.width(4.dp))
                     Text(
                         text = receta.usuarioCreadorAlias.orEmpty(),
-                        style = MaterialTheme.typography.bodySmall.copy(color = Color.Gray)
+                        style = MaterialTheme.typography.bodySmall.copy(color = Color.Black),
+                        fontFamily = Destacado
                     )
                     Spacer(Modifier.width(16.dp))
                     Icon(
@@ -441,7 +454,8 @@ fun RecipeDetailContent(
                                 text = "Ingredientes",
                                 color = if (showIngredients.value) Color.White else unselectedTextColor,
                                 style = MaterialTheme.typography.bodyMedium.copy(fontWeight = FontWeight.Medium),
-                                fontSize = 14.sp
+                                fontSize = 14.sp,
+                                fontFamily = Destacado
                             )
                         }
 
@@ -467,7 +481,8 @@ fun RecipeDetailContent(
                                 text = "Instrucciones",
                                 color = if (!showIngredients.value) Color.White else unselectedTextColor,
                                 style = MaterialTheme.typography.bodyMedium.copy(fontWeight = FontWeight.Medium),
-                                fontSize = 14.sp
+                                fontSize = 14.sp,
+                                fontFamily = Destacado
                             )
                         }
                     }
@@ -486,12 +501,14 @@ fun RecipeDetailContent(
                         Text(
                             text = "Ingredientes",
                             style = MaterialTheme.typography.titleMedium,
-                            color = primaryTextColor
+                            color = primaryTextColor,
+                            fontFamily = Destacado
                         )
                         Text(
                             text = "${receta.ingredients.size} Items",
                             style = MaterialTheme.typography.bodySmall,
-                            color = primaryTextColor
+                            color = primaryTextColor,
+                            fontFamily = Destacado
                         )
                     }
                     Spacer(Modifier.height(8.dp))
@@ -528,7 +545,8 @@ fun RecipeDetailContent(
                                     Text(
                                         text = ing.nombre,
                                         fontWeight = FontWeight.SemiBold,
-                                        color = primaryTextColor
+                                        color = primaryTextColor,
+                                        fontFamily = Destacado
                                     )
                                 }
                                 androidx.compose.material3.Surface(
@@ -550,7 +568,8 @@ fun RecipeDetailContent(
                     Text(
                         text = "Instrucciones",
                         style = MaterialTheme.typography.titleMedium,
-                        color = primaryTextColor
+                        color = primaryTextColor,
+                        fontFamily = Destacado
                     )
                     Spacer(Modifier.height(12.dp))
 
@@ -574,7 +593,8 @@ fun RecipeDetailContent(
                                 Text(
                                     text = "${paso.numeroPaso}. ${paso.titulo}",
                                     fontWeight = FontWeight.Bold,
-                                    color = primaryTextColor
+                                    color = primaryTextColor,
+                                    fontFamily = Destacado
                                 )
 
                                 // Imagen del paso, con borde redondeado de 8dp
@@ -603,7 +623,7 @@ fun RecipeDetailContent(
                                 // Descripción del paso
                                 if (!paso.descripcion.isNullOrBlank()) {
                                     Spacer(Modifier.height(8.dp))
-                                    Text(paso.descripcion, color = primaryTextColor)
+                                    Text(paso.descripcion, color = primaryTextColor, fontFamily = Destacado)
                                 }
 
                                 Spacer(Modifier.height(12.dp))
@@ -625,7 +645,8 @@ fun RecipeDetailContent(
                                         ) {
                                             Text(
                                                 text = "Paso Siguiente",
-                                                style = MaterialTheme.typography.bodyMedium.copy(fontWeight = FontWeight.Medium)
+                                                style = MaterialTheme.typography.bodyMedium.copy(fontWeight = FontWeight.Medium),
+                                                fontFamily = Destacado
                                             )
                                         }
                                     }
@@ -644,7 +665,8 @@ fun RecipeDetailContent(
                                         ) {
                                             Text(
                                                 text = "Paso Anterior",
-                                                style = MaterialTheme.typography.bodyMedium.copy(fontWeight = FontWeight.Medium)
+                                                style = MaterialTheme.typography.bodyMedium.copy(fontWeight = FontWeight.Medium),
+                                                fontFamily = Destacado
                                             )
                                         }
                                     }
@@ -681,7 +703,7 @@ fun RecipeDetailContent(
                                             ) {
                                                 Text(
                                                     text = "Paso Siguiente",
-                                                    style = MaterialTheme.typography.bodyMedium.copy(fontWeight = FontWeight.Medium)
+                                                    style = MaterialTheme.typography.bodyMedium.copy(fontWeight = FontWeight.Medium),
                                                 )
                                             }
                                         }
@@ -701,3 +723,4 @@ fun RecipeDetailContent(
         }
     }
 }
+
