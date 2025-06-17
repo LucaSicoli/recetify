@@ -84,24 +84,44 @@ fun ResetPasswordScreen(
                     value = state.newPassword,
                     onValueChange = viewModel::onNewPassChange,
                     label = { Text("Nueva contraseña") },
-                    leadingIcon = { Icon(Icons.Default.Lock, null) },
+                    leadingIcon = {
+                        Icon(
+                            imageVector = Icons.Default.Lock,
+                            contentDescription = null,
+                            tint = Color.DarkGray       // ← aquí pones el color que quieras
+                        )
+                    },
                     modifier = Modifier.fillMaxWidth(),
                     shape = RoundedCornerShape(12.dp),
                     visualTransformation = PasswordVisualTransformation(),
                     keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Password),
-                    textStyle = TextStyle(fontFamily = Sen, fontSize = 16.sp, color = Color.Black),
+                    textStyle = TextStyle(
+                        fontFamily = Sen,
+                        fontSize   = 16.sp,
+                        color      = Color.Black
+                    ),
                 )
 
                 OutlinedTextField(
                     value = state.confirmPassword,
                     onValueChange = viewModel::onConfirmPassChange,
                     label = { Text("Repetir contraseña") },
-                    leadingIcon = { Icon(Icons.Default.Lock, null) },
+                    leadingIcon = {
+                        Icon(
+                            imageVector = Icons.Default.Lock,
+                            contentDescription = null,
+                            tint = Color.DarkGray   // ← aquí el color
+                        )
+                    },
                     modifier = Modifier.fillMaxWidth(),
                     shape = RoundedCornerShape(12.dp),
                     visualTransformation = PasswordVisualTransformation(),
                     keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Password),
-                    textStyle = TextStyle(fontFamily = Sen, fontSize = 16.sp, color = Color.Black)
+                    textStyle = TextStyle(
+                        fontFamily = Sen,
+                        fontSize   = 16.sp,
+                        color      = Color.Black
+                    )
                 )
 
                 Button(
