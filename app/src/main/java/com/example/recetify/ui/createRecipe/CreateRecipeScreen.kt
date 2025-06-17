@@ -9,6 +9,7 @@ import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
+import androidx.compose.foundation.text.BasicTextField
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.LazyRow
@@ -43,10 +44,25 @@ import com.example.recetify.data.remote.model.RecipeStepRequest
 import com.example.recetify.util.FileUtil
 import com.example.recetify.util.obtenerEmoji
 import android.webkit.MimeTypeMap
+import androidx.compose.material.icons.filled.AccessTime
+import androidx.compose.material.icons.filled.Restaurant
+import androidx.compose.ui.graphics.Color.Companion.Black
+import androidx.compose.ui.graphics.Color.Companion.Gray
+import androidx.compose.ui.graphics.Color.Companion.Green
+import androidx.compose.ui.graphics.Color.Companion.Red
+import androidx.compose.ui.graphics.Color.Companion.White
+import androidx.compose.ui.graphics.SolidColor
+import androidx.compose.ui.text.font.Font
+import androidx.compose.ui.text.font.FontFamily
 import com.example.recetify.util.listaIngredientesConEmoji
 
 private val Accent = Color(0xFFBC6154)
 private val GrayBg  = Color(0xFFF8F8F8)
+
+private val Destacado = FontFamily(
+    Font(R.font.sen_semibold, weight = FontWeight.ExtraBold)
+)
+
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -60,11 +76,11 @@ fun CreateRecipeScreen(
     var localImageUri       by remember { mutableStateOf<Uri?>(null) }
     var showIngredientDialog by remember { mutableStateOf(false) }
     var showStepDialog       by remember { mutableStateOf(false) }
-
+    var editingStep by remember { mutableStateOf<RecipeStepRequest?>(null) }
     var nombre      by rememberSaveable { mutableStateOf("") }
     var descripcion by rememberSaveable { mutableStateOf("") }
     var porciones   by rememberSaveable { mutableStateOf(1) }
-    var tiempo      by rememberSaveable { mutableStateOf(1) }
+    var tiempo      by rememberSaveable { mutableStateOf(15) }
 
     val ingredients = remember { mutableStateListOf<RecipeIngredientRequest>() }
     val steps       = remember { mutableStateListOf<RecipeStepRequest>() }
@@ -178,36 +194,223 @@ fun CreateRecipeScreen(
                 ) {
                     // Nombre
                     OutlinedTextField(
-                        value         = nombre,
+                        value = nombre,
                         onValueChange = { nombre = it },
-                        label         = { Text("Nombre de la Receta", color = Accent) },
-                        modifier      = Modifier.fillMaxWidth(),
-                        shape         = RoundedCornerShape(12.dp)
+                        label = { Text("Nombre de la Receta", color = Gray, fontFamily = Destacado) },
+                        textStyle = LocalTextStyle.current.copy(color = Black),
+                        modifier = Modifier.fillMaxWidth(),
+                        shape = RoundedCornerShape(12.dp),
+
                     )
                     // Descripción
                     OutlinedTextField(
-                        value         = descripcion,
+                        value = descripcion,
                         onValueChange = { descripcion = it },
-                        placeholder   = { Text("Breve descripción…", color = Color.Gray) },
-                        modifier      = Modifier.fillMaxWidth().height(120.dp),
-                        maxLines      = 4,
-                        shape         = RoundedCornerShape(12.dp)
+                        label = { Text("Breve descripción…", color = Gray, fontFamily = Destacado) },
+                        placeholder = { Text("") },
+                        textStyle = LocalTextStyle.current.copy(color = Black),
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .height(120.dp),
+                        maxLines = 4,
+                        shape = RoundedCornerShape(12.dp)
                     )
-                    // Steppers
-                    Row(
-                        Modifier.fillMaxWidth(),
-                        horizontalArrangement = Arrangement.spacedBy(24.dp),
-                        verticalAlignment     = Alignment.CenterVertically
+
+                    Divider(
+                        color = Color(0xFFE0E0E0),
+                        thickness = 1.dp,
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .padding(vertical = 8.dp)
+                    )
+
+
+                    // STEPPERS
+                    val stepBg = Color.Black
+                    val stepFg = Color.White
+
+                    // STEPPERS
+                    Column(
+                        Modifier.fillMaxWidth().padding(vertical = 16.dp),
+                        verticalArrangement = Arrangement.spacedBy(12.dp)
                     ) {
-                        StepperField("Porciones", porciones, { if (porciones>1) porciones-- }, { porciones++ })
-                        StepperField("Tiempo (min)", tiempo, { if (tiempo>1) tiempo-- }, { tiempo++ })
+                        // 1. Porciones
+                        Card(
+                            modifier  = Modifier.fillMaxWidth(),
+                            shape     = RoundedCornerShape(6.dp),
+                            colors    = CardDefaults.cardColors(containerColor = Color.White),
+                            border    = BorderStroke(1.dp, Color.LightGray)
+                        ) {
+                            Row(
+                                Modifier
+                                    .fillMaxWidth()
+                                    .padding(12.dp),
+                                horizontalArrangement = Arrangement.SpaceBetween,
+                                verticalAlignment     = Alignment.CenterVertically
+                            ) {
+                                Text("Porciones",
+                                    color      = Color.Black,
+                                    fontWeight = FontWeight.SemiBold,
+                                    fontSize   = 16.sp,
+                                    fontFamily = Destacado
+                                )
+                                Row(
+                                    verticalAlignment     = Alignment.CenterVertically,
+                                    horizontalArrangement = Arrangement.spacedBy(8.dp)
+                                ) {
+                                    IconButton(
+                                        onClick = { if (porciones > 1) porciones-- },
+                                        modifier = Modifier.size(28.dp)
+                                    ) {
+                                        Icon(
+                                            Icons.Default.Remove,
+                                            contentDescription = "Disminuir",
+                                            tint = Color.Red     // signo “–” en rojo
+                                        )
+                                    }
+                                    Box(
+                                        Modifier
+                                            .width(64.dp)
+                                            .height(36.dp)
+                                            .background(White, RoundedCornerShape(6.dp))
+                                            .border(1.dp, Color.LightGray, RoundedCornerShape(8.dp)),
+                                        contentAlignment = Alignment.Center
+                                    ) {
+                                        BasicTextField(
+                                            value         = porciones.toString(),
+                                            onValueChange = { str ->
+                                                porciones = str.filter(Char::isDigit).toIntOrNull() ?: porciones
+                                            },
+                                            singleLine = true,
+                                            textStyle = LocalTextStyle.current.copy(
+                                                color      = Color.Black,
+                                                fontSize   = 18.sp,
+                                                fontWeight = FontWeight.Bold,
+                                                textAlign  = TextAlign.Center
+                                            ),
+                                            cursorBrush = SolidColor(Color.Black),
+                                            decorationBox = { inner ->
+                                                Box(Modifier.fillMaxSize(), contentAlignment = Alignment.Center) { inner() }
+                                            }
+                                        )
+                                    }
+                                    IconButton(
+                                        onClick = { porciones++ },
+                                        modifier = Modifier.size(28.dp)
+                                    ) {
+                                        Icon(
+                                            Icons.Default.Add,
+                                            contentDescription = "Aumentar",
+                                            tint = Color(0xFF00C853)  // signo “+” en verde
+                                        )
+                                    }
+                                }
+                            }
+                        }
+
+                        // 2. Tiempo
+                        Card(
+                            modifier  = Modifier.fillMaxWidth(),
+                            shape     = RoundedCornerShape(6.dp),
+                            colors    = CardDefaults.cardColors(containerColor = Color.White),
+                            border    = BorderStroke(1.dp, Color.LightGray)
+                        ) {
+                            Row(
+                                Modifier
+                                    .fillMaxWidth()
+                                    .padding(12.dp),
+                                horizontalArrangement = Arrangement.SpaceBetween,
+                                verticalAlignment     = Alignment.CenterVertically
+                            ) {
+                                Text("Tiempo (min)",
+                                    color      = Color.Black,
+                                    fontWeight = FontWeight.SemiBold,
+                                    fontSize   = 16.sp,
+                                    fontFamily = Destacado
+
+                                )
+                                Row(
+                                    verticalAlignment     = Alignment.CenterVertically,
+                                    horizontalArrangement = Arrangement.spacedBy(8.dp)
+                                ) {
+                                    IconButton(
+                                        onClick = { if (tiempo > 1) tiempo-- },
+                                        modifier = Modifier.size(28.dp)
+                                    ) {
+                                        Icon(
+                                            Icons.Default.Remove,
+                                            contentDescription = "Disminuir",
+                                            tint = Color.Red
+                                        )
+                                    }
+                                    Box(
+                                        Modifier
+                                            .width(64.dp)
+                                            .height(36.dp)
+                                            .background(White, RoundedCornerShape(6.dp))
+                                            .border(1.dp, Color.LightGray, RoundedCornerShape(8.dp)),
+                                        contentAlignment = Alignment.Center
+                                    ) {
+                                        BasicTextField(
+                                            value         = tiempo.toString(),
+                                            onValueChange = { str ->
+                                                tiempo = str.filter(Char::isDigit).toIntOrNull() ?: tiempo
+                                            },
+                                            singleLine = true,
+                                            textStyle = LocalTextStyle.current.copy(
+                                                color      = Color.Black,
+                                                fontSize   = 18.sp,
+                                                fontWeight = FontWeight.Bold,
+                                                textAlign  = TextAlign.Center
+                                            ),
+                                            cursorBrush = SolidColor(Color.Black),
+                                            decorationBox = { inner ->
+                                                Box(Modifier.fillMaxSize(), contentAlignment = Alignment.Center) { inner() }
+                                            }
+                                        )
+                                    }
+                                    IconButton(
+                                        onClick = { tiempo++ },
+                                        modifier = Modifier.size(28.dp)
+                                    ) {
+                                        Icon(
+                                            Icons.Default.Add,
+                                            contentDescription = "Aumentar",
+                                            tint = Color(0xFF00C853)
+                                        )
+                                    }
+                                }
+                            }
+                        }
                     }
-                    // Ingredientes header
-                    Text("Ingredientes (${ingredients.size})",
-                        fontWeight = FontWeight.SemiBold,
-                        color      = Accent,
-                        fontSize   = 18.sp
+
+                    Divider(
+                        color = Color(0xFFE0E0E0),
+                        thickness = 1.dp,
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .padding(vertical = 8.dp)
                     )
+
+                    // Ingredientes header
+                    Box(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .clip(RoundedCornerShape(12.dp))
+                            .background(Color(0xFF333333))
+                            .padding(vertical = 16.dp),
+                        contentAlignment = Alignment.Center
+                    ) {
+                        Text(
+                            "Ingredientes (${ingredients.size})",
+                            color = Color.White,
+                            fontWeight = FontWeight.SemiBold,
+                            fontSize = 16.sp,
+                            textAlign = TextAlign.Center,
+                            fontFamily = Destacado,
+
+                        )
+                    }
                     // Ingredientes list
                     ingredients.forEachIndexed { idx, ing ->
                         IngredientRow(idx, ing, onUpdate = { newIng ->
@@ -216,75 +419,229 @@ fun CreateRecipeScreen(
                     }
                     // Agregar ingrediente
                     Card(
-                        Modifier
+                        modifier = Modifier
                             .fillMaxWidth()
-                            .clickable { showIngredientDialog = true },
+                            .clickable { showIngredientDialog = true }
+                            .background(Color.White, RoundedCornerShape(12.dp))
+                            .padding(8.dp),
                         shape     = RoundedCornerShape(12.dp),
-                        border    = BorderStroke(1.dp, Accent),
-                        colors    = CardDefaults.cardColors(containerColor = Color(0xFFE6EBF2)),
+                        colors    = CardDefaults.cardColors(containerColor = Color.White),
                         elevation = CardDefaults.cardElevation(4.dp)
                     ) {
-                        Row(Modifier.padding(16.dp), verticalAlignment = Alignment.CenterVertically) {
-                            Icon(Icons.Default.Add, contentDescription = null, tint = Accent)
+                        Row(
+                            Modifier
+                                .fillMaxWidth()
+                                .padding(16.dp),
+                            verticalAlignment     = Alignment.CenterVertically,
+                            horizontalArrangement = Arrangement.Center
+                        ) {
+                            Icon(Icons.Default.Add, contentDescription = null, tint = Color(0xFF006400))
                             Spacer(Modifier.width(8.dp))
-                            Text("Agregar ingrediente", color = Accent, fontWeight = FontWeight.Medium)
+                            Text("Agregar ingrediente", color = Color(0xFF006400), fontWeight = FontWeight.Medium, fontFamily = Destacado,)
                         }
                     }
-                    // Instrucciones
-                    Text("Instrucciones (${steps.size})",
-                        fontWeight = FontWeight.SemiBold,
-                        color      = Accent,
-                        fontSize   = 18.sp
+
+                    Divider(
+                        color = Color(0xFFE0E0E0),
+                        thickness = 1.dp,
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .padding(vertical = 8.dp)
                     )
+
+
+                    // Instrucciones header
+                    // Instrucciones header (nuevo estilo)
+                    Box(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .clip(RoundedCornerShape(12.dp))
+                            .background(Color(0xFF333333))
+                            .padding(vertical = 16.dp),
+                        contentAlignment = Alignment.Center
+                    ) {
+                        Text(
+                            "Instrucciones (${steps.size})",
+                            color = Color.White,
+                            fontWeight = FontWeight.SemiBold,
+                            fontSize = 16.sp,
+                            textAlign = TextAlign.Center,
+                            fontFamily = Destacado,
+
+                        )
+                    }
                     steps.forEachIndexed { idx, step ->
                         StepCard(
                             stepNumber    = step.numeroPaso,
                             title         = step.titulo.orEmpty(),
                             description   = step.descripcion,
-                            onTitleChange = { steps[idx] = step.copy(titulo = it) },
-                            onDescChange  = { steps[idx] = step.copy(descripcion = it) },
+                            onTitleChange = { newTitle ->
+                                steps[idx] = step.copy(titulo = newTitle)
+                            },
+                            onDescChange  = { newDesc ->
+                                steps[idx] = step.copy(descripcion = newDesc)
+                            },
                             onAddPhoto    = { launcher.launch("image/*") },
                             attachments   = if (step.urlMedia != null) 1 else 0
                         )
                         Spacer(Modifier.height(8.dp))
                     }
-                    Card(
-                        Modifier
-                            .fillMaxWidth()
-                            .clickable { showStepDialog = true },
-                        shape     = RoundedCornerShape(12.dp),
-                        border    = BorderStroke(1.dp, Accent),
-                        colors    = CardDefaults.cardColors(containerColor = Color(0xFFE6EBF2)),
-                        elevation = CardDefaults.cardElevation(4.dp)
-                    ){
-                        Row(Modifier.padding(16.dp), verticalAlignment = Alignment.CenterVertically) {
-                            Icon(Icons.Default.Add, contentDescription = null, tint = Accent)
-                            Spacer(Modifier.width(8.dp))
-                            Text("Agregar paso", color = Accent, fontWeight = FontWeight.Medium)
+
+// ——————————
+// Editor inline para nuevo paso
+// ——————————
+                    editingStep?.let { draft ->
+                        Card(
+                            modifier  = Modifier
+                                .fillMaxWidth()
+                                .background(Color.White, RoundedCornerShape(12.dp))
+                                .padding(8.dp),
+                            shape     = RoundedCornerShape(12.dp),
+                            colors    = CardDefaults.cardColors(containerColor = Color.White),
+                            elevation = CardDefaults.cardElevation(4.dp)
+                        ) {
+                            Column(Modifier.padding(16.dp), verticalArrangement = Arrangement.spacedBy(12.dp)) {
+                                OutlinedTextField(
+                                    value         = draft.titulo.orEmpty(),
+                                    onValueChange = { editingStep = draft.copy(titulo = it) },
+                                    label         = { Text("Nombre del Paso") },
+                                    singleLine    = true,
+                                    modifier      = Modifier.fillMaxWidth()
+                                )
+                                OutlinedTextField(
+                                    value         = draft.descripcion,
+                                    onValueChange = { editingStep = draft.copy(descripcion = it) },
+                                    label         = { Text("Descripción del Paso") },
+                                    modifier      = Modifier.fillMaxWidth().height(100.dp),
+                                    maxLines      = 4
+                                )
+                                Row(
+                                    Modifier.fillMaxWidth(),
+                                    horizontalArrangement = Arrangement.SpaceBetween,
+                                    verticalAlignment     = Alignment.CenterVertically
+                                ) {
+                                    OutlinedButton(
+                                        onClick = { launcher.launch("image/*") },
+                                        shape   = RoundedCornerShape(8.dp),
+                                        border  = BorderStroke(1.dp, Accent)
+                                    ) {
+                                        Icon(Icons.Default.CameraAlt, contentDescription = null, tint = Accent)
+                                        Spacer(Modifier.width(4.dp))
+                                        Text("Foto", color = Accent)
+                                    }
+                                    Row {
+                                        TextButton(onClick = { editingStep = null }) {
+                                            Text("Cancelar")
+                                        }
+                                        Spacer(Modifier.width(8.dp))
+                                        Button(onClick = {
+                                            steps += draft.copy(numeroPaso = steps.size + 1)
+                                            editingStep = null
+                                        }) {
+                                            Text("Agregar Paso")
+                                        }
+                                    }
+                                }
+                            }
+                        }
+                        Spacer(Modifier.height(12.dp))
+                    }
+
+// ——————————
+// Botón para iniciar edición de un nuevo paso
+// ——————————
+                    if (editingStep == null) {
+                        Card(
+                            modifier  = Modifier
+                                .fillMaxWidth()
+                                .clickable {
+                                    editingStep = RecipeStepRequest(
+                                        numeroPaso = steps.size + 1,
+                                        titulo     = "",
+                                        descripcion= "",
+                                        urlMedia   = null
+                                    )
+                                }
+                                .background(Color.White, RoundedCornerShape(12.dp))
+                                .padding(8.dp),
+                            shape     = RoundedCornerShape(12.dp),
+                            colors    = CardDefaults.cardColors(containerColor = Color.White),
+                            elevation = CardDefaults.cardElevation(4.dp)
+                        ) {
+                            Row(
+                                Modifier
+                                    .fillMaxWidth()
+                                    .padding(16.dp),
+                                verticalAlignment     = Alignment.CenterVertically,
+                                horizontalArrangement = Arrangement.Center
+                            ) {
+                                Icon(Icons.Default.Add, contentDescription = null, tint = Color(0xFF006400))
+                                Spacer(Modifier.width(8.dp))
+                                Text("Agregar paso", color = Color(0xFF006400), fontWeight = FontWeight.Medium, fontFamily = Destacado)
+                            }
                         }
                     }
+
+                    Divider(
+                        color = Color(0xFFE0E0E0),
+                        thickness = 1.dp,
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .padding(vertical = 8.dp)
+                    )
+
+
                     // Etiquetas
-                    Text("Etiquetas", fontWeight = FontWeight.SemiBold, fontSize = 16.sp)
-                    LazyRow(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                        items(etiquetas) { tag ->
+                    Box(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .clip(RoundedCornerShape(12.dp))
+                            .background(Color.Black)
+                            .padding(vertical = 12.dp),     // un poco más de altura
+                        contentAlignment = Alignment.Center
+                    ) {
+                        Text(
+                            "Etiquetas",
+                            color = Color.White,
+                            fontWeight = FontWeight.SemiBold,
+                            fontSize = 16.sp,            // un pelín más grande
+                            textAlign = TextAlign.Center,
+                            fontFamily = Destacado,
+                        )
+                    }
+
+                    FlowRow(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .padding(top = 8.dp),        // más cerca del título
+                        horizontalArrangement = Arrangement.spacedBy(8.dp),
+                        verticalArrangement   = Arrangement.spacedBy(8.dp)
+                    ) {
+                        etiquetas.forEach { tag ->
                             val sel = selectedTags.contains(tag)
                             Text(
                                 tag,
-                                Modifier.clip(RoundedCornerShape(16.dp))
+                                Modifier
+                                    .clip(RoundedCornerShape(16.dp))
                                     .background(if (sel) Accent.copy(alpha = 0.15f) else Color(0xFFF2F2F2))
                                     .clickable {
-                                        selectedTags = if (sel) selectedTags - tag else selectedTags + tag
+                                        selectedTags =
+                                            if (sel) selectedTags - tag
+                                            else selectedTags + tag
                                     }
                                     .padding(horizontal = 12.dp, vertical = 8.dp),
                                 color = if (sel) Accent else Color.Black
                             )
                         }
-                        item {
-                            Box(
-                                Modifier.size(32.dp).clip(CircleShape).background(Color(0xFFF2F2F2))
-                                    .clickable { /* nueva etiqueta */ },
-                                contentAlignment = Alignment.Center
-                            ) { Text("+", fontSize = 16.sp) }
+                        Box(
+                            Modifier
+                                .size(32.dp)
+                                .clip(CircleShape)
+                                .background(Color(0xFFF2F2F2))
+                                .clickable { /* nueva etiqueta */ },
+                            contentAlignment = Alignment.Center
+                        ) {
+                            Text("+", fontSize = 16.sp)
                         }
                     }
                     error?.let {
@@ -397,36 +754,6 @@ fun CreateRecipeScreen(
     }
 }
 
-// Componente Stepper
-@Composable
-private fun StepperField(
-    label: String,
-    value: Int,
-    onDec: () -> Unit,
-    onInc: () -> Unit
-) {
-    Column {
-        Text(label, fontWeight = FontWeight.Medium)
-        Row(verticalAlignment = Alignment.CenterVertically) {
-            IconButton(onClick = onDec, modifier = Modifier.size(32.dp)) {
-                Icon(Icons.Default.Remove, contentDescription = null, tint = Accent)
-            }
-            Box(
-                Modifier
-                    .width(40.dp)
-                    .height(32.dp)
-                    .border(1.dp, Accent, shape = RoundedCornerShape(8.dp)),
-                contentAlignment = Alignment.Center
-            ) {
-                Text("$value", fontWeight = FontWeight.Bold)
-            }
-            IconButton(onClick = onInc, modifier = Modifier.size(32.dp)) {
-                Icon(Icons.Default.Add, contentDescription = null, tint = Accent)
-            }
-        }
-    }
-}
-
 // Componente tarjeta de paso
 @Composable
 private fun StepCard(
@@ -457,7 +784,7 @@ private fun StepCard(
                 OutlinedTextField(
                     value         = title,
                     onValueChange = onTitleChange,
-                    placeholder   = { Text("Nombre del Paso", color = Color.Gray) },
+                    placeholder   = { Text("Nombre del Paso", color = Color.White) },
                     modifier      = Modifier.fillMaxWidth(),
                     singleLine    = true
                 )
@@ -465,7 +792,7 @@ private fun StepCard(
             OutlinedTextField(
                 value         = description,
                 onValueChange = onDescChange,
-                placeholder   = { Text("Descripción de los pasos…", color = Color.Gray) },
+                placeholder   = { Text("Descripción de los pasos…", color = Color.White) },
                 modifier      = Modifier.fillMaxWidth().height(80.dp),
                 maxLines      = 3
             )
