@@ -870,9 +870,9 @@ fun CreateRecipeScreen(
                             enabled   = !viewModel.submitting.collectAsState().value,
                             modifier  = Modifier.weight(1f).height(48.dp),
                             shape     = RoundedCornerShape(24.dp),
-                            border    = BorderStroke(1.dp, Accent)
+                            border    = BorderStroke(1.dp, Black)
                         ) {
-                            Text("GUARDAR", color = Accent, fontWeight = FontWeight.Bold)
+                            Text("GUARDAR", color = Black, fontWeight = FontWeight.Bold)
                         }
 
                         // PUBLICAR (esto es lo que dispara la petición REST)
@@ -901,7 +901,7 @@ fun CreateRecipeScreen(
                             enabled   = !viewModel.submitting.collectAsState().value,
                             modifier  = Modifier.weight(1f).height(48.dp),
                             shape     = RoundedCornerShape(24.dp),
-                            colors    = ButtonDefaults.buttonColors(containerColor = Accent)
+                            colors    = ButtonDefaults.buttonColors(containerColor = Black)
                         ) {
                             val submitting = viewModel.submitting.collectAsState().value
                             if (submitting) {

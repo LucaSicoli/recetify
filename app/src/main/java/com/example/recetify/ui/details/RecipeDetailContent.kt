@@ -392,8 +392,7 @@ fun RecipeDetailContent(
                 Text(
                     text = receta.descripcion ?: "",
                     style = MaterialTheme.typography.bodyMedium,
-                    color = primaryTextColor,
-                    fontFamily = Destacado
+                    color = primaryTextColor
                 )
 
                 Spacer(Modifier.height(16.dp))

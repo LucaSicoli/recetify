@@ -352,7 +352,6 @@ private fun RecipeCard(
                     style     = MaterialTheme.typography.bodyMedium.copy(color = Color.Black),
                     maxLines  = 2,
                     overflow  = TextOverflow.Ellipsis,
-                    fontFamily = Destacado,
                     color = Color(0xFF333333)
 
                 )
