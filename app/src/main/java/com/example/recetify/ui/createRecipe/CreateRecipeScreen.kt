@@ -45,9 +45,12 @@ import com.example.recetify.util.FileUtil
 import com.example.recetify.util.obtenerEmoji
 import android.webkit.MimeTypeMap
 import androidx.compose.foundation.text.KeyboardOptions
+import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.filled.AccessTime
+import androidx.compose.material.icons.filled.ArrowBack
 import androidx.compose.material.icons.filled.Restaurant
 import androidx.compose.ui.graphics.Color.Companion.Black
+import androidx.compose.ui.graphics.Color.Companion.DarkGray
 import androidx.compose.ui.graphics.Color.Companion.Gray
 import androidx.compose.ui.graphics.Color.Companion.Green
 import androidx.compose.ui.graphics.Color.Companion.Red
@@ -83,8 +86,20 @@ fun CreateRecipeScreen(
     var descripcion by rememberSaveable { mutableStateOf("") }
     var porciones   by rememberSaveable { mutableStateOf(1) }
     var tiempo      by rememberSaveable { mutableStateOf(15) }
+    // justo junto a tus `var porciones by rememberSaveable…` y `var tiempo by rememberSaveable…`
+    var porcionesText by rememberSaveable { mutableStateOf(porciones.toString()) }
+    var tiempoText    by rememberSaveable { mutableStateOf(tiempo.toString()) }
 
     val ingredients = remember { mutableStateListOf<RecipeIngredientRequest>() }
+
+    val categories = listOf("DESAYUNO","ALMUERZO","MERIENDA","CENA","SNACK","POSTRE")
+    val tiposPlato = listOf("FIDEOS","PIZZA","HAMBURGUESA","ENSALADA","SOPA","PASTA","ARROZ","PESCADO","CARNE","POLLO","VEGETARIANO","VEGANO","SIN_TACC","RAPIDO","SALUDABLE")
+
+    var selectedCategory by rememberSaveable { mutableStateOf<String?>(null) }
+    var expandedCategory  by remember { mutableStateOf(false) }
+
+    var selectedTipo by rememberSaveable { mutableStateOf<String?>(null) }
+    var expandedTipo by remember { mutableStateOf(false) }
     val steps       = remember { mutableStateListOf<RecipeStepRequest>() }
     val etiquetas   = listOf(
         "Desayuno","Almuerzo","Snack","Merienda","Cena",
@@ -106,45 +121,7 @@ fun CreateRecipeScreen(
         }
     }
 
-    Scaffold(
-        topBar = {
-            TopAppBar(
-                navigationIcon = {
-                    IconButton(onClick = onClose) {
-                        Icon(Icons.Default.Close, contentDescription = "Cerrar")
-                    }
-                },
-                title  = {},
-                colors = TopAppBarDefaults.topAppBarColors(containerColor = Color.Transparent)
-            )
-        },
-        bottomBar = {
-            BottomAppBar(containerColor = Color.White, tonalElevation = 8.dp) {
-                OutlinedButton(
-                    onClick = onSaved,
-                    modifier = Modifier
-                        .weight(1f)
-                        .height(48.dp)
-                        .padding(8.dp),
-                    shape  = RoundedCornerShape(24.dp),
-                    border = BorderStroke(1.dp, Accent)
-                ) {
-                    Text("GUARDAR", color = Accent, fontWeight = FontWeight.Bold)
-                }
-                Button(
-                    onClick = onPublished,
-                    modifier = Modifier
-                        .weight(1f)
-                        .height(48.dp)
-                        .padding(8.dp),
-                    shape  = RoundedCornerShape(24.dp),
-                    colors = ButtonDefaults.buttonColors(containerColor = Accent)
-                ) {
-                    Text("PUBLICAR", color = Color.White, fontWeight = FontWeight.Bold)
-                }
-            }
-        }
-    ) { innerPadding ->
+    Scaffold{ innerPadding ->
         Column(
             Modifier
                 .padding(innerPadding)
@@ -153,33 +130,64 @@ fun CreateRecipeScreen(
                 .background(GrayBg)
         ) {
             // Header image (toda el área clickeable)
+            // Header image (toda el área clickeable)
             Box(
-                Modifier
+                modifier = Modifier
                     .fillMaxWidth()
                     .height(260.dp)
-                    .clickable { launcher.launch("image/*") },
-                contentAlignment = Alignment.Center
+                    .clickable { launcher.launch("image/*") }
             ) {
+                // —— Imagen o placeholder centrados —— (primero)
                 when {
                     localImageUri != null -> AsyncImage(
-                        model = localImageUri, contentDescription = null,
-                        modifier = Modifier.fillMaxSize(), contentScale = ContentScale.Crop
+                        model = localImageUri,
+                        contentDescription = null,
+                        modifier = Modifier
+                            .fillMaxSize()
+                            .align(Alignment.Center),
+                        contentScale = ContentScale.Crop
                     )
-                    photoUrl     != null -> AsyncImage(
-                        model = photoUrl!!, contentDescription = null,
-                        modifier = Modifier.fillMaxSize(), contentScale = ContentScale.Crop
+                    photoUrl != null -> AsyncImage(
+                        model = photoUrl!!,
+                        contentDescription = null,
+                        modifier = Modifier
+                            .fillMaxSize()
+                            .align(Alignment.Center),
+                        contentScale = ContentScale.Crop
                     )
                     else -> Icon(
                         Icons.Default.CameraAlt,
                         contentDescription = "Agregar foto",
-                        modifier = Modifier.size(80.dp),
+                        modifier = Modifier
+                            .size(80.dp)
+                            .align(Alignment.Center),
                         tint = Color.Gray
                     )
                 }
+
+                // —— Indicador de subida —— (segundo)
                 if (uploading) {
                     CircularProgressIndicator(
-                        Modifier.align(Alignment.BottomCenter).padding(bottom = 56.dp),
+                        Modifier
+                            .align(Alignment.BottomCenter)
+                            .padding(bottom = 56.dp),
                         color = Accent
+                    )
+                }
+
+                // —— Botón Volver —— (último, siempre encima)
+                IconButton(
+                    onClick = onClose,
+                    modifier = Modifier
+                        .padding(16.dp)
+                        .size(40.dp)
+                        .background(Black, shape = CircleShape)
+                        .align(Alignment.TopStart)
+                ) {
+                    Icon(
+                        imageVector = Icons.Default.ArrowBack,
+                        contentDescription = "Volver",
+                        tint = Color.White
                     )
                 }
             }
@@ -220,7 +228,7 @@ fun CreateRecipeScreen(
 
                     Divider(
                         color = Color(0xFFE0E0E0),
-                        thickness = 1.dp,
+                        thickness = 4.dp,
                         modifier = Modifier
                             .fillMaxWidth()
                             .padding(vertical = 8.dp)
@@ -232,16 +240,19 @@ fun CreateRecipeScreen(
                     val stepFg = Color.White
 
                     // STEPPERS
+                    // ── STEPPERS (Porciones / Tiempo / Categoria / Tipo) ─────────────────
                     Column(
-                        Modifier.fillMaxWidth().padding(vertical = 16.dp),
+                        Modifier
+                            .fillMaxWidth()
+                            .padding(vertical = 16.dp),
                         verticalArrangement = Arrangement.spacedBy(12.dp)
                     ) {
                         // 1. Porciones
                         Card(
-                            modifier  = Modifier.fillMaxWidth(),
-                            shape     = RoundedCornerShape(6.dp),
-                            colors    = CardDefaults.cardColors(containerColor = Color.White),
-                            border    = BorderStroke(1.dp, Color.LightGray)
+                            modifier = Modifier.fillMaxWidth(),
+                            shape    = RoundedCornerShape(6.dp),
+                            border   = BorderStroke(1.dp, Color.LightGray),
+                            colors   = CardDefaults.cardColors(containerColor = Color.White)
                         ) {
                             Row(
                                 Modifier
@@ -251,66 +262,152 @@ fun CreateRecipeScreen(
                                 verticalAlignment     = Alignment.CenterVertically
                             ) {
                                 Text("Porciones",
-                                    color      = Color.Black,
-                                    fontWeight = FontWeight.SemiBold,
-                                    fontSize   = 16.sp,
-                                    fontFamily = Destacado
+                                    fontFamily = Destacado,
+                                    fontWeight  = FontWeight.SemiBold,
+                                    fontSize    = 16.sp,
+                                    color       = DarkGray
                                 )
-                                Row(
-                                    verticalAlignment     = Alignment.CenterVertically,
-                                    horizontalArrangement = Arrangement.spacedBy(8.dp)
-                                ) {
+                                // aquí no hay Spacer ni spacing automático
+                                Row(verticalAlignment = Alignment.CenterVertically) {
                                     IconButton(
-                                        onClick = { if (porciones > 1) porciones-- },
+                                        onClick = {
+                                            val v = porcionesText.toIntOrNull() ?: 0
+                                            if (v > 1) {
+                                                porcionesText = (v - 1).toString()
+                                                porciones     = v - 1
+                                            }
+                                        },
                                         modifier = Modifier.size(28.dp)
                                     ) {
-                                        Icon(
-                                            Icons.Default.Remove,
-                                            contentDescription = "Disminuir",
-                                            tint = Color.Red     // signo “–” en rojo
-                                        )
+                                        Icon(Icons.Default.Remove, contentDescription = null, tint = Red)
                                     }
+
                                     Box(
                                         Modifier
                                             .width(64.dp)
                                             .height(36.dp)
-                                            .background(White, RoundedCornerShape(6.dp))
+                                            .background(Color.White, RoundedCornerShape(6.dp))
                                             .border(1.dp, Color.LightGray, RoundedCornerShape(8.dp)),
                                         contentAlignment = Alignment.Center
                                     ) {
                                         BasicTextField(
-                                            value         = porciones.toString(),
-                                            onValueChange = { str ->
-                                                porciones = str.filter(Char::isDigit).toIntOrNull() ?: porciones
+                                            value           = porcionesText,
+                                            onValueChange   = { str ->
+                                                // solo dígitos o vacío
+                                                if (str.all { it.isDigit() } || str.isEmpty()) {
+                                                    porcionesText = str
+                                                    porciones     = str.toIntOrNull() ?: 0
+                                                }
                                             },
-                                            singleLine = true,
-                                            textStyle = LocalTextStyle.current.copy(
+                                            singleLine      = true,
+                                            keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
+                                            textStyle       = LocalTextStyle.current.copy(
                                                 color      = Color.Black,
                                                 fontSize   = 18.sp,
                                                 fontWeight = FontWeight.Bold,
                                                 textAlign  = TextAlign.Center
                                             ),
-                                            cursorBrush = SolidColor(Color.Black),
-                                            decorationBox = { inner ->
+                                            cursorBrush     = SolidColor(Color.Black),
+                                            decorationBox   = { inner ->
                                                 Box(Modifier.fillMaxSize(), contentAlignment = Alignment.Center) { inner() }
                                             }
                                         )
                                     }
+
                                     IconButton(
-                                        onClick = { porciones++ },
+                                        onClick = {
+                                            val v = porcionesText.toIntOrNull() ?: 0
+                                            porcionesText = (v + 1).toString()
+                                            porciones     = v + 1
+                                        },
                                         modifier = Modifier.size(28.dp)
                                     ) {
-                                        Icon(
-                                            Icons.Default.Add,
-                                            contentDescription = "Aumentar",
-                                            tint = Color(0xFF00C853)  // signo “+” en verde
-                                        )
+                                        Icon(Icons.Default.Add, contentDescription = null, tint = Green)
                                     }
                                 }
                             }
                         }
 
                         // 2. Tiempo
+                        Card(
+                            modifier = Modifier.fillMaxWidth(),
+                            shape    = RoundedCornerShape(6.dp),
+                            border   = BorderStroke(1.dp, Color.LightGray),
+                            colors   = CardDefaults.cardColors(containerColor = Color.White)
+                        ) {
+                            Row(
+                                Modifier
+                                    .fillMaxWidth()
+                                    .padding(12.dp),
+                                horizontalArrangement = Arrangement.SpaceBetween,
+                                verticalAlignment     = Alignment.CenterVertically
+                            ) {
+                                Text("Tiempo (min)",
+                                    fontFamily = Destacado,
+                                    fontWeight  = FontWeight.SemiBold,
+                                    fontSize    = 16.sp,
+                                    color       = DarkGray
+                                )
+                                Row(verticalAlignment = Alignment.CenterVertically) {
+                                    IconButton(
+                                        onClick = {
+                                            val v = tiempoText.toIntOrNull() ?: 0
+                                            if (v > 1) {
+                                                tiempoText = (v - 1).toString()
+                                                tiempo     = v - 1
+                                            }
+                                        },
+                                        modifier = Modifier.size(28.dp)
+                                    ) {
+                                        Icon(Icons.Default.Remove, contentDescription = null, tint = Red)
+                                    }
+
+                                    Box(
+                                        Modifier
+                                            .width(64.dp)
+                                            .height(36.dp)
+                                            .background(Color.White, RoundedCornerShape(6.dp))
+                                            .border(1.dp, Color.LightGray, RoundedCornerShape(8.dp)),
+                                        contentAlignment = Alignment.Center
+                                    ) {
+                                        BasicTextField(
+                                            value           = tiempoText,
+                                            onValueChange   = { str ->
+                                                if (str.all { it.isDigit() } || str.isEmpty()) {
+                                                    tiempoText = str
+                                                    tiempo     = str.toIntOrNull() ?: 0
+                                                }
+                                            },
+                                            singleLine      = true,
+                                            keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
+                                            textStyle       = LocalTextStyle.current.copy(
+                                                color      = Color.Black,
+                                                fontSize   = 18.sp,
+                                                fontWeight = FontWeight.Bold,
+                                                textAlign  = TextAlign.Center
+                                            ),
+                                            cursorBrush     = SolidColor(Color.Black),
+                                            decorationBox   = { inner ->
+                                                Box(Modifier.fillMaxSize(), contentAlignment = Alignment.Center) { inner() }
+                                            }
+                                        )
+                                    }
+
+                                    IconButton(
+                                        onClick = {
+                                            val v = tiempoText.toIntOrNull() ?: 0
+                                            tiempoText = (v + 1).toString()
+                                            tiempo     = v + 1
+                                        },
+                                        modifier = Modifier.size(28.dp)
+                                    ) {
+                                        Icon(Icons.Default.Add, contentDescription = null, tint = Green)
+                                    }
+                                }
+                            }
+                        }
+
+                        // 3. Categoría
                         Card(
                             modifier  = Modifier.fillMaxWidth(),
                             shape     = RoundedCornerShape(6.dp),
@@ -324,71 +421,90 @@ fun CreateRecipeScreen(
                                 horizontalArrangement = Arrangement.SpaceBetween,
                                 verticalAlignment     = Alignment.CenterVertically
                             ) {
-                                Text("Tiempo (min)",
-                                    color      = Color.Black,
+                                Text("Categoría",
+                                    fontFamily = Destacado,
                                     fontWeight = FontWeight.SemiBold,
                                     fontSize   = 16.sp,
-                                    fontFamily = Destacado
-
+                                    color = DarkGray
                                 )
-                                Row(
-                                    verticalAlignment     = Alignment.CenterVertically,
-                                    horizontalArrangement = Arrangement.spacedBy(8.dp)
+                                Box(
+                                    Modifier
+                                        .clip(RoundedCornerShape(6.dp))
+                                        .background(GrayBg)
+                                        .border(1.dp, Color.LightGray, RoundedCornerShape(6.dp))
+                                        .clickable { expandedCategory = true }
+                                        .padding(horizontal = 12.dp, vertical = 8.dp)
                                 ) {
-                                    IconButton(
-                                        onClick = { if (tiempo > 1) tiempo-- },
-                                        modifier = Modifier.size(28.dp)
+                                    Text(selectedCategory ?: "Seleccionar", color = DarkGray, fontFamily = Destacado)
+                                    DropdownMenu(
+                                        expanded = expandedCategory,
+                                        onDismissRequest = { expandedCategory = false }
                                     ) {
-                                        Icon(
-                                            Icons.Default.Remove,
-                                            contentDescription = "Disminuir",
-                                            tint = Color.Red
-                                        )
+                                        categories.forEach { cat ->
+                                            DropdownMenuItem(
+                                                text = { Text(cat) },
+                                                onClick = {
+                                                    selectedCategory = cat
+                                                    expandedCategory = false
+                                                }
+                                            )
+                                        }
                                     }
-                                    Box(
-                                        Modifier
-                                            .width(64.dp)
-                                            .height(36.dp)
-                                            .background(White, RoundedCornerShape(6.dp))
-                                            .border(1.dp, Color.LightGray, RoundedCornerShape(8.dp)),
-                                        contentAlignment = Alignment.Center
+                                }
+                            }
+                        }
+
+                        // 4. Tipo de Plato
+                        Card(
+                            modifier  = Modifier.fillMaxWidth(),
+                            shape     = RoundedCornerShape(6.dp),
+                            colors    = CardDefaults.cardColors(containerColor = Color.White),
+                            border    = BorderStroke(1.dp, Color.LightGray)
+                        ) {
+                            Row(
+                                Modifier
+                                    .fillMaxWidth()
+                                    .padding(12.dp),
+                                horizontalArrangement = Arrangement.SpaceBetween,
+                                verticalAlignment     = Alignment.CenterVertically
+                            ) {
+                                Text("Tipo de Plato",
+                                    fontFamily = Destacado,
+                                    fontWeight = FontWeight.SemiBold,
+                                    fontSize   = 16.sp,
+                                    color = DarkGray
+                                )
+                                Box(
+                                    Modifier
+                                        .clip(RoundedCornerShape(6.dp))
+                                        .background(GrayBg)
+                                        .border(1.dp, Color.LightGray, RoundedCornerShape(6.dp))
+                                        .clickable { expandedTipo = true }
+                                        .padding(horizontal = 12.dp, vertical = 8.dp)
+                                ) {
+                                    Text(selectedTipo ?: "Seleccionar", color = DarkGray, fontFamily = Destacado)
+                                    DropdownMenu(
+                                        expanded = expandedTipo,
+                                        onDismissRequest = { expandedTipo = false }
                                     ) {
-                                        BasicTextField(
-                                            value         = tiempo.toString(),
-                                            onValueChange = { str ->
-                                                tiempo = str.filter(Char::isDigit).toIntOrNull() ?: tiempo
-                                            },
-                                            singleLine = true,
-                                            textStyle = LocalTextStyle.current.copy(
-                                                color      = Color.Black,
-                                                fontSize   = 18.sp,
-                                                fontWeight = FontWeight.Bold,
-                                                textAlign  = TextAlign.Center
-                                            ),
-                                            cursorBrush = SolidColor(Color.Black),
-                                            decorationBox = { inner ->
-                                                Box(Modifier.fillMaxSize(), contentAlignment = Alignment.Center) { inner() }
-                                            }
-                                        )
-                                    }
-                                    IconButton(
-                                        onClick = { tiempo++ },
-                                        modifier = Modifier.size(28.dp)
-                                    ) {
-                                        Icon(
-                                            Icons.Default.Add,
-                                            contentDescription = "Aumentar",
-                                            tint = Color(0xFF00C853)
-                                        )
+                                        tiposPlato.forEach { tipo ->
+                                            DropdownMenuItem(
+                                                text = { Text(tipo) },
+                                                onClick = {
+                                                    selectedTipo = tipo
+                                                    expandedTipo = false
+                                                }
+                                            )
+                                        }
                                     }
                                 }
                             }
                         }
                     }
-
+// ── Divider justo después de todos los steppers ─────────────────────
                     Divider(
                         color = Color(0xFFE0E0E0),
-                        thickness = 1.dp,
+                        thickness = 4.dp,
                         modifier = Modifier
                             .fillMaxWidth()
                             .padding(vertical = 8.dp)
@@ -445,7 +561,7 @@ fun CreateRecipeScreen(
 
                     Divider(
                         color = Color(0xFFE0E0E0),
-                        thickness = 1.dp,
+                        thickness = 4.dp,
                         modifier = Modifier
                             .fillMaxWidth()
                             .padding(vertical = 8.dp)
@@ -473,18 +589,22 @@ fun CreateRecipeScreen(
                         )
                     }
                     steps.forEachIndexed { idx, step ->
+                        // launcher específico para este paso
+                        val stepImageLauncher = rememberLauncherForActivityResult(GetContent()) { uri: Uri? ->
+                            uri?.let {
+                                // sólo actualizamos la foto de este paso
+                                steps[idx] = step.copy(urlMedia = it.toString())
+                            }
+                        }
+
                         StepCard(
                             stepNumber    = step.numeroPaso,
                             title         = step.titulo.orEmpty(),
                             description   = step.descripcion,
-                            onTitleChange = { newTitle ->
-                                steps[idx] = step.copy(titulo = newTitle)
-                            },
-                            onDescChange  = { newDesc ->
-                                steps[idx] = step.copy(descripcion = newDesc)
-                            },
-                            onAddPhoto    = { launcher.launch("image/*") },
-                            attachments   = if (step.urlMedia != null) 1 else 0
+                            urlMedia      = step.urlMedia,         // <<< aquí
+                            onTitleChange = { steps[idx] = step.copy(titulo = it) },
+                            onDescChange  = { steps[idx] = step.copy(descripcion = it) },
+                            onAddPhoto    = { stepImageLauncher.launch("image/*") }
                         )
                         Spacer(Modifier.height(8.dp))
                     }
@@ -645,12 +765,14 @@ fun CreateRecipeScreen(
                                         shape  = RoundedCornerShape(8.dp),
                                         colors = ButtonDefaults.buttonColors(containerColor = Accent)
                                     ) {
-                                        Text("Agregar Paso", color = Color.White, fontFamily = Destacado)
+                                        Text("Agregar", color = Color.White, fontFamily = Destacado)
                                     }
                                 }
                             }
                         }
                         Spacer(Modifier.height(12.dp))
+
+
 
                         // --- DIALOGO DE PREVIEW ---
                         if (showImagePreview) {
@@ -708,69 +830,75 @@ fun CreateRecipeScreen(
 
                     Divider(
                         color = Color(0xFFE0E0E0),
-                        thickness = 1.dp,
+                        thickness = 4.dp,
                         modifier = Modifier
                             .fillMaxWidth()
                             .padding(vertical = 8.dp)
                     )
 
 
-                    // Etiquetas
-                    Box(
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .clip(RoundedCornerShape(12.dp))
-                            .background(Color.Black)
-                            .padding(vertical = 12.dp),     // un poco más de altura
-                        contentAlignment = Alignment.Center
-                    ) {
-                        Text(
-                            "Etiquetas",
-                            color = Color.White,
-                            fontWeight = FontWeight.SemiBold,
-                            fontSize = 16.sp,            // un pelín más grande
-                            textAlign = TextAlign.Center,
-                            fontFamily = Destacado,
-                        )
-                    }
 
-                    FlowRow(
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .padding(top = 8.dp),        // más cerca del título
-                        horizontalArrangement = Arrangement.spacedBy(8.dp),
-                        verticalArrangement   = Arrangement.spacedBy(8.dp)
-                    ) {
-                        etiquetas.forEach { tag ->
-                            val sel = selectedTags.contains(tag)
-                            Text(
-                                tag,
-                                Modifier
-                                    .clip(RoundedCornerShape(16.dp))
-                                    .background(if (sel) Accent.copy(alpha = 0.15f) else Color(0xFFF2F2F2))
-                                    .clickable {
-                                        selectedTags =
-                                            if (sel) selectedTags - tag
-                                            else selectedTags + tag
-                                    }
-                                    .padding(horizontal = 12.dp, vertical = 8.dp),
-                                color = if (sel) Accent else Color.Black
-                            )
-                        }
-                        Box(
-                            Modifier
-                                .size(32.dp)
-                                .clip(CircleShape)
-                                .background(Color(0xFFF2F2F2))
-                                .clickable { /* nueva etiqueta */ },
-                            contentAlignment = Alignment.Center
-                        ) {
-                            Text("+", fontSize = 16.sp)
-                        }
-                    }
                     error?.let {
                         Spacer(Modifier.height(8.dp))
                         Text(it, color = MaterialTheme.colorScheme.error)
+                    }
+
+                    Row(
+                        Modifier
+                            .fillMaxWidth()
+                            .padding(horizontal = 24.dp, vertical = 16.dp),
+                        horizontalArrangement = Arrangement.spacedBy(12.dp)
+                    ) {
+                        // GUARDAR (opcional: local, borrador…)
+                        OutlinedButton(
+                            onClick   = onSaved,
+                            enabled   = !viewModel.submitting.collectAsState().value,
+                            modifier  = Modifier.weight(1f).height(48.dp),
+                            shape     = RoundedCornerShape(24.dp),
+                            border    = BorderStroke(1.dp, Accent)
+                        ) {
+                            Text("GUARDAR", color = Accent, fontWeight = FontWeight.Bold)
+                        }
+
+                        // PUBLICAR (esto es lo que dispara la petición REST)
+                        Button(
+                            onClick = {
+                                // valida que todos los campos obligatorios estén llenos
+                                if (nombre.isBlank() || descripcion.isBlank()
+                                    || selectedCategory == null || selectedTipo == null
+                                    || ingredients.isEmpty() || steps.isEmpty()
+                                ) {
+                                    // muestra algún error al usuario…
+                                    return@Button
+                                }
+                                viewModel.createRecipe(
+                                    nombre      = nombre,
+                                    descripcion = descripcion,
+                                    tiempo      = tiempo,
+                                    porciones   = porciones,
+                                    tipoPlato   = selectedTipo!!,
+                                    categoria   = selectedCategory!!,
+                                    ingredients = ingredients.toList(),
+                                    steps       = steps.toList(),
+                                    onSuccess   = onPublished
+                                )
+                            },
+                            enabled   = !viewModel.submitting.collectAsState().value,
+                            modifier  = Modifier.weight(1f).height(48.dp),
+                            shape     = RoundedCornerShape(24.dp),
+                            colors    = ButtonDefaults.buttonColors(containerColor = Accent)
+                        ) {
+                            val submitting = viewModel.submitting.collectAsState().value
+                            if (submitting) {
+                                CircularProgressIndicator(
+                                    modifier   = Modifier.size(20.dp),
+                                    color      = Color.White,
+                                    strokeWidth = 2.dp
+                                )
+                            } else {
+                                Text("PUBLICAR", color = Color.White, fontWeight = FontWeight.Bold)
+                            }
+                        }
                     }
                     Spacer(Modifier.height(80.dp))
                 }
@@ -903,42 +1031,103 @@ private fun StepCard(
     stepNumber:   Int,
     title:        String,
     description:  String,
+    urlMedia:     String?,           // ahora recibe la URL
     onTitleChange:(String)->Unit,
     onDescChange: (String)->Unit,
-    onAddPhoto:   ()->Unit,
-    attachments:  Int
+    onAddPhoto:   ()->Unit
 ) {
+    var showImagePreview by remember { mutableStateOf(false) }
+
     Card(
-        shape     = RoundedCornerShape(12.dp),
-        border    = BorderStroke(1.dp, Color(0xFFE0E0E0)),
-        elevation = CardDefaults.cardElevation(4.dp),
-        modifier  = Modifier.fillMaxWidth()
+        modifier  = Modifier
+            .fillMaxWidth()
+            .padding(vertical = 4.dp),
+        shape     = RoundedCornerShape(6.dp),
+        colors    = CardDefaults.cardColors(containerColor = Color.White),
+        elevation = CardDefaults.cardElevation(defaultElevation = 2.dp)
     ) {
-        Column(Modifier.padding(16.dp), verticalArrangement = Arrangement.spacedBy(12.dp)) {
+        Column(
+            Modifier.padding(12.dp),
+            verticalArrangement = Arrangement.spacedBy(12.dp)
+        ) {
+            // —— Número y título
             Row(verticalAlignment = Alignment.CenterVertically) {
                 Box(
-                    Modifier.size(24.dp)
-                        .background(Accent.copy(alpha = 0.2f), shape = RoundedCornerShape(6.dp)),
+                    Modifier
+                        .size(24.dp)
+                        .background(Accent.copy(alpha = 0.2f), RoundedCornerShape(6.dp)),
                     contentAlignment = Alignment.Center
                 ) {
                     Text("$stepNumber", color = Accent, fontWeight = FontWeight.Bold)
                 }
                 Spacer(Modifier.width(12.dp))
-                OutlinedTextField(
-                    value         = title,
-                    onValueChange = onTitleChange,
-                    placeholder   = { Text("Nombre del Paso", color = Color.White) },
-                    modifier      = Modifier.fillMaxWidth(),
-                    singleLine    = true
+                Box(
+                    Modifier
+                        .fillMaxWidth()
+                        .background(Color(0xFFF8F8F8), RoundedCornerShape(6.dp))
+                        .border(1.dp, Color.LightGray, RoundedCornerShape(6.dp))
+                        .padding(8.dp)
+                ) {
+                    BasicTextField(
+                        value         = title,
+                        onValueChange = onTitleChange,
+                        singleLine    = true,
+                        textStyle     = LocalTextStyle.current.copy(
+                            color      = Color.Black,
+                            fontSize   = 16.sp,
+                            fontWeight = FontWeight.SemiBold
+                        ),
+                        decorationBox = { inner ->
+                            if (title.isEmpty()) Text("Nombre del Paso", color = Color.Gray)
+                            inner()
+                        },
+                        modifier = Modifier.fillMaxWidth()
+                    )
+                }
+            }
+
+            // —— Descripción
+            Box(
+                Modifier
+                    .fillMaxWidth()
+                    .height(80.dp)
+                    .background(Color(0xFFF8F8F8), RoundedCornerShape(6.dp))
+                    .border(1.dp, Color.LightGray, RoundedCornerShape(6.dp))
+                    .padding(8.dp)
+            ) {
+                BasicTextField(
+                    value         = description,
+                    onValueChange = onDescChange,
+                    textStyle     = LocalTextStyle.current.copy(
+                        color    = Color.Black,
+                        fontSize = 14.sp
+                    ),
+                    decorationBox = { inner ->
+                        if (description.isEmpty()) Text("Descripción de los pasos…", color = Color.Gray)
+                        inner()
+                    },
+                    modifier = Modifier.fillMaxSize()
                 )
             }
-            OutlinedTextField(
-                value         = description,
-                onValueChange = onDescChange,
-                placeholder   = { Text("Descripción de los pasos…", color = Color.White) },
-                modifier      = Modifier.fillMaxWidth().height(80.dp),
-                maxLines      = 3
-            )
+
+            // —— Mini‐preview si hay foto
+            urlMedia?.let {
+                Column(verticalArrangement = Arrangement.spacedBy(4.dp)) {
+                    Text("Imagen paso:", color = Color.Gray, fontSize = 12.sp)
+                    AsyncImage(
+                        model = it,
+                        contentDescription = null,
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .height(120.dp)
+                            .clip(RoundedCornerShape(8.dp))
+                            .clickable { showImagePreview = true },
+                        contentScale = ContentScale.Crop
+                    )
+                }
+            }
+
+            // —— Botones foto / ver foto
             Row(
                 Modifier.fillMaxWidth(),
                 horizontalArrangement = Arrangement.SpaceBetween,
@@ -949,15 +1138,47 @@ private fun StepCard(
                     shape   = RoundedCornerShape(8.dp),
                     border  = BorderStroke(1.dp, Accent)
                 ) {
-                    Text("AGREGAR FOTO", color = Accent)
+                    Icon(Icons.Default.CameraAlt, contentDescription = null, tint = Accent)
+                    Spacer(Modifier.width(4.dp))
+                    Text("FOTO", color = Accent, fontFamily = Destacado)
                 }
-                Text(
-                    "$attachments archivo${if (attachments != 1) "s" else ""}",
-                    color = Color.Gray
+
+                urlMedia?.let {
+                    TextButton(onClick = { showImagePreview = true }) {
+                        Icon(
+                            painter = painterResource(R.drawable.ic_chef_hat),
+                            contentDescription = "Ver foto",
+                            tint = Accent,
+                            modifier = Modifier.size(20.dp)
+                        )
+                        Spacer(Modifier.width(4.dp))
+                        Text("Ver foto", color = Accent, fontFamily = Destacado)
+                    }
+                }
+            }
+        }
+    }
+
+    // —— diálogo de preview
+    if (showImagePreview) {
+        AlertDialog(
+            onDismissRequest = { showImagePreview = false },
+            confirmButton = {
+                TextButton(onClick = { showImagePreview = false }) {
+                    Text("Cerrar", color = Accent)
+                }
+            },
+            text = {
+                AsyncImage(
+                    model = urlMedia,
+                    contentDescription = "Foto del paso",
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .height(200.dp),
+                    contentScale = ContentScale.Crop
                 )
             }
-
-        }
+        )
     }
 }
 
@@ -1101,5 +1322,6 @@ private fun IngredientRow(
                 Icon(Icons.Default.Add, contentDescription = null, tint = Color(0xFF00C853))
             }
         }
+
     }
 }
