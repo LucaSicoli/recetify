@@ -70,8 +70,7 @@ fun NoConnectionScreen(
             Box(
                 modifier = Modifier
                     .fillMaxWidth()
-                    .weight(0.25f)
-                    .offset(y = (-24).dp)
+                    .weight(0.3f)
                     .zIndex(1f)
                     .clip(RoundedCornerShape(topStart = 24.dp, topEnd = 24.dp))
                     .background(Color.White)
@@ -109,6 +108,7 @@ fun NoConnectionScreen(
                     Button(
                         onClick = onContinueOffline,
                         modifier = Modifier
+                            .offset( y = (-20).dp)
                             .fillMaxWidth()
                             .height(48.dp),
                         shape = RoundedCornerShape(8.dp),

@@ -12,6 +12,7 @@ import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.navigation.NavController
 import com.example.recetify.data.remote.model.toModel
 import com.example.recetify.data.remote.model.toRecipeResponse
+import com.example.recetify.ui.navigation.BottomNavBar
 
 @Composable
 fun RecipeDetailScreen(
@@ -19,9 +20,8 @@ fun RecipeDetailScreen(
     navController: NavController,
     viewModel: RecipeDetailViewModel = viewModel()
 ) {
-    val details = viewModel.recipeWithDetails
-    val loading = viewModel.loading
-
+    val details      = viewModel.recipeWithDetails
+    val loading      = viewModel.loading
     val showIngredients = remember { mutableStateOf(true) }
     val currentStep     = remember { mutableStateOf(0) }
 
@@ -29,22 +29,25 @@ fun RecipeDetailScreen(
         viewModel.fetchRecipe(recipeId)
     }
 
-    Scaffold(containerColor = Color.White) { padding ->
+    Scaffold(
+        // Slot para el nav bar flotante
+        bottomBar = {
+            BottomNavBar(navController)
+        },
+        containerColor = Color.White
+    ) { padding ->
         Box(
             modifier = Modifier
                 .fillMaxSize()
-                .background(Color.White)
-                .padding(padding)
+                .padding(padding)  // deja el espacio para el bottomBar
         ) {
             if (loading || details == null) {
-                Box(Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
+                Box(Modifier.fillMaxSize(), Alignment.Center) {
                     CircularProgressIndicator()
                 }
             } else {
-                // mapeo de RatingEntity → RatingResponse
                 val ratingResponses = details.ratings.map { it.toModel() }
-
-                Column(modifier = Modifier.padding(bottom = 100.dp)) {
+                Column(modifier = Modifier.padding(bottom =  /* opcional padding extra */ 0.dp)) {
                     RecipeDetailContent(
                         receta          = details.toRecipeResponse(),
                         ratings         = ratingResponses,
