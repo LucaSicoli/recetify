@@ -6,14 +6,18 @@ import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.material.icons.Icons
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.Text
+import androidx.compose.material.icons.filled.WifiOff
+import androidx.compose.material3.Icon
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.Color.Companion.White
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.font.Font
 import androidx.compose.ui.text.font.FontFamily
@@ -52,16 +56,12 @@ fun NoConnectionScreen(
                     horizontalAlignment = Alignment.CenterHorizontally,
                     verticalArrangement = Arrangement.Center
                 ) {
-                    Image(
-                        painter = painterResource(R.drawable.logo_chef),
-                        contentDescription = "Logo Recetify",
-                        modifier = Modifier.size(150.dp)
-                    )
                     Spacer(Modifier.height(24.dp))
-                    Image(
-                        painter = painterResource(R.drawable.no_wifi),
+                    Icon(
+                        imageVector = Icons.Filled.WifiOff,
                         contentDescription = "Sin conexión",
-                        modifier = Modifier.size(200.dp)
+                        modifier = Modifier.size(160.dp),
+                        tint = White// o el gris que quieras
                     )
                 }
             }
