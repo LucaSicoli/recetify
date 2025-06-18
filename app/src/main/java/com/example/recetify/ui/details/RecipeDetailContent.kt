@@ -1,5 +1,6 @@
 package com.example.recetify.ui.details
 
+import android.R.attr.divider
 import androidx.compose.animation.animateContentSize
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.background
@@ -51,6 +52,7 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.Color.Companion.LightGray
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.font.Font
@@ -137,6 +139,12 @@ fun ReviewsAndCommentSection(
             .fillMaxWidth()
             .animateContentSize()
     ) {
+        Spacer(Modifier.height(24.dp))
+        Divider(
+            color = LightGray,
+            thickness = 2.dp,
+            modifier = Modifier.fillMaxWidth()
+        )
         // ── Encabezado con “Reseñas” + promedio + total ───────────────────────
         Row(
             modifier = Modifier
@@ -206,8 +214,8 @@ fun ReviewsAndCommentSection(
 
         Spacer(modifier = Modifier.height(12.dp))
         Divider(
-            color = Color(0xFFE0E0E0),
-            thickness = 1.dp,
+            color = LightGray,
+            thickness = 2.dp,
             modifier = Modifier.fillMaxWidth()
         )
 
@@ -625,7 +633,7 @@ fun RecipeDetailContent(
                                 // Descripción del paso
                                 if (!paso.descripcion.isNullOrBlank()) {
                                     Spacer(Modifier.height(8.dp))
-                                    Text(paso.descripcion, color = primaryTextColor, fontFamily = Destacado)
+                                    Text(paso.descripcion, color = primaryTextColor)
                                 }
 
                                 Spacer(Modifier.height(12.dp))
