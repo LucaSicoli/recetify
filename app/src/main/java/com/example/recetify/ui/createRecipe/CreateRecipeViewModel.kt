@@ -4,6 +4,7 @@ package com.example.recetify.ui.createRecipe
 import android.app.Application
 import android.content.Context
 import android.net.ConnectivityManager
+import android.net.Uri
 import androidx.lifecycle.AndroidViewModel
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.ViewModelProvider
@@ -14,6 +15,7 @@ import com.example.recetify.data.remote.RetrofitClient
 import com.example.recetify.data.remote.model.RecipeIngredientRequest
 import com.example.recetify.data.remote.model.RecipeRequest
 import com.example.recetify.data.remote.model.RecipeStepRequest
+import com.example.recetify.util.FileUtil
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.launch
@@ -96,12 +98,8 @@ class CreateRecipeViewModel(
      * Construye el RecipeRequest y lo envía al backend.
      */
     fun createRecipe(
-        nombre: String,
-        descripcion: String,
-        tiempo: Int,
-        porciones: Int,
-        tipoPlato: String,
-        categoria: String,
+        nombre: String, descripcion: String, tiempo: Int, porciones: Int,
+        tipoPlato: String, categoria: String,
         ingredients: List<RecipeIngredientRequest>,
         steps: List<RecipeStepRequest>,
         onSuccess: () -> Unit
@@ -109,6 +107,18 @@ class CreateRecipeViewModel(
         _submitting.value = true
         _error.value = null
         try {
+            // ➊ primero subo todas las fotos de pasos:
+            val uploadedSteps = steps.map { step ->
+                val local = step.urlMedia
+                if (!local.isNullOrBlank() && local.startsWith("content://")) {
+                    // convierto URI a File (igual que haces en el screen)
+                    val file = File(FileUtil.from(getApplication(), Uri.parse(local)).path)
+                    val remoteUrl = repo.uploadPhoto(file)
+                    step.copy(urlMedia = remoteUrl)
+                } else step
+            }
+
+            // ➋ armo el request usando la lista con URLs remotas
             val req = RecipeRequest(
                 nombre        = nombre,
                 descripcion   = descripcion,
@@ -118,7 +128,7 @@ class CreateRecipeViewModel(
                 tipoPlato     = tipoPlato,
                 categoria     = categoria,
                 ingredients   = ingredients,
-                steps         = steps
+                steps         = uploadedSteps
             )
             repo.createRecipe(req)
             onSuccess()

@@ -68,7 +68,7 @@ import com.example.recetify.data.remote.model.RecipeResponse
 import com.example.recetify.data.remote.model.RatingResponse
 import com.example.recetify.ui.details.RecipeDetailViewModel
 import com.example.recetify.util.obtenerEmoji
-
+import java.net.URI
 
 
 private val Destacado = FontFamily(
@@ -331,8 +331,13 @@ fun RecipeDetailContent(
     val unitTextColor = Color.White
 
     val baseUrl = RetrofitClient.BASE_URL.trimEnd('/')
-    val imgPath = receta.fotoPrincipal?.removePrefix("http://localhost:8080") ?: ""
-    val fullUrl = "$baseUrl$imgPath"
+    // normalizo igual que en Home
+    val originalMain = receta.fotoPrincipal.orEmpty()
+    val pathMain = runCatching {
+        val uri = URI(originalMain)
+        uri.rawPath + uri.rawQuery?.let { "?$it" }.orEmpty()
+    }.getOrNull() ?: originalMain
+    val fullUrl = if (pathMain.startsWith("/")) "$baseUrl$pathMain" else pathMain
 
     Column(
         modifier = Modifier
@@ -600,23 +605,21 @@ fun RecipeDetailContent(
                                 // Imagen del paso, con borde redondeado de 8dp
                                 if (!paso.urlMedia.isNullOrBlank()) {
                                     Spacer(Modifier.height(8.dp))
-                                    val rawUrl = paso.urlMedia!!
-                                    val imageUrl = when {
-                                        rawUrl.startsWith("http://localhost:8080") ->
-                                            rawUrl.replaceFirst("http://localhost:8080", baseUrl)
-                                        rawUrl.startsWith(baseUrl) ->
-                                            rawUrl
-                                        else ->
-                                            rawUrl
-                                    }
+                                    val originalStep = paso.urlMedia!!
+                                    val pathStep = runCatching {
+                                        val uri = URI(originalStep)
+                                        uri.rawPath + uri.rawQuery?.let { "?$it" }.orEmpty()
+                                    }.getOrNull() ?: originalStep
+                                    val stepImageUrl = if (pathStep.startsWith("/")) "$baseUrl$pathStep" else pathStep
+
                                     AsyncImage(
-                                        model = imageUrl,
+                                        model           = stepImageUrl,
                                         contentDescription = null,
-                                        modifier = Modifier
+                                        modifier        = Modifier
                                             .fillMaxWidth()
                                             .height(180.dp)
                                             .clip(RoundedCornerShape(8.dp)),
-                                        contentScale = ContentScale.Crop
+                                        contentScale    = ContentScale.Crop
                                     )
                                 }
 

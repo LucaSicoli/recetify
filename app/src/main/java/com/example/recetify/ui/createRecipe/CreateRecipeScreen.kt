@@ -7,6 +7,7 @@ import androidx.activity.result.contract.ActivityResultContracts.GetContent
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
+import androidx.compose.material.icons.filled.RamenDining
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.text.BasicTextField
@@ -49,6 +50,7 @@ import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.filled.AccessTime
 import androidx.compose.material.icons.filled.ArrowBack
 import androidx.compose.material.icons.filled.Restaurant
+import androidx.compose.material.icons.filled.RestaurantMenu
 import androidx.compose.ui.graphics.Color.Companion.Black
 import androidx.compose.ui.graphics.Color.Companion.DarkGray
 import androidx.compose.ui.graphics.Color.Companion.Gray
@@ -127,7 +129,7 @@ fun CreateRecipeScreen(
                 .padding(innerPadding)
                 .fillMaxSize()
                 .verticalScroll(rememberScrollState())
-                .background(GrayBg)
+                .background(Black)
         ) {
             // Header image (toda el área clickeable)
             // Header image (toda el área clickeable)
@@ -155,14 +157,27 @@ fun CreateRecipeScreen(
                             .align(Alignment.Center),
                         contentScale = ContentScale.Crop
                     )
-                    else -> Icon(
-                        Icons.Default.CameraAlt,
-                        contentDescription = "Agregar foto",
+                    else -> Row(
                         modifier = Modifier
-                            .size(80.dp)
-                            .align(Alignment.Center),
-                        tint = Color.Gray
-                    )
+                            .align(Alignment.Center)
+                            .clickable { launcher.launch("image/*") }
+                            .padding(8.dp),
+                        verticalAlignment = Alignment.CenterVertically,
+                        horizontalArrangement = Arrangement.spacedBy(4.dp)
+                    ) {
+                        Icon(
+                            Icons.Filled.RamenDining,
+                            contentDescription = "Agregar foto",
+                            modifier = Modifier.size(80.dp),
+                            tint = Color.White
+                        )
+                        Icon(
+                            Icons.Default.Add,
+                            contentDescription = "Agregar foto",
+                            modifier = Modifier.size(40.dp),
+                            tint = Color.White
+                        )
+                    }
                 }
 
                 // —— Indicador de subida —— (segundo)
@@ -181,7 +196,7 @@ fun CreateRecipeScreen(
                     modifier = Modifier
                         .padding(16.dp)
                         .size(40.dp)
-                        .background(Black, shape = CircleShape)
+                        .background(DarkGray, shape = CircleShape)
                         .align(Alignment.TopStart)
                 ) {
                     Icon(
