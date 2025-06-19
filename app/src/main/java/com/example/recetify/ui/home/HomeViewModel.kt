@@ -1,54 +1,43 @@
+// app/src/main/java/com/example/recetify/ui/home/HomeViewModel.kt
 package com.example.recetify.ui.home
 
 import android.app.Application
+import android.net.ConnectivityManager
 import androidx.lifecycle.AndroidViewModel
 import androidx.lifecycle.viewModelScope
-import coil.ImageLoader
-import coil.request.ImageRequest
+import com.example.recetify.data.RecipeRepository
+import com.example.recetify.data.db.DatabaseProvider
+import com.example.recetify.data.db.RecipeEntity
 import com.example.recetify.data.remote.RetrofitClient
-import com.example.recetify.data.remote.model.RecipeResponse
-import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.flow.MutableStateFlow
-import kotlinx.coroutines.flow.StateFlow
+import kotlinx.coroutines.flow.*
 import kotlinx.coroutines.launch
-import java.net.URI
 
 class HomeViewModel(app: Application) : AndroidViewModel(app) {
-    private val _recipes   = MutableStateFlow<List<RecipeResponse>>(emptyList())
-    val recipes: StateFlow<List<RecipeResponse>> = _recipes
+    // Para detectar si hay red
+    private val connectivity =
+        app.getSystemService(ConnectivityManager::class.java)!!
 
+    private val dao  = DatabaseProvider.getInstance(app).recipeDao()
+    private val repo = RecipeRepository(dao, RetrofitClient.api, connectivity)
+
+    // Indicador de carga
     private val _isLoading = MutableStateFlow(true)
-    val isLoading: StateFlow<Boolean> = _isLoading
+    val isLoading: StateFlow<Boolean> = _isLoading.asStateFlow()
 
-    init {
-        viewModelScope.launch(Dispatchers.IO) {
-            // 1) Descarga JSON
-            val fetched = try {
-                RetrofitClient.api.getAllRecipesSummary()
-            } catch (e: Throwable) {
-                emptyList<RecipeResponse>()
+    // Lista de recetas (actualiza _isLoading cuando emite)
+    val recipes: StateFlow<List<RecipeEntity>> =
+        repo.getAllRecipes()
+            .onStart {
+                // justo antes de pedir la lista, muestro loading
+                _isLoading.value = true
             }
-
-            // 2) Precarga imágenes en Coil
-            val loader = ImageLoader(getApplication())
-            fetched.forEach { recipe ->
-                val base     = RetrofitClient.BASE_URL.trimEnd('/')
-                val original = recipe.fotoPrincipal.orEmpty()
-                val pathOnly = runCatching {
-                    val uri = URI(original)
-                    uri.rawPath + uri.rawQuery?.let { "?$it" }.orEmpty()
-                }.getOrNull() ?: original
-                val finalUrl = if (pathOnly.startsWith("/")) "$base$pathOnly" else "$base/$pathOnly"
-
-                val request = ImageRequest.Builder(getApplication())
-                    .data(finalUrl)
-                    .build()
-                runCatching { loader.execute(request) }
+            .onEach {
+                // tras recibir la primera emisión (cache o red), oculto loading
+                _isLoading.value = false
             }
-
-            // 3) Emitir datos ya listos
-            _recipes.value   = fetched
-            _isLoading.value = false
-        }
-    }
+            .stateIn(
+                scope = viewModelScope,
+                started = SharingStarted.Lazily,
+                initialValue = emptyList()
+            )
 }

@@ -1,3 +1,4 @@
+// app/src/main/java/com/example/recetify/ui/login/VerifyCodeScreen.kt
 package com.example.recetify.ui.login
 
 import androidx.compose.foundation.Image
@@ -54,7 +55,14 @@ fun VerifyCodeScreen(
     val lifecycleOwner = LocalLifecycleOwner.current
     val scope = rememberCoroutineScope()
 
-    // Cursor blink
+    // 1) Al entrar limpiamos cualquier error o state previo
+    LaunchedEffect(Unit) {
+        viewModel.clearError()
+        validationState = null
+        otp = ""
+    }
+
+    // 2) Cursor blink
     LaunchedEffect(isFocused) {
         while (isFocused) {
             cursorVisible = true
@@ -65,14 +73,7 @@ fun VerifyCodeScreen(
         cursorVisible = false
     }
 
-    // Si viene error tras 6 dígitos, marcamos invalid
-    LaunchedEffect(state.error) {
-        if (state.error != null && otp.length == 6) {
-            validationState = Validation.Invalid
-        }
-    }
-
-    // Pedimos foco en STARTED
+    // 3) Pedimos foco en STARTED
     LaunchedEffect(Unit) {
         lifecycleOwner.repeatOnLifecycle(Lifecycle.State.STARTED) {
             focusRequester.requestFocus()
@@ -96,12 +97,20 @@ fun VerifyCodeScreen(
                     modifier = Modifier.size(100.dp)
                 )
                 Spacer(Modifier.height(16.dp))
-                Text("VERIFICAR CÓDIGO",
-                    fontFamily = Sen, fontSize = 24.sp,
-                    fontWeight = FontWeight.SemiBold, color = Color.White)
+                Text(
+                    "VERIFICAR CÓDIGO",
+                    fontFamily = Sen,
+                    fontSize = 24.sp,
+                    fontWeight = FontWeight.SemiBold,
+                    color = Color.White
+                )
                 Spacer(Modifier.height(8.dp))
-                Text("Ingresá el código que te enviamos",
-                    fontFamily = Sen, fontSize = 14.sp, color = Color.White)
+                Text(
+                    "Ingresá el código que te enviamos",
+                    fontFamily = Sen,
+                    fontSize = 14.sp,
+                    color = Color.White
+                )
             }
         }
 
@@ -111,9 +120,10 @@ fun VerifyCodeScreen(
             color = Color.White,
             shape = RoundedCornerShape(topStart = 24.dp, topEnd = 24.dp)
         ) {
-            Column(modifier = Modifier
-                .fillMaxSize()
-                .padding(24.dp)
+            Column(
+                modifier = Modifier
+                    .fillMaxSize()
+                    .padding(24.dp)
             ) {
                 // Header con “Reenviar”
                 Row(
@@ -121,16 +131,23 @@ fun VerifyCodeScreen(
                     horizontalArrangement = Arrangement.SpaceBetween,
                     verticalAlignment = Alignment.CenterVertically
                 ) {
-                    Text("CÓDIGO DE VERIFICACIÓN",
-                        fontFamily = Sen, fontSize = 14.sp, color = Color.Black)
-                    Text("Reenviar",
-                        fontFamily = Sen, fontSize = 14.sp,
+                    Text(
+                        "CÓDIGO DE VERIFICACIÓN",
+                        fontFamily = Sen,
+                        fontSize = 14.sp,
+                        color = Color.Black
+                    )
+                    Text(
+                        "Reenviar",
+                        fontFamily = Sen,
+                        fontSize = 14.sp,
                         fontWeight = FontWeight.Bold,
                         color = Color(0xCCBC6154),
                         modifier = Modifier.clickable {
-                            otp = ""
+                            viewModel.clearError()
                             validationState = null
-                            viewModel.requestReset { }
+                            otp = ""
+                            viewModel.requestReset { /* no navega */ }
                         }
                     )
                 }
@@ -141,19 +158,23 @@ fun VerifyCodeScreen(
                 BasicTextField(
                     value = otp,
                     onValueChange = { new ->
-                        if (new.length <= 6 && new.all { it.isDigit() }) {
+                        if (new.length <= 6 && new.all(Char::isDigit)) {
                             otp = new
                             validationState = null
+                            viewModel.clearError()
                             if (new.length == 6) {
                                 // validamos automáticamente
                                 viewModel.verifyCode(
-                                    code      = new,
+                                    code = new,
                                     onSuccess = {
                                         validationState = Validation.Valid
                                         scope.launch {
                                             delay(300)
                                             onNext()
                                         }
+                                    },
+                                    onError = {
+                                        validationState = Validation.Invalid
                                     }
                                 )
                             }
@@ -161,7 +182,7 @@ fun VerifyCodeScreen(
                     },
                     keyboardOptions = KeyboardOptions(
                         keyboardType = KeyboardType.Number,
-                        imeAction     = ImeAction.Done
+                        imeAction = ImeAction.Done
                     ),
                     singleLine = true,
                     modifier = Modifier
@@ -179,9 +200,9 @@ fun VerifyCodeScreen(
                     repeat(6) { i ->
                         val char = otp.getOrNull(i)?.toString() ?: ""
                         val bg = when (validationState) {
-                            Validation.Valid -> Color(0xFF4CAF50)
+                            Validation.Valid   -> Color(0xFF4CAF50)
                             Validation.Invalid -> Color(0xFFF44336)
-                            else -> Color(0xFFF2F4F7)
+                            else               -> Color(0xFFF2F4F7)
                         }
                         Box(
                             contentAlignment = Alignment.Center,
@@ -194,7 +215,8 @@ fun VerifyCodeScreen(
                                 }
                         ) {
                             if (char.isNotEmpty()) {
-                                Text(char,
+                                Text(
+                                    char,
                                     fontFamily = Sen,
                                     fontSize = 20.sp,
                                     fontWeight = FontWeight.SemiBold,
@@ -214,31 +236,15 @@ fun VerifyCodeScreen(
 
                 Spacer(Modifier.height(24.dp))
 
-                // Botón manual (opcional)
-                Button(
-                    onClick = {
-                        viewModel.verifyCode(
-                            code      = otp,
-                            onSuccess = onNext
-                        )
-                    },
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .height(48.dp),
-                    shape = RoundedCornerShape(12.dp),
-                    colors = ButtonDefaults.buttonColors(containerColor = Color(0xCCBC6154))
-                ) {
-                    if (state.isLoading) {
-                        CircularProgressIndicator(
-                            Modifier.size(24.dp),
-                            color = Color.White,
-                            strokeWidth = 2.dp
-                        )
-                    } else {
-                        Text("VERIFICAR",
-                            color = Color.White,
-                            fontFamily = Sen)
-                    }
+                // Mostrar error si existe
+                state.error?.let { err ->
+                    Text(
+                        text = err,
+                        color = MaterialTheme.colorScheme.error,
+                        fontSize = 12.sp,
+                        modifier = Modifier.align(Alignment.CenterHorizontally),
+                        fontFamily = Sen
+                    )
                 }
             }
         }

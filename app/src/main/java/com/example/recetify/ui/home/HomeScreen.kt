@@ -1,10 +1,12 @@
 package com.example.recetify.ui.home
 
+import androidx.activity.compose.BackHandler
 import androidx.compose.animation.core.animateFloatAsState
 import androidx.compose.animation.core.tween
 import androidx.compose.foundation.ExperimentalFoundationApi
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
@@ -14,6 +16,7 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Star
 import androidx.compose.material.icons.filled.Timer
 import androidx.compose.material.icons.outlined.Person
+import androidx.compose.material.icons.outlined.Star
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
@@ -21,10 +24,12 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.Color.Companion.Gray
 import androidx.compose.ui.graphics.Shape
 import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalDensity
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.PlatformTextStyle
 import androidx.compose.ui.text.font.Font
@@ -33,57 +38,71 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import androidx.compose.ui.zIndex
 import androidx.lifecycle.viewmodel.compose.viewModel
+import androidx.navigation.NavController
 import coil.compose.AsyncImage
 import com.example.recetify.R
+import com.example.recetify.data.db.RecipeEntity
 import com.example.recetify.data.remote.RetrofitClient
-import com.example.recetify.data.remote.model.RecipeResponse
+import com.example.recetify.data.remote.model.SessionManager
+import kotlinx.coroutines.launch
 import java.net.URI
-import androidx.compose.foundation.clickable
-import androidx.compose.ui.zIndex
-import androidx.navigation.NavController
 
+// Fuentes
 private val Sen = FontFamily(
     Font(R.font.pacifico_regular, weight = FontWeight.Light)
 )
-
 private val Destacado = FontFamily(
     Font(R.font.sen_semibold, weight = FontWeight.ExtraBold)
 )
 
 @OptIn(ExperimentalFoundationApi::class)
 @Composable
-fun HomeScreen(homeVm: HomeViewModel = viewModel(), navController: NavController) {
-    val recipes by homeVm.recipes.collectAsState()
-    val isLoading by homeVm.isLoading.collectAsState()
-    val listState = rememberLazyListState()
+fun HomeScreen(
+    homeVm: HomeViewModel = viewModel(),
+    navController: NavController
+) {
+    val context = LocalContext.current
+    val scope   = rememberCoroutineScope()
 
-    val fadeDistancePx = with(LocalDensity.current) { 80.dp.toPx() }
+    // Flow desde Room/Repo
+    val recipes  by homeVm.recipes.collectAsState()
+    val isLoading by homeVm.isLoading.collectAsState()
+
+    val listState = rememberLazyListState()
+    var showLogoutDialog by remember { mutableStateOf(false) }
+
+    // Cálculo de fade para el logo
+    val fadePx = with(LocalDensity.current){ 80.dp.toPx() }
     val rawAlpha = remember {
         derivedStateOf {
             if (listState.firstVisibleItemIndex > 0) 0f
-            else (1f - listState.firstVisibleItemScrollOffset / fadeDistancePx).coerceIn(0f, 1f)
+            else (1f - listState.firstVisibleItemScrollOffset / fadePx).coerceIn(0f,1f)
         }
     }.value
-    val logoAlpha by animateFloatAsState(targetValue = rawAlpha, animationSpec = tween(500))
+    val logoAlpha by animateFloatAsState(rawAlpha, tween(500))
+
+    BackHandler { showLogoutDialog = true }
 
     Surface(modifier = Modifier.fillMaxSize(), color = Color(0xFFF5F5F5)) {
         if (isLoading) {
+            // ── Mientras carga ────────────────────────────────
             Box(Modifier.fillMaxSize(), Alignment.Center) {
                 CircularProgressIndicator()
             }
         } else {
+            // ── Lista de recetas ───────────────────────────────
             LazyColumn(
                 state = listState,
                 modifier = Modifier.fillMaxSize(),
                 contentPadding = PaddingValues(top = 0.dp, bottom = 100.dp),
                 verticalArrangement = Arrangement.spacedBy(16.dp)
             ) {
+                // ── Logo ───────────────────────────────────────────
                 item {
                     Box(
-                        Modifier
-                            .fillMaxWidth()
-                            .padding(horizontal = 24.dp)
+                        Modifier.fillMaxWidth().padding(horizontal = 24.dp)
                     ) {
                         Image(
                             painter = painterResource(id = R.drawable.homecheflogo),
@@ -98,25 +117,27 @@ fun HomeScreen(homeVm: HomeViewModel = viewModel(), navController: NavController
                     }
                 }
 
+                // ── Sticky Header “Destacados” ────────────────────
                 stickyHeader {
-                    val isStuck by remember { derivedStateOf { listState.firstVisibleItemIndex > 0 } }
+                    val stuck by remember { derivedStateOf { listState.firstVisibleItemIndex > 0 } }
                     Box(
                         Modifier
                             .fillMaxWidth()
-                            .offset(y = if (!isStuck) (-24).dp else 0.dp)
-                            .padding(horizontal = if (isStuck) 0.dp else 24.dp)
+                            .offset(y = if (!stuck) (-24).dp else 0.dp)
+                            .padding(horizontal = if (stuck) 0.dp else 24.dp)
                             .background(Color.White)
                             .zIndex(10f)
                     ) {
                         FeaturedHeader(
                             modifier = Modifier
                                 .fillMaxWidth()
-                                .height(if (isStuck) 100.dp else 90.dp),
-                            shape = if (isStuck) RoundedCornerShape(0.dp) else RoundedCornerShape(8.dp)
+                                .height(if (stuck) 100.dp else 90.dp),
+                            shape = if (stuck) RoundedCornerShape(0.dp) else RoundedCornerShape(8.dp)
                         )
                     }
                 }
 
+                // ── Items ─────────────────────────────────────────
                 items(recipes, key = { it.id }) { recipe ->
                     Box(
                         Modifier
@@ -129,6 +150,36 @@ fun HomeScreen(homeVm: HomeViewModel = viewModel(), navController: NavController
                 }
             }
         }
+    }
+
+    // ── Diálogo de “Cerrar sesión” ───────────────────────
+    if (showLogoutDialog) {
+        AlertDialog(
+            onDismissRequest = { showLogoutDialog = false },
+            title           = { Text("Cerrar sesión") },
+            text            = { Text("¿Estás seguro de que querés cerrar la sesión y volver al login?") },
+            confirmButton   = {
+                TextButton(onClick = {
+                    showLogoutDialog = false
+                    scope.launch {
+                        SessionManager.setVisitante(context)
+                        navController.navigate("login") {
+                            popUpTo(navController.graph.startDestinationId) {
+                                inclusive = true
+                            }
+                            launchSingleTop = true
+                        }
+                    }
+                }) {
+                    Text("Sí")
+                }
+            },
+            dismissButton   = {
+                TextButton(onClick = { showLogoutDialog = false }) {
+                    Text("No")
+                }
+            }
+        )
     }
 }
 
@@ -166,7 +217,7 @@ private fun FeaturedHeader(
                 verticalAlignment = Alignment.CenterVertically
             ) {
                 Icon(
-                    imageVector = Icons.Filled.Star,
+                    Icons.Filled.Star,
                     contentDescription = null,
                     tint = Color.White,
                     modifier = Modifier.size(28.dp)
@@ -201,10 +252,9 @@ private fun FeaturedHeader(
         }
     }
 }
-
 @Composable
-fun RecipeCard(
-    recipe: RecipeResponse,
+private fun RecipeCard(
+    recipe: RecipeEntity,
     modifier: Modifier = Modifier
 ) {
     val base     = RetrofitClient.BASE_URL.trimEnd('/')
@@ -216,84 +266,94 @@ fun RecipeCard(
     val finalUrl = if (pathOnly.startsWith("/")) "$base$pathOnly" else "$base/$pathOnly"
 
     Card(
-        modifier = modifier.fillMaxWidth(),
-        shape = RoundedCornerShape(8.dp),
+        modifier  = modifier.fillMaxWidth(),
+        shape     = RoundedCornerShape(8.dp),
         elevation = CardDefaults.cardElevation(defaultElevation = 4.dp),
-        colors = CardDefaults.cardColors(containerColor = Color.White)
+        colors    = CardDefaults.cardColors(containerColor = Color.White)
     ) {
         Column {
             AsyncImage(
-                model = finalUrl,
+                model           = finalUrl,
                 contentDescription = recipe.nombre,
-                modifier = Modifier
+                modifier        = Modifier
                     .fillMaxWidth()
                     .height(180.dp)
                     .clip(RoundedCornerShape(topStart = 8.dp, topEnd = 8.dp)),
-                contentScale = ContentScale.Crop
+                contentScale    = ContentScale.Crop
             )
 
             Spacer(Modifier.height(12.dp))
 
             Column(Modifier.padding(horizontal = 16.dp)) {
+                // Título un poco más grande
                 Text(
-                    text = recipe.nombre,
-                    style = MaterialTheme.typography.titleMedium.copy(fontWeight = FontWeight.SemiBold),
-                    color = Color.Black
+                    text      = recipe.nombre,
+                    style     = MaterialTheme.typography.titleLarge.copy(fontWeight = FontWeight.SemiBold),
+                    color     = Color.Black,
+                    maxLines  = 1,
+                    overflow  = TextOverflow.Ellipsis,
+                    fontFamily = Destacado
                 )
 
-                Spacer(Modifier.height(4.dp))
+                Spacer(Modifier.height(8.dp))
 
+                // Una única fila con perfil, rating y tiempo
                 Row(verticalAlignment = Alignment.CenterVertically) {
+                    // Icono y alias del chef
                     Icon(
-                        imageVector = Icons.Outlined.Person,
+                        imageVector     = Icons.Outlined.Person,
                         contentDescription = "Chef",
-                        tint = Color.Black,
-                        modifier = Modifier.size(16.dp)
+                        tint            = Color.Black,
+                        modifier        = Modifier.size(16.dp)
                     )
                     Spacer(Modifier.width(4.dp))
                     Text(
-                        text = recipe.usuarioCreadorAlias.orEmpty(),
+                        text  = recipe.usuarioCreadorAlias.orEmpty(),
+                        style = MaterialTheme.typography.bodySmall.copy(color = Color.Black),
+                        fontFamily = Destacado
+                    )
+
+                    Spacer(Modifier.width(16.dp))
+
+                    // Rating
+                    Icon(
+                        imageVector     = Icons.Outlined.Star,
+                        contentDescription = "Rating",
+                        tint            = Color(0xFFe29587),
+                        modifier        = Modifier.size(18.dp)
+                    )
+                    Spacer(Modifier.width(4.dp))
+                    Text(
+                        text  = "%,.1f".format(recipe.promedioRating ?: 0.0),
+                        style = MaterialTheme.typography.bodySmall.copy(color = Color(0xFFe29587))
+                    )
+
+                    Spacer(Modifier.width(16.dp))
+
+                    // Tiempo
+                    Icon(
+                        imageVector     = Icons.Filled.Timer,
+                        contentDescription = "Tiempo",
+                        tint            = Color.Black,
+                        modifier        = Modifier.size(18.dp)
+                    )
+                    Spacer(Modifier.width(4.dp))
+                    Text(
+                        text  = "${recipe.tiempo} min",
                         style = MaterialTheme.typography.bodySmall.copy(color = Color.Black)
                     )
                 }
 
                 Spacer(Modifier.height(8.dp))
 
-                Row(verticalAlignment = Alignment.CenterVertically) {
-                    Icon(
-                        imageVector = Icons.Filled.Star,
-                        contentDescription = "Rating",
-                        tint = Color(0xFFe29587),
-                        modifier = Modifier.size(18.dp)
-                    )
-                    Spacer(Modifier.width(4.dp))
-                    Text(
-                        text = "%,.1f".format(recipe.promedioRating ?: 0.0),
-                        style = MaterialTheme.typography.bodyMedium.copy(color = Color.Black)
-                    )
-
-                    Spacer(Modifier.width(16.dp))
-
-                    Icon(
-                        imageVector = Icons.Filled.Timer,
-                        contentDescription = "Tiempo",
-                        tint = Color.Black,
-                        modifier = Modifier.size(18.dp)
-                    )
-                    Spacer(Modifier.width(4.dp))
-                    Text(
-                        text = "${recipe.tiempo} min",
-                        style = MaterialTheme.typography.bodyMedium.copy(color = Color.Black)
-                    )
-                }
-
-                Spacer(Modifier.height(8.dp))
-
+                // Descripción
                 Text(
-                    text = recipe.descripcion.orEmpty(),
-                    style = MaterialTheme.typography.bodyMedium.copy(color = Color.Black),
-                    maxLines = 2,
-                    overflow = TextOverflow.Ellipsis
+                    text      = recipe.descripcion.orEmpty(),
+                    style     = MaterialTheme.typography.bodyMedium.copy(color = Color.Black),
+                    maxLines  = 2,
+                    overflow  = TextOverflow.Ellipsis,
+                    color = Color(0xFF333333)
+
                 )
             }
 

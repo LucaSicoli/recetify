@@ -1,6 +1,8 @@
 package com.example.recetify.ui.details
 
+import android.R.attr.divider
 import androidx.compose.animation.animateContentSize
+import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
@@ -50,20 +52,30 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.Color.Companion.LightGray
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.text.TextStyle
+import androidx.compose.ui.text.font.Font
+import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.TextFieldValue
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.navigation.NavController
 import coil.compose.AsyncImage
+import com.example.recetify.R
 import com.example.recetify.data.remote.RetrofitClient
 import com.example.recetify.data.remote.model.RecipeResponse
 import com.example.recetify.data.remote.model.RatingResponse
 import com.example.recetify.ui.details.RecipeDetailViewModel
 import com.example.recetify.util.obtenerEmoji
+import java.net.URI
 
+
+private val Destacado = FontFamily(
+    Font(R.font.sen_semibold, weight = FontWeight.ExtraBold)
+)
 /**
  * Selector de estrellas para puntaje (1..5).
  */
@@ -127,22 +139,26 @@ fun ReviewsAndCommentSection(
             .fillMaxWidth()
             .animateContentSize()
     ) {
+        Spacer(Modifier.height(24.dp))
+
         // ── Encabezado con “Reseñas” + promedio + total ───────────────────────
         Row(
             modifier = Modifier
-                .fillMaxWidth()
+                .align(Alignment.CenterHorizontally)
+                .fillMaxWidth(0.9f)
                 .padding(top = 16.dp, bottom = 8.dp),
             verticalAlignment = Alignment.CenterVertically
         ) {
             Text(
                 text = "Reseñas",
-                style = MaterialTheme.typography.titleMedium.copy(fontWeight = FontWeight.Bold),
-                color = Color.Black
+                style = MaterialTheme.typography.titleMedium.copy(fontWeight = FontWeight.Bold, fontSize = 18.sp),
+                color = Color.Black,
+                fontFamily = Destacado,
             )
             Spacer(Modifier.weight(1f))
             Text(
                 text = String.format("%.1f", averageRating),
-                style = MaterialTheme.typography.bodyMedium.copy(fontWeight = FontWeight.SemiBold),
+                style = MaterialTheme.typography.bodyMedium.copy(fontWeight = FontWeight.SemiBold, fontSize = 16.sp),
                 color = Color.Black
             )
             Spacer(Modifier.width(4.dp))
@@ -150,13 +166,14 @@ fun ReviewsAndCommentSection(
                 imageVector = Icons.Default.Star,
                 contentDescription = "Estrella Dorada",
                 tint = Color(0xFFFFD700),
-                modifier = Modifier.size(20.dp)
+                modifier = Modifier.size(22.dp)
             )
             Spacer(Modifier.width(4.dp))
             Text(
                 text = "(${ratings.size} reseñas)",
-                style = MaterialTheme.typography.bodySmall,
-                color = Color.Gray
+                style = MaterialTheme.typography.bodySmall, fontSize = 16.sp,
+                color = Color.Gray,
+                fontFamily = Destacado
             )
         }
 
@@ -193,20 +210,15 @@ fun ReviewsAndCommentSection(
         }
 
         Spacer(modifier = Modifier.height(12.dp))
-        Divider(
-            color = Color(0xFFE0E0E0),
-            thickness = 1.dp,
-            modifier = Modifier.fillMaxWidth()
-        )
 
         // ── Card: “Dejá tu comentario” ────────────────────────────────────────
         Card(
             modifier = Modifier
                 .fillMaxWidth()
-                .padding(vertical = 16.dp),
+                .padding(horizontal = 4.dp, vertical = 16.dp),
             shape = RoundedCornerShape(12.dp),
             colors = CardDefaults.cardColors(containerColor = Color.White),
-            elevation = CardDefaults.cardElevation(defaultElevation = 4.dp)
+            elevation = CardDefaults.cardElevation(defaultElevation = 3.dp)
         ) {
             Column(modifier = Modifier.padding(16.dp)) {
                 // Encabezado con “Dejá tu comentario” + estrellas
@@ -217,7 +229,8 @@ fun ReviewsAndCommentSection(
                     Text(
                         text = "Dejá tu comentario",
                         style = MaterialTheme.typography.titleMedium.copy(fontWeight = FontWeight.Bold),
-                        color = Color.Black
+                        color = Color.Black,
+                        fontFamily = Destacado
                     )
                     Spacer(Modifier.weight(1f))
                     for (i in 1..5) {
@@ -248,17 +261,16 @@ fun ReviewsAndCommentSection(
 
                 // Cuadro de texto con contador de caracteres
                 Box(modifier = Modifier.fillMaxWidth()) {
-                    OutlinedTextField(
+                    StyledBasicField(
                         value = textComment,
                         onValueChange = {
                             if (it.text.length <= maxChars) textComment = it
                         },
-                        placeholder = { Text("Contanos qué te pareció la receta…") },
+                        placeholder = { Text("Contanos qué te pareció la receta…", color = Color.Gray)},
+                        maxLines = 4,
                         modifier = Modifier
                             .fillMaxWidth()
-                            .height(100.dp),
-                        maxLines = 4,
-                        textStyle = TextStyle(color = Color.Black)
+                            .height(100.dp)
                     )
 
                     Text(
@@ -302,11 +314,12 @@ fun ReviewsAndCommentSection(
 @Composable
 fun RecipeDetailContent(
     receta: RecipeResponse,
+    ratings: List<RatingResponse>,
     padding: PaddingValues,
     showIngredients: MutableState<Boolean>,
     currentStep: MutableState<Int>,
     navController: NavController,
-    viewModel: RecipeDetailViewModel
+    onSendRating: (comentario: String, puntos: Int) -> Unit
 ) {
     val primaryTextColor = Color(0xFF042628)
     val selectedButtonColor = Color(0xFF042628)
@@ -317,10 +330,14 @@ fun RecipeDetailContent(
     val unitBackgroundColor = Color(0xFF995850)
     val unitTextColor = Color.White
 
-    val ratings = viewModel.ratings
     val baseUrl = RetrofitClient.BASE_URL.trimEnd('/')
-    val imgPath = receta.fotoPrincipal?.removePrefix("http://localhost:8080") ?: ""
-    val fullUrl = "$baseUrl$imgPath"
+    // normalizo igual que en Home
+    val originalMain = receta.fotoPrincipal.orEmpty()
+    val pathMain = runCatching {
+        val uri = URI(originalMain)
+        uri.rawPath + uri.rawQuery?.let { "?$it" }.orEmpty()
+    }.getOrNull() ?: originalMain
+    val fullUrl = if (pathMain.startsWith("/")) "$baseUrl$pathMain" else pathMain
 
     Column(
         modifier = Modifier
@@ -367,7 +384,9 @@ fun RecipeDetailContent(
                 Text(
                     text = receta.nombre,
                     style = MaterialTheme.typography.headlineSmall.copy(fontWeight = FontWeight.Bold),
-                    color = primaryTextColor
+                    color = primaryTextColor,
+                    fontFamily = Destacado
+
                 )
                 Spacer(Modifier.height(4.dp))
                 Text(
@@ -383,13 +402,14 @@ fun RecipeDetailContent(
                     Icon(
                         imageVector = Icons.Outlined.Person,
                         contentDescription = "Creador",
-                        tint = Color.Gray,
-                        modifier = Modifier.size(16.dp)
+                        tint = Color.Black,
+                        modifier = Modifier.size(16.dp),
                     )
                     Spacer(Modifier.width(4.dp))
                     Text(
                         text = receta.usuarioCreadorAlias.orEmpty(),
-                        style = MaterialTheme.typography.bodySmall.copy(color = Color.Gray)
+                        style = MaterialTheme.typography.bodySmall.copy(color = Color.Black),
+                        fontFamily = Destacado
                     )
                     Spacer(Modifier.width(16.dp))
                     Icon(
@@ -438,7 +458,8 @@ fun RecipeDetailContent(
                                 text = "Ingredientes",
                                 color = if (showIngredients.value) Color.White else unselectedTextColor,
                                 style = MaterialTheme.typography.bodyMedium.copy(fontWeight = FontWeight.Medium),
-                                fontSize = 14.sp
+                                fontSize = 14.sp,
+                                fontFamily = Destacado
                             )
                         }
 
@@ -464,11 +485,13 @@ fun RecipeDetailContent(
                                 text = "Instrucciones",
                                 color = if (!showIngredients.value) Color.White else unselectedTextColor,
                                 style = MaterialTheme.typography.bodyMedium.copy(fontWeight = FontWeight.Medium),
-                                fontSize = 14.sp
+                                fontSize = 14.sp,
+                                fontFamily = Destacado
                             )
                         }
                     }
                 }
+
 
                 Spacer(Modifier.height(16.dp))
 
@@ -476,18 +499,30 @@ fun RecipeDetailContent(
                 if (showIngredients.value) {
                     // Ingredientes
                     Row(
-                        modifier = Modifier.fillMaxWidth(),
-                        horizontalArrangement = Arrangement.SpaceBetween
+                        modifier = Modifier
+                            .align(Alignment.CenterHorizontally)    // centra todo el Row
+                            .fillMaxWidth(0.9f)                     // ocupa el 90% del ancho
+                            .padding(vertical = 8.dp),              // un poco de espacio arriba/abajo
+                        horizontalArrangement = Arrangement.SpaceBetween,
+                        verticalAlignment = Alignment.CenterVertically
                     ) {
                         Text(
                             text = "Ingredientes",
-                            style = MaterialTheme.typography.titleMedium,
-                            color = primaryTextColor
+                            style = MaterialTheme.typography.titleMedium.copy(
+                                fontWeight = FontWeight.Bold,
+                                fontSize   = 18.sp                // mismo tamaño que en reseñas
+                            ),
+                            color      = primaryTextColor,
+                            fontFamily = Destacado
                         )
                         Text(
-                            text = "${receta.ingredients.size} Items",
-                            style = MaterialTheme.typography.bodySmall,
-                            color = primaryTextColor
+                            text = "(${receta.ingredients.size} Items)",
+                            style = MaterialTheme.typography.bodyMedium.copy(
+                                fontWeight = FontWeight.SemiBold,
+                                fontSize   = 16.sp                // igual que en “(n reseñas)”
+                            ),
+                            color      = primaryTextColor,
+                            fontFamily = Destacado
                         )
                     }
                     Spacer(Modifier.height(8.dp))
@@ -498,7 +533,8 @@ fun RecipeDetailContent(
                                 .padding(vertical = 6.dp),
                             shape = RoundedCornerShape(16.dp),
                             colors = CardDefaults.cardColors(containerColor = ingredientCardColor),
-                            elevation = CardDefaults.cardElevation(defaultElevation = 4.dp)
+                            elevation = CardDefaults.cardElevation(defaultElevation = 2.dp)
+
                         ) {
                             Row(
                                 modifier = Modifier
@@ -523,7 +559,8 @@ fun RecipeDetailContent(
                                     Text(
                                         text = ing.nombre,
                                         fontWeight = FontWeight.SemiBold,
-                                        color = primaryTextColor
+                                        color = primaryTextColor,
+                                        fontFamily = Destacado
                                     )
                                 }
                                 androidx.compose.material3.Surface(
@@ -545,84 +582,72 @@ fun RecipeDetailContent(
                     Text(
                         text = "Instrucciones",
                         style = MaterialTheme.typography.titleMedium,
-                        color = primaryTextColor
+                        color = primaryTextColor,
+                        fontFamily = Destacado
                     )
                     Spacer(Modifier.height(12.dp))
+
                     val pasos = receta.steps.sortedBy { it.numeroPaso }
+                    val lastIndex = pasos.lastIndex
+
                     if (currentStep.value in pasos.indices) {
                         val paso = pasos[currentStep.value]
+
                         Card(
-                            modifier = Modifier.fillMaxWidth(),
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .padding(vertical = 8.dp),
                             shape = RoundedCornerShape(16.dp),
+                            border = BorderStroke(1.dp, Color(0xFFE0E0E0)),
                             colors = CardDefaults.cardColors(containerColor = Color.White),
                             elevation = CardDefaults.cardElevation(defaultElevation = 4.dp)
                         ) {
                             Column(Modifier.padding(16.dp)) {
+                                // Título del paso
                                 Text(
                                     text = "${paso.numeroPaso}. ${paso.titulo}",
                                     fontWeight = FontWeight.Bold,
-                                    color = primaryTextColor
+                                    color = primaryTextColor,
+                                    fontFamily = Destacado
                                 )
+
+                                // Imagen del paso, con borde redondeado de 8dp
                                 if (!paso.urlMedia.isNullOrBlank()) {
                                     Spacer(Modifier.height(8.dp))
-
-                                    // 1) Tomamos la URL que vino del backend:
-                                    val rawUrl = paso.urlMedia!!
-                                    val imageUrl = when {
-                                        rawUrl.startsWith("http://localhost:8080") ->
-                                            rawUrl.replaceFirst("http://localhost:8080", baseUrl)
-
-                                        rawUrl.startsWith(baseUrl) ->
-                                            rawUrl
-
-                                        else ->
-                                            rawUrl
-                                    }
+                                    val originalStep = paso.urlMedia!!
+                                    val pathStep = runCatching {
+                                        val uri = URI(originalStep)
+                                        uri.rawPath + uri.rawQuery?.let { "?$it" }.orEmpty()
+                                    }.getOrNull() ?: originalStep
+                                    val stepImageUrl = if (pathStep.startsWith("/")) "$baseUrl$pathStep" else pathStep
 
                                     AsyncImage(
-                                        model = imageUrl,
+                                        model           = stepImageUrl,
                                         contentDescription = null,
-                                        modifier = Modifier
+                                        modifier        = Modifier
                                             .fillMaxWidth()
-                                            .height(180.dp),
-                                        contentScale = ContentScale.Crop
+                                            .height(180.dp)
+                                            .clip(RoundedCornerShape(8.dp)),
+                                        contentScale    = ContentScale.Crop
                                     )
                                 }
+
+                                // Descripción del paso
                                 if (!paso.descripcion.isNullOrBlank()) {
                                     Spacer(Modifier.height(8.dp))
                                     Text(paso.descripcion, color = primaryTextColor)
                                 }
+
                                 Spacer(Modifier.height(12.dp))
-                                if (currentStep.value > 0) {
-                                    // A partir del segundo paso, mostramos "Anterior" y "Siguiente"
-                                    Row(modifier = Modifier.fillMaxWidth()) {
-                                        Button(
-                                            onClick = { currentStep.value-- },
-                                            enabled = currentStep.value > 0,
-                                            modifier = Modifier
-                                                .weight(1f)
-                                                .height(40.dp),
-                                            shape = RoundedCornerShape(8.dp),
-                                            colors = ButtonDefaults.buttonColors(
-                                                containerColor = Color(0xFF042628),
-                                                contentColor = Color.White
-                                            )
-                                        ) {
-                                            Text(
-                                                text = "Paso Anterior",
-                                                style = MaterialTheme.typography.bodyMedium.copy(
-                                                    fontWeight = FontWeight.Medium
-                                                )
-                                            )
-                                        }
 
-                                        Spacer(modifier = Modifier.width(8.dp))
-
+                                // Navegación entre pasos
+                                when {
+                                    // Primer paso: solo “Siguiente”
+                                    currentStep.value == 0 -> {
                                         Button(
                                             onClick = { currentStep.value++ },
-                                            enabled = currentStep.value < pasos.lastIndex,
                                             modifier = Modifier
-                                                .weight(1f)
+                                                .fillMaxWidth()
                                                 .height(40.dp),
                                             shape = RoundedCornerShape(8.dp),
                                             colors = ButtonDefaults.buttonColors(
@@ -632,32 +657,68 @@ fun RecipeDetailContent(
                                         ) {
                                             Text(
                                                 text = "Paso Siguiente",
-                                                style = MaterialTheme.typography.bodyMedium.copy(
-                                                    fontWeight = FontWeight.Medium
-                                                )
+                                                style = MaterialTheme.typography.bodyMedium.copy(fontWeight = FontWeight.Medium),
+                                                fontFamily = Destacado
                                             )
                                         }
                                     }
-                                } else {
-                                    // Solo “Siguiente” en el primer paso
-                                    Button(
-                                        onClick = { currentStep.value++ },
-                                        enabled = currentStep.value < pasos.lastIndex,
-                                        modifier = Modifier
-                                            .fillMaxWidth()
-                                            .height(40.dp),
-                                        shape = RoundedCornerShape(8.dp),
-                                        colors = ButtonDefaults.buttonColors(
-                                            containerColor = Color(0xFF042628),
-                                            contentColor = Color.White
-                                        )
-                                    ) {
-                                        Text(
-                                            text = "Paso Siguiente",
-                                            style = MaterialTheme.typography.bodyMedium.copy(
-                                                fontWeight = FontWeight.Medium
+                                    // Último paso: solo “Anterior”
+                                    currentStep.value == lastIndex -> {
+                                        Button(
+                                            onClick = { currentStep.value-- },
+                                            modifier = Modifier
+                                                .fillMaxWidth()
+                                                .height(40.dp),
+                                            shape = RoundedCornerShape(8.dp),
+                                            colors = ButtonDefaults.buttonColors(
+                                                containerColor = Color(0xFF042628),
+                                                contentColor = Color.White
                                             )
-                                        )
+                                        ) {
+                                            Text(
+                                                text = "Paso Anterior",
+                                                style = MaterialTheme.typography.bodyMedium.copy(fontWeight = FontWeight.Medium),
+                                                fontFamily = Destacado
+                                            )
+                                        }
+                                    }
+                                    // Pasos intermedios: ambos botones
+                                    else -> {
+                                        Row(modifier = Modifier.fillMaxWidth()) {
+                                            Button(
+                                                onClick = { currentStep.value-- },
+                                                modifier = Modifier
+                                                    .weight(1f)
+                                                    .height(40.dp),
+                                                shape = RoundedCornerShape(8.dp),
+                                                colors = ButtonDefaults.buttonColors(
+                                                    containerColor = Color(0xFF042628),
+                                                    contentColor = Color.White
+                                                )
+                                            ) {
+                                                Text(
+                                                    text = "Paso Anterior",
+                                                    style = MaterialTheme.typography.bodyMedium.copy(fontWeight = FontWeight.Medium)
+                                                )
+                                            }
+                                            Spacer(modifier = Modifier.width(8.dp))
+                                            Button(
+                                                onClick = { currentStep.value++ },
+                                                modifier = Modifier
+                                                    .weight(1f)
+                                                    .height(40.dp),
+                                                shape = RoundedCornerShape(8.dp),
+                                                colors = ButtonDefaults.buttonColors(
+                                                    containerColor = Color(0xFF042628),
+                                                    contentColor = Color.White
+                                                )
+                                            ) {
+                                                Text(
+                                                    text = "Paso Siguiente",
+                                                    style = MaterialTheme.typography.bodyMedium.copy(fontWeight = FontWeight.Medium),
+                                                )
+                                            }
+                                        }
                                     }
                                 }
                             }
@@ -668,15 +729,10 @@ fun RecipeDetailContent(
                 // ── Sección de reseñas + comentarios ─────────────────────────────
                 ReviewsAndCommentSection(
                     ratings = ratings,
-                    onSend = { comentarioTexto, puntosElegidos ->
-                        viewModel.postRating(
-                            recipeId = receta.id,
-                            comentario = comentarioTexto,
-                            puntos = puntosElegidos
-                        )
-                    }
+                    onSend  = onSendRating
                 )
             }
         }
     }
 }
+

@@ -1,16 +1,17 @@
-
 package com.example.recetify.ui.login
+
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
-import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Visibility
 import androidx.compose.material.icons.filled.VisibilityOff
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
+import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
@@ -23,12 +24,14 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.text.input.PasswordVisualTransformation
 import androidx.compose.ui.text.input.VisualTransformation
+import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.lifecycle.viewmodel.compose.viewModel
 import com.example.recetify.R
 import com.example.recetify.data.local.UserPreferences
 import com.example.recetify.data.remote.model.SessionManager
+import kotlinx.coroutines.launch
 
 private val Sen = FontFamily(
     Font(R.font.sen_regular, weight = FontWeight.Normal),
@@ -43,24 +46,18 @@ fun LoginScreen(
 ) {
     val context = LocalContext.current
     val prefs   = remember { UserPreferences(context) }
+    val scope   = rememberCoroutineScope()
 
-    // 1) Observamos el estado del ViewModel
     val state by viewModel.state.collectAsState()
 
-    // 2) Cargamos de DataStore los valores guardados
+    // Credenciales guardadas
     val savedRemember by prefs.rememberFlow.collectAsState(initial = false)
     val savedAlias    by prefs.aliasFlow.collectAsState(initial = "")
     val savedEmail    by prefs.emailFlow.collectAsState(initial = "")
     val savedPwd      by prefs.passwordFlow.collectAsState(initial = "")
 
-    // 3) Local: checkbox “Recordarme”
-    var rememberMe by remember { mutableStateOf(false) }
-
-    LaunchedEffect(savedRemember) {
-        rememberMe = savedRemember
-    }
-
-    // 4) Si ya había guardado datos, los precargamos en el ViewModel
+    var rememberMe by rememberSaveable { mutableStateOf(false) }
+    LaunchedEffect(savedRemember) { rememberMe = savedRemember }
     LaunchedEffect(savedRemember) {
         if (savedRemember) {
             viewModel.onAliasChanged(savedAlias ?: "")
@@ -68,10 +65,9 @@ fun LoginScreen(
             viewModel.onPasswordChanged(savedPwd ?: "")
         }
     }
-
-    // 5) Cuando el login sale bien, guardamos (o limpiamos) en DataStore
     LaunchedEffect(state.token) {
         state.token?.let { token ->
+            // 1) Guardar o limpiar credenciales
             if (rememberMe) {
                 prefs.saveLoginData(
                     alias    = state.alias,
@@ -82,14 +78,17 @@ fun LoginScreen(
             } else {
                 prefs.clearLoginData()
             }
-            // Luego navegamos
-            SessionManager.saveToken(token)
+
+            // 2) Setear el token de alumno
+            SessionManager.setAlumno(context, token)
+
+            // 3) Navegar a Home
             onLoginSuccess(token)
         }
     }
 
     Column(modifier = Modifier.fillMaxSize()) {
-        // PARTE SUPERIOR OSCURA
+        // ── PARTE SUPERIOR OSCURA ───────────────────────────────────────────────
         Box(
             modifier = Modifier
                 .fillMaxWidth()
@@ -103,21 +102,21 @@ fun LoginScreen(
                 modifier = Modifier.padding(horizontal = 24.dp)
             ) {
                 Image(
-                    painter = painterResource(id = R.drawable.logo_chef),
+                    painter = painterResource(R.drawable.logo_chef),
                     contentDescription = "Logo Recetify",
                     modifier = Modifier.size(120.dp)
                 )
-                Spacer(modifier = Modifier.height(24.dp))
+                Spacer(Modifier.height(24.dp))
                 Text(
-                    text = "INICIO DE SESION",
+                    "INICIO DE SESIÓN",
                     fontSize = 24.sp,
                     fontWeight = FontWeight.SemiBold,
                     color = Color.White,
                     fontFamily = Sen
                 )
-                Spacer(modifier = Modifier.height(8.dp))
+                Spacer(Modifier.height(8.dp))
                 Text(
-                    text = "Ingresá para descubrir las mejores recetas",
+                    "Ingresá para descubrir las mejores recetas",
                     fontSize = 15.sp,
                     color = Color.White,
                     fontFamily = Sen
@@ -125,7 +124,7 @@ fun LoginScreen(
             }
         }
 
-        // PARTE INFERIOR BLANCA
+        // ── PARTE INFERIOR BLANCA ───────────────────────────────────────────────
         Surface(
             modifier = Modifier.fillMaxSize(),
             color = Color.White,
@@ -156,8 +155,8 @@ fun LoginScreen(
                     placeholder = { Text("example@gmail.com") },
                     modifier = Modifier.fillMaxWidth(),
                     shape = RoundedCornerShape(12.dp),
-                    textStyle = TextStyle(color = Color.Black, fontSize = 16.sp),
-                    keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Email)
+                    keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Email),
+                    textStyle = TextStyle(color = Color.Black, fontSize = 16.sp)
                 )
 
                 // Contraseña
@@ -177,10 +176,10 @@ fun LoginScreen(
                         IconButton(onClick = viewModel::togglePasswordVisibility) {
                             Icon(
                                 imageVector = if (state.isPasswordVisible)
-                                    Icons.Default.Visibility
+                                    Icons.Filled.Visibility
                                 else
-                                    Icons.Default.VisibilityOff,
-                                contentDescription = "Toggle Password Visibility"
+                                    Icons.Filled.VisibilityOff,
+                                contentDescription = null
                             )
                         }
                     }
@@ -196,13 +195,13 @@ fun LoginScreen(
                         onCheckedChange = { rememberMe = it }
                     )
                     Text(
-                        text = "Recordarme",
+                        "Recordarme",
                         fontSize = 14.sp,
                         color = Color(0xFF555555)
                     )
                 }
 
-                // Botón LOG IN
+                // Botón INICIAR SESIÓN
                 Button(
                     onClick = viewModel::onLoginClicked,
                     modifier = Modifier
@@ -218,47 +217,56 @@ fun LoginScreen(
                             color = Color.White
                         )
                     } else {
-                        Text("INICIAR SESION", color = Color.White, fontFamily = Sen)
-                    }
-                }
-
-                // Mensaje de error
-                state.error?.let { err ->
-                    Text(
-                        text = err,
-                        color = MaterialTheme.colorScheme.error,
-                        fontSize = 12.sp,
-                        modifier = Modifier.align(Alignment.CenterHorizontally)
-                    )
-                }
-
-                // Enlaces debajo del botón
-                Spacer(modifier = Modifier.height(8.dp))
-                Column(
-                    modifier = Modifier.fillMaxWidth(),
-                    horizontalAlignment = Alignment.CenterHorizontally
-                ) {
-                    Text(
-                        text = "¿Olvidaste la contraseña?",
-                        fontSize = 14.sp,
-                        color = Color(0xFFBC6154),
-                        modifier = Modifier
-                            .clickable(onClick = onForgot)
-                            .padding(vertical = 4.dp)
-                    )
-                    Row {
                         Text(
-                            text = "¿No tenés una cuenta? ",
-                            fontSize = 14.sp,
-                            color = Color(0xFF555555),
+                            "INICIAR SESIÓN",
+                            color = Color.White,
                             fontFamily = Sen
                         )
+                    }
+                }
+                Button(
+                    onClick = {
+                        scope.launch {
+                            SessionManager.setVisitante(context)
+                            onLoginSuccess("")
+                        }
+                    },
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .height(48.dp)
+                        .offset(y = (-6).dp),     // <-- esto lo sube 4dp
+                    shape = RoundedCornerShape(12.dp),
+                    colors = ButtonDefaults.buttonColors(containerColor = Color.Gray))
+                {
+                    Text("INGRESAR COMO VISITANTE", color = Color.White, fontFamily = Sen)
+                }
+
+                // — Enlaces pequeños debajo —
+                Column(modifier = Modifier.fillMaxWidth()) {
+                    Text(
+                        "¿Olvidaste la contraseña?",
+                        fontSize = 14.sp,
+                        color = Color(0xFFBC6154),
+                        textAlign = TextAlign.Center,
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .clickable(onClick = onForgot)
+                            .padding(vertical = 2.dp)
+                    )
+                    Row(
+                        modifier = Modifier.fillMaxWidth(),
+                        horizontalArrangement = Arrangement.Center
+                    ) {
                         Text(
-                            text = "REGÍSTRATE",
+                            "¿No tenés una cuenta? ",
                             fontSize = 14.sp,
+                            color = Color(0xFF555555)
+                        )
+                        Text(
+                            "REGÍSTRATE",
+                            fontSize = 12.sp,
                             fontWeight = FontWeight.Bold,
                             color = Color(0xCCBC6154),
-                            fontFamily = Sen,
                             modifier = Modifier.clickable { /* navegar a registro */ }
                         )
                     }

@@ -3,6 +3,7 @@ package com.example.recetify.ui.login
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.example.recetify.data.remote.RetrofitClient
+import com.example.recetify.data.remote.RetrofitClient.api
 import com.example.recetify.data.remote.model.CodeDTO
 import com.example.recetify.data.remote.model.EmailDTO
 import com.example.recetify.data.remote.model.ResetDTO
@@ -34,21 +35,21 @@ class PasswordResetViewModel : ViewModel() {
         }
     }
 
+
     fun verifyCode(
         code: String,
-        onSuccess: () -> Unit
+        onSuccess: () -> Unit,
+        onError: () -> Unit
     ) {
         viewModelScope.launch {
             _state.update { it.copy(isLoading = true, error = null) }
             try {
-                RetrofitClient.api.verifyResetCode(
-                    CodeDTO(state.value.email, code)
-                )
-                // guardamos el código que acaba de validarse
+                api.verifyResetCode(CodeDTO(state.value.email, code))
                 _state.update { it.copy(isLoading = false, code = code) }
                 onSuccess()
             } catch (t: Throwable) {
                 _state.update { it.copy(isLoading = false, error = t.localizedMessage) }
+                onError()
             }
         }
     }
@@ -76,5 +77,9 @@ class PasswordResetViewModel : ViewModel() {
                 _state.update { it.copy(isLoading = false, error = t.localizedMessage) }
             }
         }
+    }
+
+    fun clearError() {
+        _state.update { it.copy(error = null) }
     }
 }
