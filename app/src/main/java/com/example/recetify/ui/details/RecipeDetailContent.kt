@@ -140,28 +140,25 @@ fun ReviewsAndCommentSection(
             .animateContentSize()
     ) {
         Spacer(Modifier.height(24.dp))
-        Divider(
-            color = LightGray,
-            thickness = 2.dp,
-            modifier = Modifier.fillMaxWidth()
-        )
+
         // ── Encabezado con “Reseñas” + promedio + total ───────────────────────
         Row(
             modifier = Modifier
-                .fillMaxWidth()
+                .align(Alignment.CenterHorizontally)
+                .fillMaxWidth(0.9f)
                 .padding(top = 16.dp, bottom = 8.dp),
             verticalAlignment = Alignment.CenterVertically
         ) {
             Text(
                 text = "Reseñas",
-                style = MaterialTheme.typography.titleMedium.copy(fontWeight = FontWeight.Bold),
+                style = MaterialTheme.typography.titleMedium.copy(fontWeight = FontWeight.Bold, fontSize = 18.sp),
                 color = Color.Black,
-                fontFamily = Destacado
+                fontFamily = Destacado,
             )
             Spacer(Modifier.weight(1f))
             Text(
                 text = String.format("%.1f", averageRating),
-                style = MaterialTheme.typography.bodyMedium.copy(fontWeight = FontWeight.SemiBold),
+                style = MaterialTheme.typography.bodyMedium.copy(fontWeight = FontWeight.SemiBold, fontSize = 16.sp),
                 color = Color.Black
             )
             Spacer(Modifier.width(4.dp))
@@ -169,12 +166,12 @@ fun ReviewsAndCommentSection(
                 imageVector = Icons.Default.Star,
                 contentDescription = "Estrella Dorada",
                 tint = Color(0xFFFFD700),
-                modifier = Modifier.size(20.dp)
+                modifier = Modifier.size(22.dp)
             )
             Spacer(Modifier.width(4.dp))
             Text(
                 text = "(${ratings.size} reseñas)",
-                style = MaterialTheme.typography.bodySmall,
+                style = MaterialTheme.typography.bodySmall, fontSize = 16.sp,
                 color = Color.Gray,
                 fontFamily = Destacado
             )
@@ -213,11 +210,6 @@ fun ReviewsAndCommentSection(
         }
 
         Spacer(modifier = Modifier.height(12.dp))
-        Divider(
-            color = LightGray,
-            thickness = 2.dp,
-            modifier = Modifier.fillMaxWidth()
-        )
 
         // ── Card: “Dejá tu comentario” ────────────────────────────────────────
         Card(
@@ -507,19 +499,29 @@ fun RecipeDetailContent(
                 if (showIngredients.value) {
                     // Ingredientes
                     Row(
-                        modifier = Modifier.fillMaxWidth(),
-                        horizontalArrangement = Arrangement.SpaceBetween
+                        modifier = Modifier
+                            .align(Alignment.CenterHorizontally)    // centra todo el Row
+                            .fillMaxWidth(0.9f)                     // ocupa el 90% del ancho
+                            .padding(vertical = 8.dp),              // un poco de espacio arriba/abajo
+                        horizontalArrangement = Arrangement.SpaceBetween,
+                        verticalAlignment = Alignment.CenterVertically
                     ) {
                         Text(
                             text = "Ingredientes",
-                            style = MaterialTheme.typography.titleMedium,
-                            color = primaryTextColor,
+                            style = MaterialTheme.typography.titleMedium.copy(
+                                fontWeight = FontWeight.Bold,
+                                fontSize   = 18.sp                // mismo tamaño que en reseñas
+                            ),
+                            color      = primaryTextColor,
                             fontFamily = Destacado
                         )
                         Text(
-                            text = "${receta.ingredients.size} Items",
-                            style = MaterialTheme.typography.bodySmall,
-                            color = primaryTextColor,
+                            text = "(${receta.ingredients.size} Items)",
+                            style = MaterialTheme.typography.bodyMedium.copy(
+                                fontWeight = FontWeight.SemiBold,
+                                fontSize   = 16.sp                // igual que en “(n reseñas)”
+                            ),
+                            color      = primaryTextColor,
                             fontFamily = Destacado
                         )
                     }
