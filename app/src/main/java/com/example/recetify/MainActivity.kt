@@ -35,6 +35,10 @@ import com.example.recetify.ui.login.PasswordResetViewModel
 import com.example.recetify.ui.login.ResetPasswordScreen
 import com.example.recetify.ui.login.VerifyCodeScreen
 import com.example.recetify.ui.navigation.BottomNavBar
+import com.example.recetify.ui.profile.MyRecipesScreen
+import com.example.recetify.ui.profile.ProfileInfoScreen
+import com.example.recetify.ui.profile.ProfileScreen
+import com.example.recetify.ui.profile.SavedRecipesScreen
 import com.example.recetify.ui.theme.RecetifyTheme
 
 class MainActivity : ComponentActivity() {
@@ -126,12 +130,26 @@ fun AppNavGraph() {
                         RecipeDetailScreen(recipeId = id, navController = navController)
                     }
             }
+
+            composable("profile") {
+                ProfileScreen(navController = navController)
+            }
+            composable("my_recipes") {
+                MyRecipesScreen(onBack = { navController.popBackStack() })
+            }
+            composable("saved_recipes") {
+                SavedRecipesScreen(onBack = { navController.popBackStack() })
+            }
+            composable("profile_info") {
+                ProfileInfoScreen(onBack = { navController.popBackStack() })
+            }
+
         }
 
         // 5) BottomNavBar solo en home/recipe y si hay conexión
         val backStack by navController.currentBackStackEntryAsState()
         val route = backStack?.destination?.route ?: ""
-        if (!showOfflineScreen && (route == "home" || route.startsWith("recipe/"))) {
+        if (!showOfflineScreen && (route == "home" || route.startsWith("recipe/") || route == "profile")) {
             Box(Modifier.align(Alignment.BottomCenter)) {
                 BottomNavBar(navController = navController)
             }
