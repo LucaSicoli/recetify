@@ -62,8 +62,5 @@ interface ApiService {
     @DELETE("user-saved-recipes/{id}")
     suspend fun removeFavorite(@Path("id") id: Long): Unit
 
-//    @DELETE("user-saved-recipes/{id}")
-//    suspend fun removeFavorite(@Path("id") id: Long): Response<Unit>
-
 }
 

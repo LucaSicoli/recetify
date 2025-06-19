@@ -181,7 +181,7 @@ class FavoritesViewModel(app: Application) : AndroidViewModel(app) {
 
 
             } catch (e: Exception) {
-                // Manejar error
+                // Manejar errores
             }
         }
     }
