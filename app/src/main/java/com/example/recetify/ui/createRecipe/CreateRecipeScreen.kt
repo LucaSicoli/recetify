@@ -97,6 +97,7 @@ fun CreateRecipeScreen(
     var tiempoText    by rememberSaveable { mutableStateOf(tiempo.toString()) }
     val ingredients = remember { mutableStateListOf<RecipeIngredientRequest>() }
     var selectedStepIndex by remember { mutableStateOf<Int?>(null) }
+    var editingStepIndex by remember { mutableStateOf<Int?>(null) }
     val categories = listOf("DESAYUNO","ALMUERZO","MERIENDA","CENA","SNACK","POSTRE")
     val tiposPlato = listOf("FIDEOS","PIZZA","HAMBURGUESA","ENSALADA","SOPA","PASTA","ARROZ","PESCADO","CARNE","POLLO","VEGETARIANO","VEGANO","SIN_TACC","RAPIDO","SALUDABLE")
     var selectedCategory by rememberSaveable { mutableStateOf<String?>(null) }
@@ -618,32 +619,25 @@ fun CreateRecipeScreen(
                         )
                     }
                     steps.forEachIndexed { idx, step ->
-                        // launcher para este paso…
-                        val stepMediaLauncher = rememberLauncherForActivityResult(StartActivityForResult()) { result ->
-                            result.data?.data?.let { uri ->
-                                steps[idx] = steps[idx].copy(mediaUrls = listOf(uri.toString()))
-                            }
-                        }
-
                         StepCard(
                             stepNumber    = step.numeroPaso,
                             title         = step.titulo.orEmpty(),
                             description   = step.descripcion,
                             mediaUrls     = step.mediaUrls ?: emptyList(),
-                            onTitleChange = { newTitle ->
-                                steps[idx] = step.copy(titulo = newTitle)
-                            },
-                            onDescChange  = { newDesc ->
-                                steps[idx] = step.copy(descripcion = newDesc)
-                            },
+                            onTitleChange = { new -> steps[idx] = step.copy(titulo = new) },
+                            onDescChange  = { new -> steps[idx] = step.copy(descripcion = new) },
                             onAddMedia    = {
-                                // definimos el índice antes de lanzar el picker
                                 selectedStepIndex = idx
                                 val intent = Intent(Intent.ACTION_OPEN_DOCUMENT).apply {
                                     type = "*/*"
                                     putExtra(Intent.EXTRA_MIME_TYPES, arrayOf("image/*", "video/*"))
                                 }
                                 stepMediaLauncher.launch(intent)
+                            },
+                            onDelete      = {
+                                steps.removeAt(idx)
+                                selectedStepIndex = null
+                                steps.forEachIndexed { i, s -> steps[i] = s.copy(numeroPaso = i + 1) }
                             }
                         )
                         Spacer(Modifier.height(8.dp))
@@ -652,227 +646,41 @@ fun CreateRecipeScreen(
 // ——————————
 // Editor inline para nuevo paso con contador y visor de fotos
 // ——————————
-                    editingStep?.let { draft ->
-                        var showImagePreview by remember { mutableStateOf(false) }
-
-                        // ← Aquí, justo antes de tu Card, declara el launcher de paso:
-                        val stepImageLauncher = rememberLauncherForActivityResult(GetContent()) { uri: Uri? ->
-                            uri?.let {
-                                // Actualiza sólo el draft de este paso, manteniendo el resto intacto
-                                editingStep = draft.copy(mediaUrls = listOf(it.toString()))
-                            }
-                        }
-
-                        Card(
-                            modifier  = Modifier
-                                .fillMaxWidth()
-                                .padding(vertical = 8.dp),
-                            shape     = RoundedCornerShape(12.dp),
-                            colors    = CardDefaults.cardColors(containerColor = Color.White),
-                            elevation = CardDefaults.cardElevation(4.dp)
-                        ) {
-                            Column(
-                                Modifier.padding(16.dp),
-                                verticalArrangement = Arrangement.spacedBy(12.dp)
-                            ) {
-                                // --- TÍTULO ---
-                                Box(
-                                    Modifier
-                                        .fillMaxWidth()
-                                        .background(Color(0xFFF8F8F8), RoundedCornerShape(6.dp))
-                                        .border(1.dp, Color.LightGray, RoundedCornerShape(6.dp))
-                                        .padding(12.dp)
-                                ) {
-                                    BasicTextField(
-                                        value         = draft.titulo.orEmpty(),
-                                        onValueChange = { editingStep = draft.copy(titulo = it) },
-                                        singleLine    = true,
-                                        textStyle     = LocalTextStyle.current.copy(
-                                            color      = Color.Black,
-                                            fontFamily = Destacado,
-                                            fontSize   = 16.sp
-                                        ),
-                                        decorationBox = { inner ->
-                                            if (draft.titulo.isNullOrEmpty()) {
-                                                Text("Nombre del Paso", color = Gray, fontFamily = Destacado)
-                                            }
-                                            inner()
-                                        },
-                                        modifier = Modifier.fillMaxWidth()
-                                    )
-                                }
-
-                                // --- DESCRIPCIÓN ---
-                                Box(
-                                    Modifier
-                                        .fillMaxWidth()
-                                        .height(100.dp)
-                                        .background(Color(0xFFF8F8F8), RoundedCornerShape(6.dp))
-                                        .border(1.dp, Color.LightGray, RoundedCornerShape(6.dp))
-                                        .padding(12.dp)
-                                ) {
-                                    BasicTextField(
-                                        value         = draft.descripcion,
-                                        onValueChange = { editingStep = draft.copy(descripcion = it) },
-                                        textStyle     = LocalTextStyle.current.copy(
-                                            color      = Color.Black,
-                                            fontFamily = Destacado,
-                                            fontSize   = 14.sp
-                                        ),
-                                        decorationBox = { inner ->
-                                            if (draft.descripcion.isEmpty()) {
-                                                Text("Descripción del Paso", color = Gray, fontFamily = Destacado)
-                                            }
-                                            inner()
-                                        },
-                                        modifier = Modifier.fillMaxSize()
-                                    )
-                                }
-
-                                if (!draft.mediaUrls.isNullOrEmpty()) {
-                                    // cogemos la primera URL (o la que quieras)
-                                    val firstUrl = draft.mediaUrls.first()
-                                    Column(
-                                        modifier = Modifier
-                                            .padding(top = 8.dp)
-                                            .fillMaxWidth(),
-                                        verticalArrangement = Arrangement.spacedBy(4.dp)
-                                    ) {
-                                        Text(
-                                            text = "Imagen cargada:",
-                                            color = Color.Gray,
-                                            fontSize = 14.sp,
-                                            fontWeight = FontWeight.Medium,
-                                            fontFamily = Destacado
-                                        )
-                                        AsyncImage(
-                                            model = firstUrl,
-                                            contentDescription = null,
-                                            modifier = Modifier
-                                                .fillMaxWidth()
-                                                .height(140.dp)
-                                                .clip(RoundedCornerShape(8.dp)),
-                                            contentScale = ContentScale.Crop
-                                        )
-                                    }
-                                }
-
-                                // --- AVISO DE FOTOS ---
-                                draft.mediaUrls?.let { url ->
-                                    Row(
-                                        verticalAlignment = Alignment.CenterVertically,
-                                        horizontalArrangement = Arrangement.spacedBy(4.dp)
-                                    ) {
-                                        Text(
-                                            text = "Fotos: 1",
-                                            fontFamily = Destacado,
-                                            color = Accent
-                                        )
-                                        IconButton(onClick = { showImagePreview = true }) {
-                                            Icon(
-                                                painter = painterResource(R.drawable.ic_chef_hat),
-                                                contentDescription = "Ver foto",
-                                                tint = Accent
-                                            )
-                                        }
-                                    }
-                                }
-
-                                // --- BOTONES ---
-                                Row(
-                                    Modifier.fillMaxWidth(),
-                                    horizontalArrangement = Arrangement.SpaceBetween,
-                                    verticalAlignment     = Alignment.CenterVertically
-                                ) {
-                                    OutlinedButton(
-                                        onClick = {
-                                            val intent = Intent(Intent.ACTION_OPEN_DOCUMENT).apply {
-                                                type = "*/*"
-                                                putExtra(Intent.EXTRA_MIME_TYPES, arrayOf("image/*", "video/*"))
-                                            }
-                                            stepMediaLauncher.launch(intent)
-                                        },
-                                        shape   = RoundedCornerShape(8.dp),
-                                        border  = BorderStroke(1.dp, Accent),
-                                        colors  = ButtonDefaults.outlinedButtonColors(contentColor = Accent)
-                                    ) {
-                                        Icon(Icons.Default.CameraAlt, contentDescription = null)
-                                        Spacer(Modifier.width(4.dp))
-                                        Text("Media", fontFamily = Destacado)
-                                    }
-
-                                    TextButton(onClick = { editingStep = null }) {
-                                        Text("Cancelar", color = Accent, fontFamily = Destacado)
-                                    }
-
-                                    Button(
-                                        onClick = {
-                                            steps += draft.copy(numeroPaso = steps.size + 1)
-                                            editingStep = null
-                                        },
-                                        shape  = RoundedCornerShape(8.dp),
-                                        colors = ButtonDefaults.buttonColors(containerColor = Accent)
-                                    ) {
-                                        Text("Agregar", color = Color.White, fontFamily = Destacado)
-                                    }
-                                }
-                            }
-                        }
-                        Spacer(Modifier.height(12.dp))
-
+                    // ——————————
+// Editor inline para nuevo paso con botones compactos
+// ——————————
 
 
                         // --- DIALOGO DE PREVIEW ---
-                        if (showImagePreview) {
-                            AlertDialog(
-                                onDismissRequest = { showImagePreview = false },
-                                confirmButton = {
-                                    TextButton(onClick = { showImagePreview = false }) {
-                                        Text("Cerrar", color = Accent)
-                                    }
-                                },
-                                text = {
-                                    AsyncImage(
-                                        model = draft.mediaUrls,
-                                        contentDescription = "Foto del paso",
-                                        modifier = Modifier
-                                            .fillMaxWidth()
-                                            .height(200.dp),
-                                        contentScale = ContentScale.Crop
-                                    )
-                                }
-                            )
-                        }
-                    }
-                    if (editingStep == null) {
-                        Card(
-                            modifier  = Modifier
-                                .fillMaxWidth()
-                                .clickable {
-                                    editingStep = RecipeStepRequest(
-                                        numeroPaso = steps.size + 1,
-                                        titulo     = "",
-                                        descripcion= "",
-                                        mediaUrls   = null
-                                    )
-                                }
-                                .background(Color.White, RoundedCornerShape(12.dp))
-                                .padding(8.dp),
-                            shape     = RoundedCornerShape(12.dp),
-                            colors    = CardDefaults.cardColors(containerColor = Color.White),
-                            elevation = CardDefaults.cardElevation(4.dp)
-                        ) {
-                            Row(
-                                Modifier
-                                    .fillMaxWidth()
-                                    .padding(16.dp),
-                                verticalAlignment     = Alignment.CenterVertically,
-                                horizontalArrangement = Arrangement.Center
-                            ) {
-                                Icon(Icons.Default.Add, contentDescription = null, tint = Color(0xFF006400))
-                                Spacer(Modifier.width(8.dp))
-                                Text("Agregar paso", color = Color(0xFF006400), fontWeight = FontWeight.Medium, fontFamily = Destacado)
+                    Card(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .clickable {
+                                // 1) crea el paso vacío
+                                steps += RecipeStepRequest(
+                                    numeroPaso  = steps.size + 1,
+                                    titulo      = "",
+                                    descripcion = "",
+                                    mediaUrls   = emptyList()
+                                )
+                                // 2) marca ese índice como “en edición”
+                                selectedStepIndex = steps.lastIndex
                             }
+                            .padding(8.dp),
+                        shape     = RoundedCornerShape(12.dp),
+                        colors    = CardDefaults.cardColors(containerColor = Color.White),
+                        elevation = CardDefaults.cardElevation(4.dp)
+                    ) {
+                        Row(
+                            Modifier
+                                .fillMaxWidth()
+                                .padding(16.dp),
+                            horizontalArrangement = Arrangement.Center,
+                            verticalAlignment     = Alignment.CenterVertically
+                        ) {
+                            Icon(Icons.Default.Add, contentDescription = null, tint = Color(0xFF006400))
+                            Spacer(Modifier.width(8.dp))
+                            Text("Agregar paso", color = Color(0xFF006400), fontFamily = Destacado)
                         }
                     }
 
@@ -1076,13 +884,14 @@ fun CreateRecipeScreen(
 // Componente tarjeta de paso
 @Composable
 private fun StepCard(
-    stepNumber:   Int,
-    title:        String,
-    description:  String,
-    mediaUrls:    List<String>?,       // ahora plural
-    onTitleChange:(String)->Unit,
-    onDescChange: (String)->Unit,
-    onAddMedia:   ()->Unit
+    stepNumber:    Int,
+    title:         String,
+    description:   String,
+    mediaUrls:     List<String>?,         // ahora plural
+    onTitleChange: (String) -> Unit,
+    onDescChange:  (String) -> Unit,
+    onAddMedia:    () -> Unit,
+    onDelete:      () -> Unit           // callback para eliminar el paso
 ) {
     var showMediaPreview by remember { mutableStateOf(false) }
     val firstMedia = mediaUrls?.firstOrNull()
@@ -1099,7 +908,7 @@ private fun StepCard(
             Modifier.padding(12.dp),
             verticalArrangement = Arrangement.spacedBy(12.dp)
         ) {
-            // —— Número y título del paso ────────────────────
+            // —— Número y título del paso —————————————————
             Row(verticalAlignment = Alignment.CenterVertically) {
                 Box(
                     Modifier
@@ -1135,7 +944,7 @@ private fun StepCard(
                 }
             }
 
-            // —— Descripción ───────────────────────────────────
+            // —— Descripción ——————————————————————————————
             Box(
                 Modifier
                     .fillMaxWidth()
@@ -1159,27 +968,41 @@ private fun StepCard(
                 )
             }
 
-            // —— Mini‐preview si hay media ──────────────────────
-            firstMedia?.let { url ->
-                val uri = Uri.parse(url)
-                val ctx = LocalContext.current
-                val mime = ctx.contentResolver.getType(uri) ?: ""
-                if (mime.startsWith("video/")) {
-                    VideoPlayer(uri) // usa tu componente para vídeo
-                } else {
-                    AsyncImage(
-                        model           = uri,
-                        contentDescription = null,
-                        modifier        = Modifier
-                            .fillMaxWidth()
-                            .height(120.dp)
-                            .clip(RoundedCornerShape(8.dp)),
-                        contentScale    = ContentScale.Crop
+            // —— Media placeholder fijo 120 dp ——————————————
+            Box(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .height(120.dp)
+                    .clip(RoundedCornerShape(8.dp))
+                    .background(Color(0xFFF0F0F0))
+                    .clickable { onAddMedia() },
+                contentAlignment = Alignment.Center
+            ) {
+                if (firstMedia == null) {
+                    Icon(
+                        Icons.Default.Add,
+                        contentDescription = "Agregar foto/video",
+                        modifier = Modifier.size(40.dp),
+                        tint = Accent
                     )
+                } else {
+                    val uri = Uri.parse(firstMedia)
+                    val ctx = LocalContext.current
+                    val mime = ctx.contentResolver.getType(uri).orEmpty()
+                    if (mime.startsWith("video/")) {
+                        VideoPlayer(uri)
+                    } else {
+                        AsyncImage(
+                            model        = uri,
+                            contentDescription = null,
+                            modifier     = Modifier.fillMaxSize(),
+                            contentScale = ContentScale.Crop
+                        )
+                    }
                 }
             }
 
-            // —— Botones “Media” / “Ver media” ─────────────────
+            // —— Botones “Agregar/Cambiar media” + “Eliminar” —————
             Row(
                 Modifier.fillMaxWidth(),
                 horizontalArrangement = Arrangement.SpaceBetween,
@@ -1192,26 +1015,21 @@ private fun StepCard(
                 ) {
                     Icon(Icons.Default.CameraAlt, contentDescription = null, tint = Accent)
                     Spacer(Modifier.width(4.dp))
-                    Text("MEDIA", color = Accent, fontFamily = Destacado)
+                    Text(
+                        text = if (firstMedia == null) "Agregar media" else "Cambiar media",
+                        color = Accent,
+                        fontFamily = Destacado
+                    )
                 }
 
-                firstMedia?.let {
-                    TextButton(onClick = { showMediaPreview = true }) {
-                        Icon(
-                            painterResource(R.drawable.ic_chef_hat),
-                            contentDescription = "Ver media",
-                            tint = Accent,
-                            modifier = Modifier.size(20.dp)
-                        )
-                        Spacer(Modifier.width(4.dp))
-                        Text("Ver media", color = Accent, fontFamily = Destacado)
-                    }
+                IconButton(onClick = onDelete) {
+                    Icon(Icons.Default.Remove, contentDescription = "Eliminar paso", tint = Color.Red)
                 }
             }
         }
     }
 
-    // —— Diálogo de preview ───────────────────────────────
+    // —— Diálogo de preview —————————————————————————
     if (showMediaPreview && firstMedia != null) {
         AlertDialog(
             onDismissRequest = { showMediaPreview = false },
@@ -1223,18 +1041,17 @@ private fun StepCard(
             text = {
                 val uri = Uri.parse(firstMedia)
                 val ctx = LocalContext.current
-                val mime = ctx.contentResolver.getType(uri) ?: ""
+                val mime = ctx.contentResolver.getType(uri).orEmpty()
                 if (mime.startsWith("video/")) {
-                    // mostramos vídeo a tamaño mayor
                     VideoPlayer(uri)
                 } else {
                     AsyncImage(
-                        model           = uri,
+                        model        = uri,
                         contentDescription = null,
-                        modifier        = Modifier
+                        modifier     = Modifier
                             .fillMaxWidth()
                             .height(260.dp),
-                        contentScale    = ContentScale.Crop
+                        contentScale = ContentScale.Crop
                     )
                 }
             }
@@ -1246,13 +1063,20 @@ private fun StepCard(
 fun VideoPlayer(uri: Uri) {
     AndroidView(
         factory = { ctx ->
+            // se llama sólo la primera vez
             PlayerView(ctx).apply {
-                val exo = SimpleExoPlayer.Builder(ctx).build().also {
-                    it.setMediaItem(MediaItem.fromUri(uri))
-                    it.prepare()
-                    it.playWhenReady = false
+                player = SimpleExoPlayer.Builder(ctx).build().also { exo ->
+                    exo.setMediaItem(MediaItem.fromUri(uri))
+                    exo.prepare()
+                    exo.playWhenReady = false
                 }
-                player = exo
+            }
+        },
+        update = { view ->
+            // cada vez que cambia `uri`, reconfigura el mismo player
+            view.player?.run {
+                setMediaItem(MediaItem.fromUri(uri))
+                prepare()
             }
         },
         modifier = Modifier
@@ -1280,83 +1104,126 @@ private fun IngredientRow(
         elevation = CardDefaults.cardElevation(2.dp)
     ) {
         Row(
-            Modifier.padding(12.dp),
+            Modifier
+                .padding(12.dp),
             verticalAlignment = Alignment.CenterVertically
         ) {
+            // Emoji
             Text(
                 text       = obtenerEmoji(ingredient.nombre.orEmpty()),
                 fontSize   = 24.sp,
+                color      = Color.Black,
                 fontFamily = Destacado
             )
             Spacer(Modifier.width(8.dp))
+
+            // Nombre
             Text(
-                text     = ingredient.nombre.orEmpty(),
-                modifier = Modifier.weight(1f),
-                fontSize = 16.sp,
+                text       = ingredient.nombre.orEmpty(),
+                modifier   = Modifier.weight(1f),
+                fontSize   = 16.sp,
+                fontWeight = FontWeight.Medium,
+                color      = Color.Black,
                 fontFamily = Destacado
             )
-            IconButton(onClick = {
-                val cur = cantidadText.toIntOrNull() ?: 1
-                if (cur > 1) {
-                    cantidadText = (cur - 1).toString()
-                    onUpdate(ingredient.copy(cantidad = (cur - 1).toDouble(), unidadMedida = unidad))
-                }
-            }) {
-                Icon(Icons.Default.Remove, contentDescription = "-", tint = Color.Red)
+            Spacer(Modifier.width(8.dp))
+
+            // Botón “−”
+            IconButton(
+                onClick = {
+                    val current = cantidadText.toIntOrNull() ?: 1
+                    if (current > 1) {
+                        cantidadText = (current - 1).toString()
+                        onUpdate(ingredient.copy(cantidad = (current - 1).toDouble(), unidadMedida = unidad))
+                    }
+                },
+                modifier = Modifier.size(28.dp)
+            ) {
+                Icon(Icons.Default.Remove, contentDescription = null, tint = Color.Red)
             }
             Spacer(Modifier.width(4.dp))
+
+            // Caja de cantidad editable
             Box(
-                Modifier
-                    .width(64.dp).height(36.dp)
+                modifier = Modifier
+                    .width(64.dp)
+                    .height(36.dp)
                     .background(Color.White, RoundedCornerShape(6.dp))
                     .border(1.dp, Color.LightGray, RoundedCornerShape(6.dp)),
                 contentAlignment = Alignment.Center
             ) {
                 BasicTextField(
-                    value = cantidadText,
-                    onValueChange = { str ->
-                        if (str.all(Char::isDigit)) {
-                            cantidadText = str
-                            val parsed = str.toIntOrNull() ?: 0
+                    value         = cantidadText,
+                    onValueChange = { new ->
+                        if (new.all(Char::isDigit)) {
+                            cantidadText = new
+                            val parsed = new.toIntOrNull() ?: 0
                             onUpdate(ingredient.copy(cantidad = parsed.toDouble(), unidadMedida = unidad))
                         }
                     },
                     singleLine = true,
                     keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
                     textStyle = LocalTextStyle.current.copy(
-                        fontSize = 18.sp, fontWeight = FontWeight.Bold, textAlign = TextAlign.Center
+                        color      = Color.Black,
+                        fontSize   = 18.sp,
+                        fontWeight = FontWeight.Bold,
+                        textAlign  = TextAlign.Center,
+                        fontFamily = Destacado
                     ),
-                    modifier = Modifier.fillMaxSize()
+                    cursorBrush = SolidColor(Color.Black),
+                    decorationBox = { inner ->
+                        Box(Modifier.fillMaxSize(), contentAlignment = Alignment.Center) { inner() }
+                    }
                 )
             }
-            Spacer(Modifier.width(4.dp))
+            Spacer(Modifier.width(8.dp))
+
+            // Caja de unidad
             Box(
-                Modifier
-                    .width(56.dp).height(36.dp)
+                modifier = Modifier
+                    .width(56.dp)
+                    .height(36.dp)
                     .background(Color.White, RoundedCornerShape(6.dp))
                     .border(1.dp, Color.LightGray, RoundedCornerShape(6.dp))
                     .clickable { expanded = true },
                 contentAlignment = Alignment.Center
             ) {
-                Text(unidad, fontFamily = Destacado)
-                DropdownMenu(expanded, onDismissRequest = { expanded = false }) {
+                Text(unidad, color = Color.Black, fontFamily = Destacado)
+
+                DropdownMenu(
+                    expanded         = expanded,
+                    onDismissRequest = { expanded = false },
+                    // ↓ aquí forzamos el fondo blanco y un radio
+                    modifier = Modifier
+                        .background(Color.White, shape = RoundedCornerShape(6.dp))
+                ) {
                     listOf("un","g","kg","ml","l","tsp","tbsp","cup").forEach { u ->
-                        DropdownMenuItem(text = { Text(u) }, onClick = {
-                            unidad = u; expanded = false
-                            val qty = cantidadText.toIntOrNull() ?: 0
-                            onUpdate(ingredient.copy(cantidad = qty.toDouble(), unidadMedida = unidad))
-                        })
+                        DropdownMenuItem(
+                            text = { Text(u, color = Color.Black, fontFamily = Destacado) },
+                            onClick = {
+                                unidad   = u
+                                expanded = false
+                                val qty = cantidadText.toIntOrNull() ?: 0
+                                onUpdate(ingredient.copy(cantidad = qty.toDouble(), unidadMedida = unidad))
+                            }
+                        )
                     }
                 }
             }
             Spacer(Modifier.width(4.dp))
-            IconButton(onClick = {
-                val cur = cantidadText.toIntOrNull() ?: 0
-                cantidadText = (cur + 1).toString()
-                onUpdate(ingredient.copy(cantidad = (cur + 1).toDouble(), unidadMedida = unidad))
-            }) {
-                Icon(Icons.Default.Add, contentDescription = "+", tint = Color(0xFF00C853))
+
+            // Botón “+”
+            IconButton(
+                onClick = {
+                    val current = cantidadText.toIntOrNull() ?: 0
+                    cantidadText = (current + 1).toString()
+                    onUpdate(ingredient.copy(cantidad = (current + 1).toDouble(), unidadMedida = unidad))
+                },
+                modifier = Modifier.size(28.dp)
+            ) {
+                Icon(Icons.Default.Add, contentDescription = null, tint = Color(0xFF00C853))
             }
         }
+
     }
 }

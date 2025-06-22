@@ -64,10 +64,15 @@ fun LoopingVideoPlayer(
     AndroidView(
         factory = { innerCtx ->
             PlayerView(innerCtx).apply {
-                player        = exoPlayer
                 useController = false
                 resizeMode    = AspectRatioFrameLayout.RESIZE_MODE_FILL
+                // inicialmente lo conectamos
+                player = exoPlayer
             }
+        },
+        update = { view ->
+            // en cada recomposición (uri cambió), lo volvemos a conectar
+            view.player = exoPlayer
         },
         modifier = modifier
     )
