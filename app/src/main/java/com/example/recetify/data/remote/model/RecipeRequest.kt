@@ -5,7 +5,7 @@ data class RecipeRequest(
     val descripcion: String,
     val tiempo: Int,
     val porciones: Int,
-    val fotoPrincipal: String?,        // URL resultante de subir la foto principal
+    val mediaUrls: List<String>?,        // URL resultante de subir la foto principal
     val tipoPlato: String,             // debe coincidir con tu enum TipoPlato (p.ej. "POSTRE")
     val categoria: String,             // igual, nombre de tu enum Categoria
     val ingredients: List<RecipeIngredientRequest> = emptyList(),

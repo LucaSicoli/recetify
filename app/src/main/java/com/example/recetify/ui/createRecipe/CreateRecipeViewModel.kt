@@ -92,37 +92,35 @@ class CreateRecipeViewModel(
         _submitting.value = true
         _error.value = null
         try {
-            // ➊ Para cada paso, subimos todas las URIs locales en mediaUrls
+            // ➊ Subir media de los pasos (igual que antes)…
             val uploadedSteps = steps.map { step ->
-                // extraemos sólo las URIs que haya que subir
-                val locals = step.mediaUrls.orEmpty()
-                    .filter { it.startsWith("content://") }
+                val locals = step.mediaUrls.orEmpty().filter { it.startsWith("content://") }
                 if (locals.isNotEmpty()) {
-                    // subimos cada URI y recogemos sus URLs remotas
                     val remoteUrls = locals.map { localUri ->
                         val file = File(FileUtil.from(getApplication(), Uri.parse(localUri)).path)
                         repo.uploadPhoto(file)
                     }
-                    // conservamos cualquier URL ya remota que ya estuviera en mediaUrls
-                    val preserved = step.mediaUrls.orEmpty()
-                        .filter { !it.startsWith("content://") }
+                    val preserved = step.mediaUrls.orEmpty().filter { !it.startsWith("content://") }
                     step.copy(mediaUrls = preserved + remoteUrls)
-                } else {
-                    step
-                }
+                } else step
             }
 
-            // ➋ Creamos el RecipeRequest con las URLs remotas en cada paso
+            // ➋ Aquí defines headerUrls a partir de _photoUrl
+            val headerUrls: List<String> = _photoUrl.value
+                ?.let { listOf(it) }
+                ?: emptyList()
+
+            // ➌ Construyes el RecipeRequest con mediaUrls = headerUrls
             val req = RecipeRequest(
-                nombre        = nombre,
-                descripcion   = descripcion,
-                tiempo        = tiempo,
-                porciones     = porciones,
-                fotoPrincipal = _photoUrl.value,
-                tipoPlato     = tipoPlato,
-                categoria     = categoria,
-                ingredients   = ingredients,
-                steps         = uploadedSteps
+                nombre      = nombre,
+                descripcion = descripcion,
+                tiempo      = tiempo,
+                porciones   = porciones,
+                mediaUrls   = headerUrls,       // <-- ahora existe
+                tipoPlato   = tipoPlato,
+                categoria   = categoria,
+                ingredients = ingredients,
+                steps       = uploadedSteps
             )
 
             repo.createRecipe(req)
