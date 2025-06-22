@@ -93,6 +93,7 @@ dependencies {
     implementation("io.coil-kt:coil-compose:2.2.2")
     implementation("androidx.datastore:datastore-preferences:1.0.0")
     implementation("com.squareup.retrofit2:converter-scalars:2.9.0")
+    implementation("com.google.android.exoplayer:exoplayer:2.19.0")
 
     // ——————————————————————
     // Room

@@ -1,6 +1,6 @@
 package com.example.recetify.ui.details
 
-import android.R.attr.divider
+
 import androidx.compose.animation.animateContentSize
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.background
@@ -28,16 +28,13 @@ import androidx.compose.material.icons.filled.ArrowBack
 import androidx.compose.material.icons.filled.ArrowDropDown
 import androidx.compose.material.icons.filled.ArrowDropUp
 import androidx.compose.material.icons.filled.Star
-import androidx.compose.material.icons.filled.AccessTime
 import androidx.compose.material.icons.outlined.Person
 import androidx.compose.material.icons.outlined.StarBorder
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
-import androidx.compose.material3.Divider
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.material3.Button
@@ -52,25 +49,24 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.graphics.Color.Companion.LightGray
 import androidx.compose.ui.layout.ContentScale
-import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.font.Font
 import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.TextFieldValue
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.navigation.NavController
 import coil.compose.AsyncImage
 import com.example.recetify.R
 import com.example.recetify.data.remote.RetrofitClient
 import com.example.recetify.data.remote.model.RecipeResponse
 import com.example.recetify.data.remote.model.RatingResponse
-import com.example.recetify.ui.details.RecipeDetailViewModel
 import com.example.recetify.util.obtenerEmoji
 import java.net.URI
+import android.net.Uri
+import com.example.recetify.ui.common.LoopingVideoPlayer
+import coil.compose.AsyncImage
 
 
 private val Destacado = FontFamily(
@@ -350,12 +346,23 @@ fun RecipeDetailContent(
                 .fillMaxWidth()
                 .height(260.dp)
         ) {
-            AsyncImage(
-                model = fullUrl,
-                contentDescription = receta.nombre,
-                modifier = Modifier.fillMaxSize(),
-                contentScale = ContentScale.Crop
-            )
+            if (fullUrl.endsWith(".mp4", ignoreCase = true) ||
+                fullUrl.endsWith(".webm", ignoreCase = true)
+            ) {
+                // Vídeo en loop, silencio y sin controles
+                LoopingVideoPlayer(
+                    uri = Uri.parse(fullUrl),
+                    modifier = Modifier.fillMaxSize()
+                )
+            } else {
+                // Imagen estática
+                AsyncImage(
+                    model = fullUrl,
+                    contentDescription = receta.nombre,
+                    modifier = Modifier.fillMaxSize(),
+                    contentScale = ContentScale.Crop
+                )
+            }
             IconButton(
                 onClick = { navController.popBackStack() },
                 modifier = Modifier
@@ -614,22 +621,37 @@ fun RecipeDetailContent(
                                 // Imagen del paso, con borde redondeado de 8dp
                                 if (!paso.urlMedia.isNullOrBlank()) {
                                     Spacer(Modifier.height(8.dp))
+                                    // Normalizamos la URL igual que antes
                                     val originalStep = paso.urlMedia!!
                                     val pathStep = runCatching {
                                         val uri = URI(originalStep)
                                         uri.rawPath + uri.rawQuery?.let { "?$it" }.orEmpty()
                                     }.getOrNull() ?: originalStep
-                                    val stepImageUrl = if (pathStep.startsWith("/")) "$baseUrl$pathStep" else pathStep
+                                    val stepUrl = if (pathStep.startsWith("/")) "$baseUrl$pathStep" else pathStep
 
-                                    AsyncImage(
-                                        model           = stepImageUrl,
-                                        contentDescription = null,
-                                        modifier        = Modifier
-                                            .fillMaxWidth()
-                                            .height(180.dp)
-                                            .clip(RoundedCornerShape(8.dp)),
-                                        contentScale    = ContentScale.Crop
-                                    )
+                                    if (stepUrl.endsWith(".mp4", ignoreCase = true) ||
+                                        stepUrl.endsWith(".webm", ignoreCase = true)
+                                    ) {
+                                        // Vídeo: loop, sin sonido y sin controles
+                                        LoopingVideoPlayer(
+                                            uri = Uri.parse(stepUrl),
+                                            modifier = Modifier
+                                                .fillMaxWidth()
+                                                .height(180.dp)
+                                                .clip(RoundedCornerShape(8.dp))
+                                        )
+                                    } else {
+                                        // Imagen estática
+                                        AsyncImage(
+                                            model = stepUrl,
+                                            contentDescription = null,
+                                            modifier = Modifier
+                                                .fillMaxWidth()
+                                                .height(180.dp)
+                                                .clip(RoundedCornerShape(8.dp)),
+                                            contentScale = ContentScale.Crop
+                                        )
+                                    }
                                 }
 
                                 // Descripción del paso

@@ -5,7 +5,6 @@ import android.net.Uri
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts.GetContent
 import androidx.compose.foundation.BorderStroke
-import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.material.icons.filled.RamenDining
 import androidx.compose.foundation.border
@@ -13,7 +12,6 @@ import androidx.compose.foundation.clickable
 import androidx.compose.foundation.text.BasicTextField
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
-import androidx.compose.foundation.lazy.LazyRow
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.CircleShape
@@ -22,7 +20,6 @@ import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Add
 import androidx.compose.material.icons.filled.CameraAlt
-import androidx.compose.material.icons.filled.Close
 import androidx.compose.material.icons.filled.Remove
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
@@ -44,24 +41,25 @@ import com.example.recetify.data.remote.model.RecipeIngredientRequest
 import com.example.recetify.data.remote.model.RecipeStepRequest
 import com.example.recetify.util.FileUtil
 import com.example.recetify.util.obtenerEmoji
-import android.webkit.MimeTypeMap
 import androidx.compose.foundation.text.KeyboardOptions
-import androidx.compose.material.icons.automirrored.filled.ArrowBack
-import androidx.compose.material.icons.filled.AccessTime
 import androidx.compose.material.icons.filled.ArrowBack
-import androidx.compose.material.icons.filled.Restaurant
-import androidx.compose.material.icons.filled.RestaurantMenu
 import androidx.compose.ui.graphics.Color.Companion.Black
 import androidx.compose.ui.graphics.Color.Companion.DarkGray
 import androidx.compose.ui.graphics.Color.Companion.Gray
 import androidx.compose.ui.graphics.Color.Companion.Green
 import androidx.compose.ui.graphics.Color.Companion.Red
-import androidx.compose.ui.graphics.Color.Companion.White
 import androidx.compose.ui.graphics.SolidColor
 import androidx.compose.ui.text.font.Font
 import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.text.input.KeyboardType
 import com.example.recetify.util.listaIngredientesConEmoji
+import android.content.Intent
+import androidx.activity.result.contract.ActivityResultContracts.StartActivityForResult
+import androidx.compose.ui.viewinterop.AndroidView
+import com.google.android.exoplayer2.MediaItem
+import com.google.android.exoplayer2.SimpleExoPlayer
+import com.google.android.exoplayer2.ui.PlayerView
+
 
 private val Accent = Color(0xFFBC6154)
 private val GrayBg  = Color(0xFFF8F8F8)
@@ -80,7 +78,9 @@ fun CreateRecipeScreen(
     onPublished:() -> Unit,
 ) {
     // --- Local & ViewModel state ---
-    var localImageUri       by remember { mutableStateOf<Uri?>(null) }
+
+    var localMediaUri by remember { mutableStateOf<Uri?>(null) }
+    var isVideo       by remember { mutableStateOf(false) }
     var showIngredientDialog by remember { mutableStateOf(false) }
     var showStepDialog       by remember { mutableStateOf(false) }
     var editingStep by remember { mutableStateOf<RecipeStepRequest?>(null) }
@@ -88,39 +88,56 @@ fun CreateRecipeScreen(
     var descripcion by rememberSaveable { mutableStateOf("") }
     var porciones   by rememberSaveable { mutableStateOf(1) }
     var tiempo      by rememberSaveable { mutableStateOf(15) }
+
+
+
     // justo junto a tus `var porciones by rememberSaveable…` y `var tiempo by rememberSaveable…`
+
     var porcionesText by rememberSaveable { mutableStateOf(porciones.toString()) }
     var tiempoText    by rememberSaveable { mutableStateOf(tiempo.toString()) }
-
     val ingredients = remember { mutableStateListOf<RecipeIngredientRequest>() }
-
+    var selectedStepIndex by remember { mutableStateOf<Int?>(null) }
     val categories = listOf("DESAYUNO","ALMUERZO","MERIENDA","CENA","SNACK","POSTRE")
     val tiposPlato = listOf("FIDEOS","PIZZA","HAMBURGUESA","ENSALADA","SOPA","PASTA","ARROZ","PESCADO","CARNE","POLLO","VEGETARIANO","VEGANO","SIN_TACC","RAPIDO","SALUDABLE")
-
     var selectedCategory by rememberSaveable { mutableStateOf<String?>(null) }
     var expandedCategory  by remember { mutableStateOf(false) }
-
     var selectedTipo by rememberSaveable { mutableStateOf<String?>(null) }
     var expandedTipo by remember { mutableStateOf(false) }
     val steps       = remember { mutableStateListOf<RecipeStepRequest>() }
-    val etiquetas   = listOf(
-        "Desayuno","Almuerzo","Snack","Merienda","Cena",
-        "Hamburguesas","Pizzas","Arroz","Fideos","Carnes y Pescados"
-    )
-    var selectedTags by remember { mutableStateOf(setOf<String>()) }
-
     val photoUrl   by viewModel.photoUrl.collectAsState(initial = null)
     val uploading  by viewModel.uploading.collectAsState(initial = false)
-    val submitting by viewModel.submitting.collectAsState(initial = false)
     val error      by viewModel.error.collectAsState(initial = null)
 
     // Image picker
     val context  = LocalContext.current
-    val launcher = rememberLauncherForActivityResult(GetContent()) { uri: Uri? ->
-        uri?.let {
-            localImageUri = it
-            viewModel.uploadPhoto(FileUtil.from(context, it))
+    val anyLauncher = rememberLauncherForActivityResult(StartActivityForResult()) { result ->
+        val uri = result.data?.data ?: return@rememberLauncherForActivityResult
+        // 1️⃣ convierto el URI en File y subo siempre
+        val file = FileUtil.from(context, uri)
+        viewModel.uploadPhoto(file)  // puedes renombrar a uploadMedia si quieres
+
+        // 2️⃣ guardo URI y tipo para previsualizar en pantalla
+        context.contentResolver.getType(uri)?.let { mime ->
+            isVideo = mime.startsWith("video/")
+            localMediaUri = uri
         }
+    }
+
+    val stepMediaLauncher = rememberLauncherForActivityResult(StartActivityForResult()) { result ->
+        val uri = result.data?.data ?: return@rememberLauncherForActivityResult
+        // aquí necesitarás saber qué paso estás editando;
+        // puedes guardar el índice en un estado temporal:
+        selectedStepIndex?.let { idx ->
+            steps[idx] = steps[idx].copy(urlMedia = uri.toString())
+        }
+    }
+
+    fun openPicker() {
+        val intent = Intent(Intent.ACTION_OPEN_DOCUMENT).apply {
+            type = "*/*"
+            putExtra(Intent.EXTRA_MIME_TYPES, arrayOf("image/*", "video/*"))
+        }
+        anyLauncher.launch(intent)
     }
 
     Scaffold{ innerPadding ->
@@ -137,30 +154,27 @@ fun CreateRecipeScreen(
                 modifier = Modifier
                     .fillMaxWidth()
                     .height(260.dp)
-                    .clickable { launcher.launch("image/*") }
+                    .clickable { openPicker() }
             ) {
                 // —— Imagen o placeholder centrados —— (primero)
                 when {
-                    localImageUri != null -> AsyncImage(
-                        model = localImageUri,
+                    localMediaUri != null && isVideo -> VideoPlayer(localMediaUri!!)
+                    localMediaUri != null             -> AsyncImage(
+                        model = localMediaUri,
                         contentDescription = null,
-                        modifier = Modifier
-                            .fillMaxSize()
-                            .align(Alignment.Center),
+                        modifier = Modifier.fillMaxSize().align(Alignment.Center),
                         contentScale = ContentScale.Crop
                     )
-                    photoUrl != null -> AsyncImage(
+                    photoUrl != null                   -> AsyncImage(
                         model = photoUrl!!,
                         contentDescription = null,
-                        modifier = Modifier
-                            .fillMaxSize()
-                            .align(Alignment.Center),
+                        modifier = Modifier.fillMaxSize().align(Alignment.Center),
                         contentScale = ContentScale.Crop
                     )
                     else -> Row(
                         modifier = Modifier
                             .align(Alignment.Center)
-                            .clickable { launcher.launch("image/*") }
+                            .clickable { openPicker() }
                             .padding(8.dp),
                         verticalAlignment = Alignment.CenterVertically,
                         horizontalArrangement = Arrangement.spacedBy(4.dp)
@@ -604,22 +618,30 @@ fun CreateRecipeScreen(
                         )
                     }
                     steps.forEachIndexed { idx, step ->
-                        // launcher específico para este paso
-                        val stepImageLauncher = rememberLauncherForActivityResult(GetContent()) { uri: Uri? ->
-                            uri?.let {
-                                // sólo actualizamos la foto de este paso
-                                steps[idx] = step.copy(urlMedia = it.toString())
-                            }
+                        // ① Creamos un launcher MIXTO (imagen o vídeo) para este paso:
+                        val stepMediaLauncher = rememberLauncherForActivityResult(StartActivityForResult()) { result ->
+                            val uri = result.data?.data ?: return@rememberLauncherForActivityResult
+                            steps[idx] = step.copy(urlMedia = uri.toString())
                         }
 
                         StepCard(
-                            stepNumber    = step.numeroPaso,
-                            title         = step.titulo.orEmpty(),
-                            description   = step.descripcion,
-                            urlMedia      = step.urlMedia,         // <<< aquí
-                            onTitleChange = { steps[idx] = step.copy(titulo = it) },
-                            onDescChange  = { steps[idx] = step.copy(descripcion = it) },
-                            onAddPhoto    = { stepImageLauncher.launch("image/*") }
+
+
+                            stepNumber   = step.numeroPaso,
+                            title        = step.titulo.orEmpty(),
+                            description  = step.descripcion,
+                            urlMedia     = step.urlMedia,
+                            onTitleChange= { steps[idx] = step.copy(titulo = it) },
+                            onDescChange = { steps[idx] = step.copy(descripcion = it) },
+                            onAddMedia = {
+                                // antes de lanzar, marca qué paso es:
+                                selectedStepIndex = idx
+                                val intent = Intent(Intent.ACTION_OPEN_DOCUMENT).apply {
+                                    type = "*/*"
+                                    putExtra(Intent.EXTRA_MIME_TYPES, arrayOf("image/*", "video/*"))
+                                }
+                                stepMediaLauncher.launch(intent)
+                            }
                         )
                         Spacer(Modifier.height(8.dp))
                     }
@@ -758,14 +780,20 @@ fun CreateRecipeScreen(
                                     verticalAlignment     = Alignment.CenterVertically
                                 ) {
                                     OutlinedButton(
-                                        onClick = { stepImageLauncher.launch("image/*") },
+                                        onClick = {
+                                            val intent = Intent(Intent.ACTION_OPEN_DOCUMENT).apply {
+                                                type = "*/*"
+                                                putExtra(Intent.EXTRA_MIME_TYPES, arrayOf("image/*", "video/*"))
+                                            }
+                                            stepMediaLauncher.launch(intent)
+                                        },
                                         shape   = RoundedCornerShape(8.dp),
                                         border  = BorderStroke(1.dp, Accent),
                                         colors  = ButtonDefaults.outlinedButtonColors(contentColor = Accent)
                                     ) {
                                         Icon(Icons.Default.CameraAlt, contentDescription = null)
                                         Spacer(Modifier.width(4.dp))
-                                        Text("Foto", fontFamily = Destacado)
+                                        Text("Media", fontFamily = Destacado)
                                     }
 
                                     TextButton(onClick = { editingStep = null }) {
@@ -1049,7 +1077,7 @@ private fun StepCard(
     urlMedia:     String?,           // ahora recibe la URL
     onTitleChange:(String)->Unit,
     onDescChange: (String)->Unit,
-    onAddPhoto:   ()->Unit
+    onAddMedia:   ()->Unit
 ) {
     var showImagePreview by remember { mutableStateOf(false) }
 
@@ -1126,18 +1154,22 @@ private fun StepCard(
             }
 
             // —— Mini‐preview si hay foto
-            urlMedia?.let {
-                Column(verticalArrangement = Arrangement.spacedBy(4.dp)) {
-                    Text("Imagen paso:", color = Color.Gray, fontSize = 12.sp)
+            urlMedia?.let { uriString ->
+                val uri = Uri.parse(uriString)
+                val mime = LocalContext.current.contentResolver.getType(uri) ?: ""
+                if (mime.startsWith("video/")) {
+                    // usa ExoPlayer para vídeos
+                    VideoPlayer(uri)
+                } else {
+                    // tu AsyncImage para imágenes
                     AsyncImage(
-                        model = it,
-                        contentDescription = null,
+                        model = uri,
                         modifier = Modifier
                             .fillMaxWidth()
                             .height(120.dp)
-                            .clip(RoundedCornerShape(8.dp))
-                            .clickable { showImagePreview = true },
-                        contentScale = ContentScale.Crop
+                            .clip(RoundedCornerShape(8.dp)),
+                        contentScale = ContentScale.Crop,
+                        contentDescription = null
                     )
                 }
             }
@@ -1149,7 +1181,7 @@ private fun StepCard(
                 verticalAlignment     = Alignment.CenterVertically
             ) {
                 OutlinedButton(
-                    onClick = onAddPhoto,
+                    onClick = onAddMedia,
                     shape   = RoundedCornerShape(8.dp),
                     border  = BorderStroke(1.dp, Accent)
                 ) {
@@ -1339,4 +1371,23 @@ private fun IngredientRow(
         }
 
     }
+}
+
+@Composable
+fun VideoPlayer(uri: Uri) {
+    AndroidView(
+        factory = { ctx ->
+            PlayerView(ctx).apply {
+                val exo = SimpleExoPlayer.Builder(ctx).build().also {
+                    it.setMediaItem(MediaItem.fromUri(uri))
+                    it.prepare()
+                    it.playWhenReady = false
+                }
+                player = exo
+            }
+        },
+        modifier = Modifier
+            .fillMaxWidth()
+            .height(200.dp)
+    )
 }

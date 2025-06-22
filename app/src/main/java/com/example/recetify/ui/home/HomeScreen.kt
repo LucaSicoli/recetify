@@ -6,6 +6,8 @@ import androidx.compose.animation.core.tween
 import androidx.compose.foundation.ExperimentalFoundationApi
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
+import com.example.recetify.ui.createRecipe.VideoPlayer
+import android.net.Uri
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
@@ -24,7 +26,6 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.graphics.Color.Companion.Gray
 import androidx.compose.ui.graphics.Shape
 import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.layout.ContentScale
@@ -48,6 +49,7 @@ import com.example.recetify.data.remote.RetrofitClient
 import com.example.recetify.data.remote.model.SessionManager
 import kotlinx.coroutines.launch
 import java.net.URI
+import com.example.recetify.ui.common.LoopingVideoPlayer
 
 // Fuentes
 private val Sen = FontFamily(
@@ -272,15 +274,27 @@ private fun RecipeCard(
         colors    = CardDefaults.cardColors(containerColor = Color.White)
     ) {
         Column {
-            AsyncImage(
-                model           = finalUrl,
-                contentDescription = recipe.nombre,
-                modifier        = Modifier
-                    .fillMaxWidth()
-                    .height(180.dp)
-                    .clip(RoundedCornerShape(topStart = 8.dp, topEnd = 8.dp)),
-                contentScale    = ContentScale.Crop
-            )
+            if (finalUrl.endsWith(".mp4",  true) ||
+                finalUrl.endsWith(".webm", true)
+            ) {
+                LoopingVideoPlayer(
+                    uri      = Uri.parse(finalUrl),
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .height(180.dp)
+                        .clip(RoundedCornerShape(topStart = 8.dp, topEnd = 8.dp))
+                )
+            } else {
+                AsyncImage(
+                    model           = finalUrl,
+                    contentDescription = recipe.nombre,
+                    modifier        = Modifier
+                        .fillMaxWidth()
+                        .height(180.dp)
+                        .clip(RoundedCornerShape(topStart = 8.dp, topEnd = 8.dp)),
+                    contentScale    = ContentScale.Crop
+                )
+            }
 
             Spacer(Modifier.height(12.dp))
 
