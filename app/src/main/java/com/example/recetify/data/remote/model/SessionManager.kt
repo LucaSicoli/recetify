@@ -19,7 +19,7 @@ object SessionManager {
     private val KEY_JWT_TOKEN    = stringPreferencesKey("jwt_token")
 
     suspend fun setAlumno(context: Context, token: String) {
-        jwtToken = token
+        this.jwtToken = token
         context.sessionPrefs.edit {
             it[KEY_IS_ALUMNO] = true
             it[KEY_JWT_TOKEN] = token

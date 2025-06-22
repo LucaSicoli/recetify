@@ -40,6 +40,18 @@ fun ProfileScreen(
 
     var showLogoutDialog by remember { mutableStateOf(false) }
 
+    // Setear callback y cargar perfil sólo 1 vez
+    LaunchedEffect(Unit) {
+        viewModel.onUnauthorized = {
+            SessionManager.clearToken()
+            navController.navigate("login") {
+                popUpTo(navController.graph.startDestinationId) { inclusive = true }
+                launchSingleTop = true
+            }
+        }
+        viewModel.fetchProfile()
+    }
+
     if (isLoading) {
         Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
             CircularProgressIndicator()
@@ -191,9 +203,7 @@ fun ProfileScreen(
                         SessionManager.clearToken()
                         showLogoutDialog = false
                         navController.navigate("login") {
-                            popUpTo(navController.graph.startDestinationId) {
-                                inclusive = true
-                            }
+                            popUpTo(navController.graph.startDestinationId) { inclusive = true }
                             launchSingleTop = true
                         }
                     }

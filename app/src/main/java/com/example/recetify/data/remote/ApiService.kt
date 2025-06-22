@@ -6,6 +6,7 @@ import com.example.recetify.data.remote.model.CreateRatingRequest
 import com.example.recetify.data.remote.model.EmailDTO
 import com.example.recetify.data.remote.model.JwtResponse
 import com.example.recetify.data.remote.model.LoginRequest
+import com.example.recetify.data.remote.model.ProfileSummaryDTO
 import com.example.recetify.data.remote.model.RatingResponse
 import com.example.recetify.data.remote.model.RecipeRequest
 import com.example.recetify.data.remote.model.RecipeResponse
@@ -13,6 +14,7 @@ import com.example.recetify.data.remote.model.RecipeSummaryResponse
 import com.example.recetify.data.remote.model.ResetDTO
 import com.example.recetify.data.remote.model.RecipeStepRequest
 import com.example.recetify.data.remote.model.RecipeIngredientRequest
+import com.example.recetify.data.remote.model.UserDto
 import okhttp3.MultipartBody
 import retrofit2.http.Body
 import retrofit2.http.GET
@@ -36,6 +38,14 @@ interface ApiService {
     @POST("api/auth/reset-password")
     suspend fun resetPassword(@Body req: ResetDTO): Unit
 
+    //---- Perfil ---
+
+    @GET("users/me")
+    suspend fun getMyProfile(): UserDto
+
+    @GET("users/profile-summary")
+    suspend fun getProfileSummary(): ProfileSummaryDTO
+
 
     // —— Recetas ——
     @GET("recipes/{id}")
@@ -52,6 +62,8 @@ interface ApiService {
     @POST("recipes/create")
     suspend fun createRecipe(@Body req: RecipeRequest): RecipeResponse
 
+    @GET("recipes/my-recipes")
+    suspend fun getMyRecipes(): List<RecipeResponse>
 
     // —— Ratings ——
     @GET("ratings/recipe/{recipeId}")

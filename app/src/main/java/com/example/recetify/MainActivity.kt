@@ -20,6 +20,7 @@ import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.compose.currentBackStackEntryAsState
 import androidx.navigation.compose.rememberNavController
+import com.example.recetify.data.remote.RetrofitClient
 import com.example.recetify.data.remote.model.SessionManager
 import com.example.recetify.ui.common.NoConnectionScreen
 import com.example.recetify.ui.common.rememberIsOnline
@@ -30,6 +31,7 @@ import com.example.recetify.ui.details.RecipeDetailScreen
 import com.example.recetify.ui.home.HomeScreen
 import com.example.recetify.ui.login.*
 import com.example.recetify.ui.navigation.BottomNavBar
+import com.example.recetify.ui.profile.ProfileScreen
 import com.example.recetify.ui.theme.RecetifyTheme
 import kotlinx.coroutines.launch
 
@@ -57,55 +59,72 @@ fun AppNavGraph() {
     val navController = rememberNavController()
     val scope         = rememberCoroutineScope()
 
-    // ViewModel único para todo el flow de password reset
     val passwordVm: PasswordResetViewModel = viewModel()
-
-    // Flujos de sesión y conexión
-    val isAlumno by SessionManager.isAlumnoFlow(context).collectAsState(initial = false)
     val isOnline by rememberIsOnline()
+
     var offline by rememberSaveable { mutableStateOf(!isOnline) }
     LaunchedEffect(isOnline) { offline = !isOnline }
 
-    Box(Modifier.fillMaxSize()) {
-        NavHost(navController, startDestination = "login") {
+    // Estado en memoria para saber si el usuario está logueado
+    var isAlumno by rememberSaveable { mutableStateOf(false) }
 
-            // 1) Login / Home guardado
-            composable("login") {
-                if (isAlumno) {
-                    LaunchedEffect(Unit) {
-                        navController.navigate("home") {
-                            popUpTo("login") { inclusive = true }
-                        }
-                    }
-                } else {
-                    LoginScreen(
-                        viewModel      = viewModel<LoginViewModel>(),
-                        onLoginSuccess = { token ->
-                            scope.launch {
-                                SessionManager.setAlumno(context, token)
-                                navController.navigate("home") {
-                                    popUpTo("login") { inclusive = true }
-                                }
-                            }
-                        },
-                        onForgot = { navController.navigate("forgot") }
-                    )
+    // Escuchar token guardado y validar perfil
+    LaunchedEffect(Unit) {
+        SessionManager.tokenFlow(context).collect { token ->
+            if (token.isNullOrBlank()) {
+                // No hay token, usuario no logueado
+                isAlumno = false
+                SessionManager.clearToken()
+                SessionManager.setVisitante(context)
+            } else {
+                try {
+                    RetrofitClient.api.getMyProfile()
+                    isAlumno = true
+                } catch (e: Exception) {
+                    // Token inválido o expirado
+                    isAlumno = false
+                    SessionManager.clearToken()
+                    SessionManager.setVisitante(context)
                 }
             }
+        }
+    }
 
-            // 2) Password reset flow
+    val startDestination = if (isAlumno) "home" else "login"
+
+    Box(Modifier.fillMaxSize()) {
+        NavHost(navController, startDestination = startDestination) {
+
+            composable("login") {
+                LoginScreen(
+                    viewModel      = viewModel<LoginViewModel>(),
+                    onLoginSuccess = { token ->
+                        scope.launch {
+                            SessionManager.setAlumno(context, token)
+                            isAlumno = true
+                            navController.navigate("home") {
+                                popUpTo("login") { inclusive = true }
+                            }
+                        }
+                    },
+                    onForgot = { navController.navigate("forgot") }
+                )
+            }
+
             composable("forgot") {
                 ForgotPasswordScreen(
                     viewModel = passwordVm,
                     onNext    = { navController.navigate("verify") }
                 )
             }
+
             composable("verify") {
                 VerifyCodeScreen(
                     viewModel = passwordVm,
                     onNext    = { navController.navigate("reset") }
                 )
             }
+
             composable("reset") {
                 ResetPasswordScreen(
                     viewModel = passwordVm,
@@ -117,7 +136,6 @@ fun AppNavGraph() {
                 )
             }
 
-            // 3) Home y Detail
             composable("home") {
                 if (!isAlumno) {
                     LaunchedEffect(Unit) {
@@ -129,8 +147,33 @@ fun AppNavGraph() {
                     HomeScreen(navController = navController)
                 }
             }
-            composable("recipe/{id}") { back ->
-                back.arguments
+
+            composable("profile") {
+                if (!isAlumno) {
+                    LaunchedEffect(Unit) {
+                        navController.navigate("login") {
+                            popUpTo("profile") { inclusive = true }
+                        }
+                    }
+                } else {
+                    ProfileScreen(
+                        navController = navController
+                       /* onUnauthorized = {
+                            SessionManager.clearToken()
+                            isAlumno = false
+                            navController.navigate("login") {
+                                popUpTo(navController.graph.startDestinationId) {
+                                    inclusive = true
+                                }
+                                launchSingleTop = true
+                            }
+                        }*/
+                    )
+                }
+            }
+
+            composable("recipe/{id}") { backStackEntry ->
+                backStackEntry.arguments
                     ?.getString("id")
                     ?.toLongOrNull()
                     ?.let { id ->
@@ -138,7 +181,6 @@ fun AppNavGraph() {
                     }
             }
 
-            // 4) Create Recipe
             composable("createRecipe") {
                 val vm: CreateRecipeViewModel = viewModel(
                     factory = CreateRecipeViewModelFactory(
@@ -154,19 +196,20 @@ fun AppNavGraph() {
             }
         }
 
-        // BottomNavBar sólo en home/recipe y online
+        // Mostrar BottomNavBar solo si estamos online y en home/recipe/createRecipe
         val backStackEntry by navController.currentBackStackEntryAsState()
         val route = backStackEntry?.destination?.route ?: ""
-        if (!offline && (route == "home" || route.startsWith("recipe/")) || route == "createRecipe") {
+        if (!offline && (route == "home" || route.startsWith("recipe/") || route == "createRecipe" || route == "profile")) {
             Box(Modifier.align(Alignment.BottomCenter)) {
                 BottomNavBar(navController)
             }
         }
 
-        // Overlay "Sin conexión"
         if (offline) {
             NoConnectionScreen(
-                onContinueOffline = { offline = false }
+                onContinueOffline = {
+                    offline = false
+                }
             )
         }
     }
