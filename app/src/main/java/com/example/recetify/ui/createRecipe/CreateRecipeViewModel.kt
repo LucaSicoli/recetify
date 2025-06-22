@@ -2,8 +2,6 @@
 package com.example.recetify.ui.createRecipe
 
 import android.app.Application
-import android.content.Context
-import android.net.ConnectivityManager
 import android.net.Uri
 import androidx.lifecycle.AndroidViewModel
 import androidx.lifecycle.ViewModel
@@ -21,16 +19,12 @@ import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.launch
 import java.io.File
 
-/**
- * Manual provider para inyección del repositorio (sin Hilt).
- */
 object RecipeRepositoryProvider {
-    fun get(context: Context): RecipeRepository {
+    fun get(context: Application): RecipeRepository {
         val db = DatabaseProvider.getInstance(context)
         val dao = db.recipeDao()
         val connectivity =
-            context.getSystemService(Context.CONNECTIVITY_SERVICE) as ConnectivityManager
-
+            context.getSystemService(Application.CONNECTIVITY_SERVICE) as android.net.ConnectivityManager
         return RecipeRepository(
             dao = dao,
             api = RetrofitClient.api,
@@ -39,9 +33,6 @@ object RecipeRepositoryProvider {
     }
 }
 
-/**
- * Factory para CreateRecipeViewModel, inyectando el repositorio.
- */
 class CreateRecipeViewModelFactory(
     private val app: Application
 ) : ViewModelProvider.Factory {
@@ -57,30 +48,23 @@ class CreateRecipeViewModelFactory(
     }
 }
 
-/**
- * ViewModel para la pantalla de creación de recetas.
- */
 class CreateRecipeViewModel(
     app: Application,
     private val repo: RecipeRepository
 ) : AndroidViewModel(app) {
 
-    private val _uploading = MutableStateFlow(false)
-    val uploading = _uploading.asStateFlow()
+    private val _uploading   = MutableStateFlow(false)
+    val uploading           = _uploading.asStateFlow()
 
-    private val _submitting = MutableStateFlow(false)
-    val submitting = _submitting.asStateFlow()
+    private val _submitting  = MutableStateFlow(false)
+    val submitting          = _submitting.asStateFlow()
 
-    private val _error = MutableStateFlow<String?>(null)
-    val error = _error.asStateFlow()
+    private val _error       = MutableStateFlow<String?>(null)
+    val error               = _error.asStateFlow()
 
-    // ← Cambiado a StateFlow para poder hacer collectAsState()
-    private val _photoUrl = MutableStateFlow<String?>(null)
-    val photoUrl = _photoUrl.asStateFlow()
+    private val _photoUrl    = MutableStateFlow<String?>(null)
+    val photoUrl            = _photoUrl.asStateFlow()
 
-    /**
-     * Sube la foto seleccionada y guarda la URL devuelta.
-     */
     fun uploadPhoto(file: File) = viewModelScope.launch {
         _uploading.value = true
         _error.value = null
@@ -94,12 +78,13 @@ class CreateRecipeViewModel(
         }
     }
 
-    /**
-     * Construye el RecipeRequest y lo envía al backend.
-     */
     fun createRecipe(
-        nombre: String, descripcion: String, tiempo: Int, porciones: Int,
-        tipoPlato: String, categoria: String,
+        nombre: String,
+        descripcion: String,
+        tiempo: Int,
+        porciones: Int,
+        tipoPlato: String,
+        categoria: String,
         ingredients: List<RecipeIngredientRequest>,
         steps: List<RecipeStepRequest>,
         onSuccess: () -> Unit
@@ -107,18 +92,27 @@ class CreateRecipeViewModel(
         _submitting.value = true
         _error.value = null
         try {
-            // ➊ primero subo todas las fotos de pasos:
+            // ➊ Para cada paso, subimos todas las URIs locales en mediaUrls
             val uploadedSteps = steps.map { step ->
-                val local = step.urlMedia
-                if (!local.isNullOrBlank() && local.startsWith("content://")) {
-                    // convierto URI a File (igual que haces en el screen)
-                    val file = File(FileUtil.from(getApplication(), Uri.parse(local)).path)
-                    val remoteUrl = repo.uploadPhoto(file)
-                    step.copy(urlMedia = remoteUrl)
-                } else step
+                // extraemos sólo las URIs que haya que subir
+                val locals = step.mediaUrls.orEmpty()
+                    .filter { it.startsWith("content://") }
+                if (locals.isNotEmpty()) {
+                    // subimos cada URI y recogemos sus URLs remotas
+                    val remoteUrls = locals.map { localUri ->
+                        val file = File(FileUtil.from(getApplication(), Uri.parse(localUri)).path)
+                        repo.uploadPhoto(file)
+                    }
+                    // conservamos cualquier URL ya remota que ya estuviera en mediaUrls
+                    val preserved = step.mediaUrls.orEmpty()
+                        .filter { !it.startsWith("content://") }
+                    step.copy(mediaUrls = preserved + remoteUrls)
+                } else {
+                    step
+                }
             }
 
-            // ➋ armo el request usando la lista con URLs remotas
+            // ➋ Creamos el RecipeRequest con las URLs remotas en cada paso
             val req = RecipeRequest(
                 nombre        = nombre,
                 descripcion   = descripcion,
@@ -130,6 +124,7 @@ class CreateRecipeViewModel(
                 ingredients   = ingredients,
                 steps         = uploadedSteps
             )
+
             repo.createRecipe(req)
             onSuccess()
         } catch (t: Throwable) {

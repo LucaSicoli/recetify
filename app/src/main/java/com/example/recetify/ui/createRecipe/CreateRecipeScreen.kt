@@ -128,7 +128,7 @@ fun CreateRecipeScreen(
         // aquí necesitarás saber qué paso estás editando;
         // puedes guardar el índice en un estado temporal:
         selectedStepIndex?.let { idx ->
-            steps[idx] = steps[idx].copy(urlMedia = uri.toString())
+            steps[idx] = steps[idx].copy(mediaUrls = listOf(uri.toString()))
         }
     }
 
@@ -618,23 +618,26 @@ fun CreateRecipeScreen(
                         )
                     }
                     steps.forEachIndexed { idx, step ->
-                        // ① Creamos un launcher MIXTO (imagen o vídeo) para este paso:
+                        // launcher para este paso…
                         val stepMediaLauncher = rememberLauncherForActivityResult(StartActivityForResult()) { result ->
-                            val uri = result.data?.data ?: return@rememberLauncherForActivityResult
-                            steps[idx] = step.copy(urlMedia = uri.toString())
+                            result.data?.data?.let { uri ->
+                                steps[idx] = steps[idx].copy(mediaUrls = listOf(uri.toString()))
+                            }
                         }
 
                         StepCard(
-
-
-                            stepNumber   = step.numeroPaso,
-                            title        = step.titulo.orEmpty(),
-                            description  = step.descripcion,
-                            urlMedia     = step.urlMedia,
-                            onTitleChange= { steps[idx] = step.copy(titulo = it) },
-                            onDescChange = { steps[idx] = step.copy(descripcion = it) },
-                            onAddMedia = {
-                                // antes de lanzar, marca qué paso es:
+                            stepNumber    = step.numeroPaso,
+                            title         = step.titulo.orEmpty(),
+                            description   = step.descripcion,
+                            mediaUrls     = step.mediaUrls ?: emptyList(),
+                            onTitleChange = { newTitle ->
+                                steps[idx] = step.copy(titulo = newTitle)
+                            },
+                            onDescChange  = { newDesc ->
+                                steps[idx] = step.copy(descripcion = newDesc)
+                            },
+                            onAddMedia    = {
+                                // definimos el índice antes de lanzar el picker
                                 selectedStepIndex = idx
                                 val intent = Intent(Intent.ACTION_OPEN_DOCUMENT).apply {
                                     type = "*/*"
@@ -656,7 +659,7 @@ fun CreateRecipeScreen(
                         val stepImageLauncher = rememberLauncherForActivityResult(GetContent()) { uri: Uri? ->
                             uri?.let {
                                 // Actualiza sólo el draft de este paso, manteniendo el resto intacto
-                                editingStep = draft.copy(urlMedia = it.toString())
+                                editingStep = draft.copy(mediaUrls = listOf(it.toString()))
                             }
                         }
 
@@ -726,7 +729,9 @@ fun CreateRecipeScreen(
                                     )
                                 }
 
-                                if (!draft.urlMedia.isNullOrBlank()) {
+                                if (!draft.mediaUrls.isNullOrEmpty()) {
+                                    // cogemos la primera URL (o la que quieras)
+                                    val firstUrl = draft.mediaUrls.first()
                                     Column(
                                         modifier = Modifier
                                             .padding(top = 8.dp)
@@ -741,7 +746,7 @@ fun CreateRecipeScreen(
                                             fontFamily = Destacado
                                         )
                                         AsyncImage(
-                                            model = draft.urlMedia,
+                                            model = firstUrl,
                                             contentDescription = null,
                                             modifier = Modifier
                                                 .fillMaxWidth()
@@ -753,7 +758,7 @@ fun CreateRecipeScreen(
                                 }
 
                                 // --- AVISO DE FOTOS ---
-                                draft.urlMedia?.let { url ->
+                                draft.mediaUrls?.let { url ->
                                     Row(
                                         verticalAlignment = Alignment.CenterVertically,
                                         horizontalArrangement = Arrangement.spacedBy(4.dp)
@@ -828,7 +833,7 @@ fun CreateRecipeScreen(
                                 },
                                 text = {
                                     AsyncImage(
-                                        model = draft.urlMedia,
+                                        model = draft.mediaUrls,
                                         contentDescription = "Foto del paso",
                                         modifier = Modifier
                                             .fillMaxWidth()
@@ -848,7 +853,7 @@ fun CreateRecipeScreen(
                                         numeroPaso = steps.size + 1,
                                         titulo     = "",
                                         descripcion= "",
-                                        urlMedia   = null
+                                        mediaUrls   = null
                                     )
                                 }
                                 .background(Color.White, RoundedCornerShape(12.dp))
@@ -1055,7 +1060,7 @@ fun CreateRecipeScreen(
                             numeroPaso = steps.size + 1,
                             titulo     = stepTitle,
                             descripcion= stepDesc,
-                            urlMedia   = null
+                            mediaUrls  = null
                         )
                         showStepDialog = false
                     }) { Text("Agregar") }
@@ -1074,12 +1079,13 @@ private fun StepCard(
     stepNumber:   Int,
     title:        String,
     description:  String,
-    urlMedia:     String?,           // ahora recibe la URL
+    mediaUrls:    List<String>?,       // ahora plural
     onTitleChange:(String)->Unit,
     onDescChange: (String)->Unit,
     onAddMedia:   ()->Unit
 ) {
-    var showImagePreview by remember { mutableStateOf(false) }
+    var showMediaPreview by remember { mutableStateOf(false) }
+    val firstMedia = mediaUrls?.firstOrNull()
 
     Card(
         modifier  = Modifier
@@ -1093,7 +1099,7 @@ private fun StepCard(
             Modifier.padding(12.dp),
             verticalArrangement = Arrangement.spacedBy(12.dp)
         ) {
-            // —— Número y título
+            // —— Número y título del paso ────────────────────
             Row(verticalAlignment = Alignment.CenterVertically) {
                 Box(
                     Modifier
@@ -1129,7 +1135,7 @@ private fun StepCard(
                 }
             }
 
-            // —— Descripción
+            // —— Descripción ───────────────────────────────────
             Box(
                 Modifier
                     .fillMaxWidth()
@@ -1153,28 +1159,27 @@ private fun StepCard(
                 )
             }
 
-            // —— Mini‐preview si hay foto
-            urlMedia?.let { uriString ->
-                val uri = Uri.parse(uriString)
-                val mime = LocalContext.current.contentResolver.getType(uri) ?: ""
+            // —— Mini‐preview si hay media ──────────────────────
+            firstMedia?.let { url ->
+                val uri = Uri.parse(url)
+                val ctx = LocalContext.current
+                val mime = ctx.contentResolver.getType(uri) ?: ""
                 if (mime.startsWith("video/")) {
-                    // usa ExoPlayer para vídeos
-                    VideoPlayer(uri)
+                    VideoPlayer(uri) // usa tu componente para vídeo
                 } else {
-                    // tu AsyncImage para imágenes
                     AsyncImage(
-                        model = uri,
-                        modifier = Modifier
+                        model           = uri,
+                        contentDescription = null,
+                        modifier        = Modifier
                             .fillMaxWidth()
                             .height(120.dp)
                             .clip(RoundedCornerShape(8.dp)),
-                        contentScale = ContentScale.Crop,
-                        contentDescription = null
+                        contentScale    = ContentScale.Crop
                     )
                 }
             }
 
-            // —— Botones foto / ver foto
+            // —— Botones “Media” / “Ver media” ─────────────────
             Row(
                 Modifier.fillMaxWidth(),
                 horizontalArrangement = Arrangement.SpaceBetween,
@@ -1187,189 +1192,53 @@ private fun StepCard(
                 ) {
                     Icon(Icons.Default.CameraAlt, contentDescription = null, tint = Accent)
                     Spacer(Modifier.width(4.dp))
-                    Text("FOTO", color = Accent, fontFamily = Destacado)
+                    Text("MEDIA", color = Accent, fontFamily = Destacado)
                 }
 
-                urlMedia?.let {
-                    TextButton(onClick = { showImagePreview = true }) {
+                firstMedia?.let {
+                    TextButton(onClick = { showMediaPreview = true }) {
                         Icon(
-                            painter = painterResource(R.drawable.ic_chef_hat),
-                            contentDescription = "Ver foto",
+                            painterResource(R.drawable.ic_chef_hat),
+                            contentDescription = "Ver media",
                             tint = Accent,
                             modifier = Modifier.size(20.dp)
                         )
                         Spacer(Modifier.width(4.dp))
-                        Text("Ver foto", color = Accent, fontFamily = Destacado)
+                        Text("Ver media", color = Accent, fontFamily = Destacado)
                     }
                 }
             }
         }
     }
 
-    // —— diálogo de preview
-    if (showImagePreview) {
+    // —— Diálogo de preview ───────────────────────────────
+    if (showMediaPreview && firstMedia != null) {
         AlertDialog(
-            onDismissRequest = { showImagePreview = false },
+            onDismissRequest = { showMediaPreview = false },
             confirmButton = {
-                TextButton(onClick = { showImagePreview = false }) {
+                TextButton(onClick = { showMediaPreview = false }) {
                     Text("Cerrar", color = Accent)
                 }
             },
             text = {
-                AsyncImage(
-                    model = urlMedia,
-                    contentDescription = "Foto del paso",
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .height(200.dp),
-                    contentScale = ContentScale.Crop
-                )
-            }
-        )
-    }
-}
-
-// ── Fila de ingrediente: emoji, nombre, – / cantidad / + y menú de unidades ────────────────
-@Composable
-private fun IngredientRow(
-    index: Int,
-    ingredient: RecipeIngredientRequest,
-    onUpdate: (RecipeIngredientRequest) -> Unit
-) {
-    var cantidadText by remember { mutableStateOf(ingredient.cantidad.toInt().toString()) }
-    var unidad      by remember { mutableStateOf(ingredient.unidadMedida) }
-    var expanded    by remember { mutableStateOf(false) }
-
-    Card(
-        modifier  = Modifier
-            .fillMaxWidth()
-            .padding(vertical = 4.dp),
-        shape     = RoundedCornerShape(6.dp),
-        colors    = CardDefaults.cardColors(containerColor = Color.White),
-        elevation = CardDefaults.cardElevation(2.dp)
-    ) {
-        Row(
-            Modifier
-                .padding(12.dp),
-            verticalAlignment = Alignment.CenterVertically
-        ) {
-            // Emoji
-            Text(
-                text       = obtenerEmoji(ingredient.nombre.orEmpty()),
-                fontSize   = 24.sp,
-                color      = Color.Black,
-                fontFamily = Destacado
-            )
-            Spacer(Modifier.width(8.dp))
-
-            // Nombre
-            Text(
-                text       = ingredient.nombre.orEmpty(),
-                modifier   = Modifier.weight(1f),
-                fontSize   = 16.sp,
-                fontWeight = FontWeight.Medium,
-                color      = Color.Black,
-                fontFamily = Destacado
-            )
-            Spacer(Modifier.width(8.dp))
-
-            // Botón “−”
-            IconButton(
-                onClick = {
-                    val current = cantidadText.toIntOrNull() ?: 1
-                    if (current > 1) {
-                        cantidadText = (current - 1).toString()
-                        onUpdate(ingredient.copy(cantidad = (current - 1).toDouble(), unidadMedida = unidad))
-                    }
-                },
-                modifier = Modifier.size(28.dp)
-            ) {
-                Icon(Icons.Default.Remove, contentDescription = null, tint = Color.Red)
-            }
-            Spacer(Modifier.width(4.dp))
-
-            // Caja de cantidad editable
-            Box(
-                modifier = Modifier
-                    .width(64.dp)
-                    .height(36.dp)
-                    .background(Color.White, RoundedCornerShape(6.dp))
-                    .border(1.dp, Color.LightGray, RoundedCornerShape(6.dp)),
-                contentAlignment = Alignment.Center
-            ) {
-                BasicTextField(
-                    value         = cantidadText,
-                    onValueChange = { new ->
-                        if (new.all(Char::isDigit)) {
-                            cantidadText = new
-                            val parsed = new.toIntOrNull() ?: 0
-                            onUpdate(ingredient.copy(cantidad = parsed.toDouble(), unidadMedida = unidad))
-                        }
-                    },
-                    singleLine = true,
-                    keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
-                    textStyle = LocalTextStyle.current.copy(
-                        color      = Color.Black,
-                        fontSize   = 18.sp,
-                        fontWeight = FontWeight.Bold,
-                        textAlign  = TextAlign.Center,
-                        fontFamily = Destacado
-                    ),
-                    cursorBrush = SolidColor(Color.Black),
-                    decorationBox = { inner ->
-                        Box(Modifier.fillMaxSize(), contentAlignment = Alignment.Center) { inner() }
-                    }
-                )
-            }
-            Spacer(Modifier.width(8.dp))
-
-            // Caja de unidad
-            Box(
-                modifier = Modifier
-                    .width(56.dp)
-                    .height(36.dp)
-                    .background(Color.White, RoundedCornerShape(6.dp))
-                    .border(1.dp, Color.LightGray, RoundedCornerShape(6.dp))
-                    .clickable { expanded = true },
-                contentAlignment = Alignment.Center
-            ) {
-                Text(unidad, color = Color.Black, fontFamily = Destacado)
-
-                DropdownMenu(
-                    expanded         = expanded,
-                    onDismissRequest = { expanded = false },
-                    // ↓ aquí forzamos el fondo blanco y un radio
-                    modifier = Modifier
-                        .background(Color.White, shape = RoundedCornerShape(6.dp))
-                ) {
-                    listOf("un","g","kg","ml","l","tsp","tbsp","cup").forEach { u ->
-                        DropdownMenuItem(
-                            text = { Text(u, color = Color.Black, fontFamily = Destacado) },
-                            onClick = {
-                                unidad   = u
-                                expanded = false
-                                val qty = cantidadText.toIntOrNull() ?: 0
-                                onUpdate(ingredient.copy(cantidad = qty.toDouble(), unidadMedida = unidad))
-                            }
-                        )
-                    }
+                val uri = Uri.parse(firstMedia)
+                val ctx = LocalContext.current
+                val mime = ctx.contentResolver.getType(uri) ?: ""
+                if (mime.startsWith("video/")) {
+                    // mostramos vídeo a tamaño mayor
+                    VideoPlayer(uri)
+                } else {
+                    AsyncImage(
+                        model           = uri,
+                        contentDescription = null,
+                        modifier        = Modifier
+                            .fillMaxWidth()
+                            .height(260.dp),
+                        contentScale    = ContentScale.Crop
+                    )
                 }
             }
-            Spacer(Modifier.width(4.dp))
-
-            // Botón “+”
-            IconButton(
-                onClick = {
-                    val current = cantidadText.toIntOrNull() ?: 0
-                    cantidadText = (current + 1).toString()
-                    onUpdate(ingredient.copy(cantidad = (current + 1).toDouble(), unidadMedida = unidad))
-                },
-                modifier = Modifier.size(28.dp)
-            ) {
-                Icon(Icons.Default.Add, contentDescription = null, tint = Color(0xFF00C853))
-            }
-        }
-
+        )
     }
 }
 
@@ -1390,4 +1259,104 @@ fun VideoPlayer(uri: Uri) {
             .fillMaxWidth()
             .height(200.dp)
     )
+}
+
+@Composable
+private fun IngredientRow(
+    index: Int,
+    ingredient: RecipeIngredientRequest,
+    onUpdate: (RecipeIngredientRequest) -> Unit
+) {
+    var cantidadText by remember { mutableStateOf(ingredient.cantidad.toInt().toString()) }
+    var unidad      by remember { mutableStateOf(ingredient.unidadMedida) }
+    var expanded    by remember { mutableStateOf(false) }
+
+    Card(
+        modifier  = Modifier
+            .fillMaxWidth()
+            .padding(vertical = 4.dp),
+        shape     = RoundedCornerShape(6.dp),
+        colors    = CardDefaults.cardColors(containerColor = Color.White),
+        elevation = CardDefaults.cardElevation(2.dp)
+    ) {
+        Row(
+            Modifier.padding(12.dp),
+            verticalAlignment = Alignment.CenterVertically
+        ) {
+            Text(
+                text       = obtenerEmoji(ingredient.nombre.orEmpty()),
+                fontSize   = 24.sp,
+                fontFamily = Destacado
+            )
+            Spacer(Modifier.width(8.dp))
+            Text(
+                text     = ingredient.nombre.orEmpty(),
+                modifier = Modifier.weight(1f),
+                fontSize = 16.sp,
+                fontFamily = Destacado
+            )
+            IconButton(onClick = {
+                val cur = cantidadText.toIntOrNull() ?: 1
+                if (cur > 1) {
+                    cantidadText = (cur - 1).toString()
+                    onUpdate(ingredient.copy(cantidad = (cur - 1).toDouble(), unidadMedida = unidad))
+                }
+            }) {
+                Icon(Icons.Default.Remove, contentDescription = "-", tint = Color.Red)
+            }
+            Spacer(Modifier.width(4.dp))
+            Box(
+                Modifier
+                    .width(64.dp).height(36.dp)
+                    .background(Color.White, RoundedCornerShape(6.dp))
+                    .border(1.dp, Color.LightGray, RoundedCornerShape(6.dp)),
+                contentAlignment = Alignment.Center
+            ) {
+                BasicTextField(
+                    value = cantidadText,
+                    onValueChange = { str ->
+                        if (str.all(Char::isDigit)) {
+                            cantidadText = str
+                            val parsed = str.toIntOrNull() ?: 0
+                            onUpdate(ingredient.copy(cantidad = parsed.toDouble(), unidadMedida = unidad))
+                        }
+                    },
+                    singleLine = true,
+                    keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
+                    textStyle = LocalTextStyle.current.copy(
+                        fontSize = 18.sp, fontWeight = FontWeight.Bold, textAlign = TextAlign.Center
+                    ),
+                    modifier = Modifier.fillMaxSize()
+                )
+            }
+            Spacer(Modifier.width(4.dp))
+            Box(
+                Modifier
+                    .width(56.dp).height(36.dp)
+                    .background(Color.White, RoundedCornerShape(6.dp))
+                    .border(1.dp, Color.LightGray, RoundedCornerShape(6.dp))
+                    .clickable { expanded = true },
+                contentAlignment = Alignment.Center
+            ) {
+                Text(unidad, fontFamily = Destacado)
+                DropdownMenu(expanded, onDismissRequest = { expanded = false }) {
+                    listOf("un","g","kg","ml","l","tsp","tbsp","cup").forEach { u ->
+                        DropdownMenuItem(text = { Text(u) }, onClick = {
+                            unidad = u; expanded = false
+                            val qty = cantidadText.toIntOrNull() ?: 0
+                            onUpdate(ingredient.copy(cantidad = qty.toDouble(), unidadMedida = unidad))
+                        })
+                    }
+                }
+            }
+            Spacer(Modifier.width(4.dp))
+            IconButton(onClick = {
+                val cur = cantidadText.toIntOrNull() ?: 0
+                cantidadText = (cur + 1).toString()
+                onUpdate(ingredient.copy(cantidad = (cur + 1).toDouble(), unidadMedida = unidad))
+            }) {
+                Icon(Icons.Default.Add, contentDescription = "+", tint = Color(0xFF00C853))
+            }
+        }
+    }
 }

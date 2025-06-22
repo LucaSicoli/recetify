@@ -4,7 +4,7 @@ data class RecipeResponse(
     val id: Long,
     val nombre: String,
     val descripcion: String?,
-    val fotoPrincipal: String?,
+    val mediaUrls: List<String>? = null,
     val tiempo: Int,
     val porciones: Int,
     val tipoPlato: String,
@@ -28,5 +28,5 @@ data class StepDTO(
     val numeroPaso: Int,
     val titulo: String,
     val descripcion: String,
-    val urlMedia: String? = null
+    val mediaUrls: List<String>? = null,
 )

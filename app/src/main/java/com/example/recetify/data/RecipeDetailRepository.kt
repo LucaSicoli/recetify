@@ -26,21 +26,22 @@ class RecipeDetailRepository(
     fun getRecipeDetail(id: Long): Flow<RecipeWithDetails> = flow {
         if (connectivity.activeNetwork != null) {
             // 1) Descarga remota
-            val remoteRecipe = api.getRecipeById(id)
-            val remoteRatings    = api.getRatingsForRecipe(id)
+            val remoteRecipe      = api.getRecipeById(id)
+            val remoteRatings     = api.getRatingsForRecipe(id)
             val remoteIngredients = remoteRecipe.ingredients
             val remoteSteps       = remoteRecipe.steps
 
             // 2) Guarda en Room en IO
             withContext(Dispatchers.IO) {
+                // Este mapeo usa tu EntityMappers.toEntity()
                 detailDao.insertRecipe(remoteRecipe.toEntity())
-                detailDao.insertRatings(remoteRatings.map { it.toEntity(id) })
+                detailDao.insertRatings(remoteRatings.map    { it.toEntity(id) })
                 detailDao.insertIngredients(remoteIngredients.map { it.toEntity(id) })
-                detailDao.insertSteps(remoteSteps.map { it.toEntity(id) })
+                detailDao.insertSteps(remoteSteps.map       { it.toEntity(id) })
             }
         }
 
-        // 3) Emite siempre Room
+        // 3) Emite siempre lo que hay en Room
         emitAll(detailDao.getRecipeWithDetails(id))
     }.flowOn(Dispatchers.IO)
 }

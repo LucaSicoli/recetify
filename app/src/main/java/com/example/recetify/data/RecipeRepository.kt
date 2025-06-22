@@ -20,7 +20,7 @@ import java.io.File
 
 class RecipeRepository(
     private val dao: RecipeDao,
-    private val api: ApiService,               // ← Recibe únicamente el ApiService
+    private val api: ApiService,
     private val connectivity: ConnectivityManager
 ) {
 
@@ -31,16 +31,15 @@ class RecipeRepository(
         val requestBody = file
             .asRequestBody("image/*".toMediaTypeOrNull())
         val part = MultipartBody.Part.createFormData(
-            name = "file",
+            name     = "file",
             filename = file.name,
-            body = requestBody
+            body     = requestBody
         )
         return api.uploadImage(part)
     }
 
     /**
      * Envía el RecipeRequest al backend y devuelve la receta creada.
-     * Lanza excepción si no hay conexión.
      */
     suspend fun createRecipe(req: RecipeRequest): RecipeResponse = withContext(Dispatchers.IO) {
         check(connectivity.activeNetwork != null) { "Sin conexión de red" }
@@ -51,28 +50,27 @@ class RecipeRepository(
      * Descarga el listado de recetas (resumen) y actualiza el caché en Room.
      * Luego emite siempre el contenido de Room, para soporte offline.
      */
-    fun getAllRecipes(): Flow<List<RecipeEntity>> =
-        flow {
-            if (connectivity.activeNetwork != null) {
-                val summary = api.getAllRecipesSummary()
-                val entities = summary.map { s ->
-                    RecipeEntity(
-                        id                  = s.id,
-                        nombre              = s.nombre,
-                        descripcion         = s.descripcion,
-                        fotoPrincipal       = s.fotoPrincipal,
-                        tiempo              = s.tiempo.toInt(),
-                        porciones           = s.porciones,
-                        tipoPlato           = s.tipoPlato,
-                        categoria           = s.categoria,
-                        usuarioCreadorAlias = s.usuarioCreadorAlias,
-                        promedioRating      = s.promedioRating
-                    )
-                }
-                dao.clearAll()
-                dao.insertAll(entities)
+    fun getAllRecipes(): Flow<List<RecipeEntity>> = flow {
+        if (connectivity.activeNetwork != null) {
+            val summary  = api.getAllRecipesSummary()
+            val entities = summary.map { s ->
+                RecipeEntity(
+                    id                  = s.id,
+                    nombre              = s.nombre,
+                    descripcion         = s.descripcion.orEmpty(),
+                    // Convertimos la sola fotoPrincipal en lista de 1 elemento:
+                    mediaUrls           = s.mediaUrls.orEmpty(),
+                    tiempo              = s.tiempo.toInt(),
+                    porciones           = s.porciones,
+                    tipoPlato           = s.tipoPlato,
+                    categoria           = s.categoria,
+                    usuarioCreadorAlias = s.usuarioCreadorAlias,
+                    promedioRating      = s.promedioRating
+                )
             }
-            emitAll(dao.getAll())
+            dao.clearAll()
+            dao.insertAll(entities)
         }
-            .flowOn(Dispatchers.IO)
+        emitAll(dao.getAll())
+    }.flowOn(Dispatchers.IO)
 }

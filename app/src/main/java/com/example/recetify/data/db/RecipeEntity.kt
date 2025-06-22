@@ -9,7 +9,7 @@ data class RecipeEntity(
     @PrimaryKey val id: Long,
     val nombre: String,
     val descripcion: String?,
-    val fotoPrincipal: String?,
+    val mediaUrls: List<String>?,
     val tiempo: Int,
     val porciones: Int,
     val tipoPlato: String,

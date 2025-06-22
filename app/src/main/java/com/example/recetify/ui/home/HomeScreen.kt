@@ -260,7 +260,7 @@ private fun RecipeCard(
     modifier: Modifier = Modifier
 ) {
     val base     = RetrofitClient.BASE_URL.trimEnd('/')
-    val original = recipe.fotoPrincipal.orEmpty()
+    val original = recipe.mediaUrls?.firstOrNull().orEmpty()
     val pathOnly = runCatching {
         val uri = URI(original)
         uri.rawPath + uri.rawQuery?.let { "?$it" }.orEmpty()

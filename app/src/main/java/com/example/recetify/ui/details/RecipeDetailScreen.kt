@@ -10,8 +10,8 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.navigation.NavController
-import com.example.recetify.data.remote.model.toModel
 import com.example.recetify.data.remote.model.toRecipeResponse
+import com.example.recetify.data.remote.model.toRatingResponse
 import com.example.recetify.ui.navigation.BottomNavBar
 
 @Composable
@@ -20,34 +20,33 @@ fun RecipeDetailScreen(
     navController: NavController,
     viewModel: RecipeDetailViewModel = viewModel()
 ) {
-    val details      = viewModel.recipeWithDetails
-    val loading      = viewModel.loading
-    val showIngredients = remember { mutableStateOf(true) }
-    val currentStep     = remember { mutableStateOf(0) }
+    val details          = viewModel.recipeWithDetails
+    val loading          = viewModel.loading
+    val showIngredients  = remember { mutableStateOf(true) }
+    val currentStep      = remember { mutableStateOf(0) }
 
     LaunchedEffect(recipeId) {
         viewModel.fetchRecipe(recipeId)
     }
 
     Scaffold(
-        // Slot para el nav bar flotante
-        bottomBar = {
-            BottomNavBar(navController)
-        },
+        bottomBar     = { BottomNavBar(navController) },
         containerColor = Color.White
     ) { padding ->
         Box(
             modifier = Modifier
                 .fillMaxSize()
-                .padding(padding)  // deja el espacio para el bottomBar
+                .padding(padding)
         ) {
             if (loading || details == null) {
                 Box(Modifier.fillMaxSize(), Alignment.Center) {
                     CircularProgressIndicator()
                 }
             } else {
-                val ratingResponses = details.ratings.map { it.toModel() }
-                Column(modifier = Modifier.padding(bottom =  /* opcional padding extra */ 0.dp)) {
+                // <-- Aquí cambias `toModel()` por `toRatingResponse()`
+                val ratingResponses = details.ratings.map { it.toRatingResponse() }
+
+                Column(modifier = Modifier.padding(bottom = 0.dp)) {
                     RecipeDetailContent(
                         receta          = details.toRecipeResponse(),
                         ratings         = ratingResponses,

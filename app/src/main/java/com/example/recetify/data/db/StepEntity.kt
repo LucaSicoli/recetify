@@ -1,12 +1,11 @@
-// data/db/StepEntity.kt
+// app/src/main/java/com/example/recetify/data/db/StepEntity.kt
 package com.example.recetify.data.db
 
 import androidx.room.Entity
 import androidx.room.ForeignKey
-import androidx.room.ForeignKey.Companion.CASCADE
 import androidx.room.Index
 import androidx.room.PrimaryKey
-
+import androidx.room.TypeConverters
 
 @Entity(
     tableName = "steps",
@@ -15,16 +14,17 @@ import androidx.room.PrimaryKey
             entity        = RecipeEntity::class,
             parentColumns = ["id"],
             childColumns  = ["recipeId"],
-            onDelete      = CASCADE
+            onDelete      = ForeignKey.CASCADE
         )
     ],
     indices = [Index("recipeId")]
 )
+@TypeConverters(Converters::class)
 data class StepEntity(
     @PrimaryKey(autoGenerate = true) val localId: Long = 0,
     val recipeId: Long,
     val numeroPaso: Int,
     val titulo: String,
     val descripcion: String,
-    val urlMedia: String?
+    val mediaUrls: List<String>?         // varios medios por paso
 )

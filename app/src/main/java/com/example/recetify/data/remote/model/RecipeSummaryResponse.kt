@@ -1,11 +1,13 @@
-// data/remote/model/RecipeSummaryResponse.kt
 package com.example.recetify.data.remote.model
+
+import com.google.gson.annotations.SerializedName
 
 data class RecipeSummaryResponse(
     val id: Long,
     val nombre: String,
     val descripcion: String?,
-    val fotoPrincipal: String?,
+    @SerializedName("mediaUrls")
+    val mediaUrls: List<String>? = null,
     val tiempo: Long,
     val porciones: Int,
     val tipoPlato: String,

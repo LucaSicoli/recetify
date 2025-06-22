@@ -328,7 +328,8 @@ fun RecipeDetailContent(
 
     val baseUrl = RetrofitClient.BASE_URL.trimEnd('/')
     // normalizo igual que en Home
-    val originalMain = receta.fotoPrincipal.orEmpty()
+    // AHORA: tomamos el primer elemento de mediaUrls (o cadena vacía)
+    val originalMain = receta.mediaUrls.orEmpty().firstOrNull().orEmpty()
     val pathMain = runCatching {
         val uri = URI(originalMain)
         uri.rawPath + uri.rawQuery?.let { "?$it" }.orEmpty()
@@ -619,10 +620,14 @@ fun RecipeDetailContent(
                                 )
 
                                 // Imagen del paso, con borde redondeado de 8dp
-                                if (!paso.urlMedia.isNullOrBlank()) {
+                                // Sólo si la lista no está vacía
+                                if (!paso.mediaUrls.isNullOrEmpty()) {
                                     Spacer(Modifier.height(8.dp))
+
+                                    // Cogemos la primera URL (o la que tú quieras)
+                                    val originalStep = paso.mediaUrls!!.first()
+
                                     // Normalizamos la URL igual que antes
-                                    val originalStep = paso.urlMedia!!
                                     val pathStep = runCatching {
                                         val uri = URI(originalStep)
                                         uri.rawPath + uri.rawQuery?.let { "?$it" }.orEmpty()
