@@ -6,8 +6,6 @@ import androidx.compose.animation.core.tween
 import androidx.compose.foundation.ExperimentalFoundationApi
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
-import com.example.recetify.ui.createRecipe.VideoPlayer
-import android.net.Uri
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
@@ -50,6 +48,7 @@ import com.example.recetify.data.remote.model.SessionManager
 import kotlinx.coroutines.launch
 import java.net.URI
 import com.example.recetify.ui.common.LoopingVideoPlayer
+import androidx.core.net.toUri
 
 // Fuentes
 private val Sen = FontFamily(
@@ -278,7 +277,7 @@ private fun RecipeCard(
                 finalUrl.endsWith(".webm", true)
             ) {
                 LoopingVideoPlayer(
-                    uri      = Uri.parse(finalUrl),
+                    uri      = finalUrl.toUri(),
                     modifier = Modifier
                         .fillMaxWidth()
                         .height(180.dp)

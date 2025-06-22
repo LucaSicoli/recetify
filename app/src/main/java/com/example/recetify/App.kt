@@ -23,25 +23,33 @@ class App : Application() {
         super.onCreate()
 
         // ─── Coil / OkHttp HTTP cache (imágenes y peticiones) ─────────────────
+        // in your Application.onCreate()
         val httpCacheDir = File(cacheDir, "http_cache")
         val httpCache    = Cache(httpCacheDir, 50L * 1024 * 1024) // 50 MB
 
         val okHttp = OkHttpClient.Builder()
             .cache(httpCache)
-            .build()
-
-        val imageLoader = ImageLoader.Builder(this)
-            .okHttpClient { okHttp }
-            .diskCache {
-                DiskCache.Builder()
-                    .directory(File(cacheDir, "image_cache"))
-                    .maxSizeBytes(50L * 1024 * 1024) // 50 MB
+            // force‐cache every image response for up to 7 days
+            .addNetworkInterceptor { chain ->
+                val response = chain.proceed(chain.request())
+                response.newBuilder()
+                    .header("Cache-Control", "public, max-age=604800")
                     .build()
             }
             .build()
 
-        Coil.setImageLoader(imageLoader)
+        val loader = ImageLoader.Builder(this)
+            .okHttpClient { okHttp }
+            .diskCache {
+                DiskCache.Builder()
+                    .directory(File(cacheDir, "image_cache"))
+                    .maxSizeBytes(50L * 1024 * 1024)
+                    .build()
+            }
+            .respectCacheHeaders(false)  // ignorar Cache-Control del servidor
+            .build()
 
+        Coil.setImageLoader(loader)
         // ─── ExoPlayer SimpleCache (vídeos) ───────────────────────────────────
         val exoCacheDir = File(cacheDir, "exo_cache")
         val evictor     = LeastRecentlyUsedCacheEvictor(200L * 1024 * 1024) // 200 MB para vídeos
