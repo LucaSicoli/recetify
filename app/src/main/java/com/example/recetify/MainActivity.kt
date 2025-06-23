@@ -30,6 +30,9 @@ import com.example.recetify.ui.details.RecipeDetailScreen
 import com.example.recetify.ui.home.HomeScreen
 import com.example.recetify.ui.login.*
 import com.example.recetify.ui.navigation.BottomNavBar
+import com.example.recetify.ui.profile.DraftViewModel
+import com.example.recetify.ui.profile.FavouriteViewModel
+import com.example.recetify.ui.profile.ProfileScreen
 import com.example.recetify.ui.theme.RecetifyTheme
 import kotlinx.coroutines.launch
 
@@ -59,6 +62,8 @@ fun AppNavGraph() {
 
     // ViewModel único para todo el flow de password reset
     val passwordVm: PasswordResetViewModel = viewModel()
+    val draftVm: DraftViewModel = viewModel()
+    val favVm: FavouriteViewModel = viewModel()
 
     // Flujos de sesión y conexión
     val isAlumno by SessionManager.isAlumnoFlow(context).collectAsState(initial = false)
@@ -151,12 +156,21 @@ fun AppNavGraph() {
                     onPublished = { navController.popBackStack() }
                 )
             }
+
+            composable("profile") {
+                // Para que pueda volver a refrescar cuando entres
+                LaunchedEffect(Unit) {
+                    draftVm.refresh()
+                    favVm.loadFavourites()
+                }
+                ProfileScreen(navController = navController)
+            }
         }
 
         // BottomNavBar sólo en home/recipe y online
         val backStackEntry by navController.currentBackStackEntryAsState()
         val route = backStackEntry?.destination?.route ?: ""
-        if (!offline && (route == "home" || route.startsWith("recipe/")) || route == "createRecipe") {
+        if (!offline && (route == "home" || route.startsWith("recipe/")) || route == "createRecipe" || route == "profile") {
             Box(Modifier.align(Alignment.BottomCenter)) {
                 BottomNavBar(navController, isAlumno)
             }

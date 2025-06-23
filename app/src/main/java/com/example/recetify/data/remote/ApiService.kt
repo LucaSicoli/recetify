@@ -13,6 +13,7 @@ import com.example.recetify.data.remote.model.RecipeSummaryResponse
 import com.example.recetify.data.remote.model.ResetDTO
 import com.example.recetify.data.remote.model.RecipeStepRequest
 import com.example.recetify.data.remote.model.RecipeIngredientRequest
+import com.example.recetify.data.remote.model.UserSavedRecipeDTO
 import okhttp3.MultipartBody
 import retrofit2.http.Body
 import retrofit2.http.GET
@@ -59,6 +60,9 @@ interface ApiService {
     /** Listar borradores del usuario autenticado */
     @GET("recipes/drafts")
     suspend fun listDrafts(): List<RecipeSummaryResponse>
+
+    @GET("/recipes/saved")
+    suspend fun listSavedRecipes(): List<UserSavedRecipeDTO>
 
     /** Publicar un borrador */
     @PUT("recipes/{id}/publish")

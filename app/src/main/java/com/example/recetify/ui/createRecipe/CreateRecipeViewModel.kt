@@ -13,6 +13,7 @@ import com.example.recetify.data.remote.model.RecipeIngredientRequest
 import com.example.recetify.data.remote.model.RecipeRequest
 import com.example.recetify.data.remote.model.RecipeResponse
 import com.example.recetify.data.remote.model.RecipeStepRequest
+import com.example.recetify.data.remote.model.RecipeSummaryResponse
 import com.example.recetify.util.FileUtil
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
@@ -73,8 +74,8 @@ class CreateRecipeViewModel(
     val publishResult: StateFlow<Result<RecipeResponse>?> = _publishResult
 
     // Aquí el flujo de borradores que cargaremos
-    private val _drafts         = MutableStateFlow<List<RecipeResponse>>(emptyList())
-    val drafts: StateFlow<List<RecipeResponse>> = _drafts.asStateFlow()
+    private val _drafts = MutableStateFlow<List<RecipeSummaryResponse>>(emptyList())
+    val drafts: StateFlow<List<RecipeSummaryResponse>> = _drafts.asStateFlow()
 
     fun uploadPhoto(file: File) = viewModelScope.launch {
         _uploading.value = true

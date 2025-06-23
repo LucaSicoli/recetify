@@ -1,4 +1,3 @@
-// app/src/main/java/com/example/recetify/data/RecipeRepository.kt
 package com.example.recetify.data
 
 import android.net.ConnectivityManager
@@ -8,6 +7,7 @@ import com.example.recetify.data.remote.ApiService
 import com.example.recetify.data.remote.model.RecipeRequest
 import com.example.recetify.data.remote.model.RecipeResponse
 import com.example.recetify.data.remote.model.RecipeSummaryResponse
+import com.example.recetify.data.remote.model.UserSavedRecipeDTO
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.emitAll
@@ -25,18 +25,15 @@ class RecipeRepository(
     private val connectivity: ConnectivityManager
 ) {
 
-    /**
-     * Sube una imagen al servidor y devuelve la URL pública.
-     */
-    suspend fun uploadPhoto(file: File): String {
-        val requestBody = file
-            .asRequestBody("image/*".toMediaTypeOrNull())
+    suspend fun uploadPhoto(file: File): String = withContext(Dispatchers.IO) {
+        check(connectivity.activeNetwork != null) { "Sin conexión" }
+        val requestBody = file.asRequestBody("image/*".toMediaTypeOrNull())
         val part = MultipartBody.Part.createFormData(
             name     = "file",
             filename = file.name,
             body     = requestBody
         )
-        return api.uploadImage(part)
+        api.uploadImage(part)
     }
 
     suspend fun saveDraft(req: RecipeRequest): RecipeResponse = withContext(Dispatchers.IO) {
@@ -49,14 +46,16 @@ class RecipeRepository(
         api.listDrafts()
     }
 
+    suspend fun listSavedRecipes(): List<UserSavedRecipeDTO> = withContext(Dispatchers.IO) {
+        check(connectivity.activeNetwork != null) { "Sin conexión" }
+        api.listSavedRecipes()
+    }
+
     suspend fun publishDraft(id: Long): RecipeResponse = withContext(Dispatchers.IO) {
         check(connectivity.activeNetwork != null) { "Sin conexión" }
         api.publishDraft(id)
     }
 
-    /**
-     * Envía el RecipeRequest al backend y devuelve la receta creada.
-     */
     suspend fun createRecipe(req: RecipeRequest): RecipeResponse = withContext(Dispatchers.IO) {
         check(connectivity.activeNetwork != null) { "Sin conexión de red" }
         api.createRecipe(req)
@@ -65,15 +64,9 @@ class RecipeRepository(
     fun getPublishedRecipes(): Flow<List<RecipeEntity>> =
         dao.getByEstadoPublicacion("PUBLICADO")
 
-    /**
-     * Descarga el listado de recetas (resumen) y actualiza el caché en Room.
-     * Luego emite siempre el contenido de Room, para soporte offline.
-     */
     fun getAllRecipes(): Flow<List<RecipeEntity>> = flow {
         if (connectivity.activeNetwork != null) {
-            // 1) Llamo al nuevo endpoint
             val list = api.getAllRecipesSummary()
-            // 2) Mapeo cada RecipeSummaryResponse a RecipeEntity
             val entities = list.map { s ->
                 RecipeEntity(
                     id                  = s.id,
@@ -86,14 +79,13 @@ class RecipeRepository(
                     categoria           = s.categoria,
                     usuarioCreadorAlias = s.usuarioCreadorAlias,
                     promedioRating      = s.promedioRating,
-                    estadoAprobacion    = "",    // si no lo traes aquí, déjalo vacío o añade el campo en el DTO
-                    estadoPublicacion   = ""   // idem
+                    estadoAprobacion    = "",
+                    estadoPublicacion   = ""
                 )
             }
             dao.clearAll()
             dao.insertAll(entities)
         }
-        // 3) Emito siempre lo que hay en cache
         emitAll(dao.getAll())
     }.flowOn(Dispatchers.IO)
 }
