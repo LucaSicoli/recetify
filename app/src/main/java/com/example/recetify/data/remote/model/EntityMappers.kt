@@ -16,7 +16,7 @@ fun RecipeResponse.toEntity(): RecipeEntity = RecipeEntity(
     usuarioCreadorAlias = usuarioCreadorAlias,
     promedioRating      = promedioRating,
     estadoAprobacion    = estado,             // usas “estado” para aprobación
-    estadoPublicacion   = "PUBLICADO"         // o el string que quieras
+    estadoPublicacion   = estadoPublicacion         // o el string que quieras
 )
 
 fun IngredientDTO.toEntity(recipeId: Long): IngredientEntity =

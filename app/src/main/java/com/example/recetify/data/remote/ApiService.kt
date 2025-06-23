@@ -58,7 +58,7 @@ interface ApiService {
 
     /** Listar borradores del usuario autenticado */
     @GET("recipes/drafts")
-    suspend fun listDrafts(): List<RecipeResponse>
+    suspend fun listDrafts(): List<RecipeSummaryResponse>
 
     /** Publicar un borrador */
     @PUT("recipes/{id}/publish")

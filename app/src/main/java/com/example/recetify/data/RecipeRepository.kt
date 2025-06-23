@@ -7,6 +7,7 @@ import com.example.recetify.data.db.RecipeEntity
 import com.example.recetify.data.remote.ApiService
 import com.example.recetify.data.remote.model.RecipeRequest
 import com.example.recetify.data.remote.model.RecipeResponse
+import com.example.recetify.data.remote.model.RecipeSummaryResponse
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.emitAll
@@ -43,7 +44,7 @@ class RecipeRepository(
         api.saveDraft(req)
     }
 
-    suspend fun listDrafts(): List<RecipeResponse> = withContext(Dispatchers.IO) {
+    suspend fun listDrafts(): List<RecipeSummaryResponse> = withContext(Dispatchers.IO) {
         check(connectivity.activeNetwork != null) { "Sin conexión" }
         api.listDrafts()
     }
@@ -86,7 +87,7 @@ class RecipeRepository(
                     usuarioCreadorAlias = s.usuarioCreadorAlias,
                     promedioRating      = s.promedioRating,
                     estadoAprobacion    = "",    // si no lo traes aquí, déjalo vacío o añade el campo en el DTO
-                    estadoPublicacion   = null   // idem
+                    estadoPublicacion   = ""   // idem
                 )
             }
             dao.clearAll()
