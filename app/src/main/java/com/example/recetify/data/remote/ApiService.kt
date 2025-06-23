@@ -18,6 +18,7 @@ import retrofit2.http.Body
 import retrofit2.http.GET
 import retrofit2.http.Multipart
 import retrofit2.http.POST
+import retrofit2.http.PUT
 import retrofit2.http.Part
 import retrofit2.http.Path
 
@@ -52,6 +53,16 @@ interface ApiService {
     @POST("recipes/create")
     suspend fun createRecipe(@Body req: RecipeRequest): RecipeResponse
 
+    @POST("recipes/draft")
+    suspend fun saveDraft(@Body req: RecipeRequest): RecipeResponse
+
+    /** Listar borradores del usuario autenticado */
+    @GET("recipes/drafts")
+    suspend fun listDrafts(): List<RecipeResponse>
+
+    /** Publicar un borrador */
+    @PUT("recipes/{id}/publish")
+    suspend fun publishDraft(@Path("id") recipeId: Long): RecipeResponse
 
     // —— Ratings ——
     @GET("ratings/recipe/{recipeId}")
@@ -59,6 +70,8 @@ interface ApiService {
 
     @POST("ratings")
     suspend fun addRating(@Body req: CreateRatingRequest): RatingResponse
+
+
 
 
     // —— Subida de imágenes ——

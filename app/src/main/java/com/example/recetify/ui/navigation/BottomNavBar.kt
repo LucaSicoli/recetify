@@ -16,53 +16,58 @@ import androidx.navigation.compose.currentBackStackEntryAsState
 import com.example.recetify.R
 
 @Composable
-fun BottomNavBar(navController: NavController) {
+fun BottomNavBar(
+    navController: NavController,
+    isAlumno: Boolean
+) {
     val backStackEntry by navController.currentBackStackEntryAsState()
-    val currentRoute = backStackEntry?.destination?.route
+    val currentRoute   = backStackEntry?.destination?.route
+
+    // Si soy visitante, sólo Home y Search. Si soy alumno, todo.
+    val items = if (isAlumno) {
+        listOf(NavItem.Home, NavItem.Search, NavItem.Chef, NavItem.Favorites, NavItem.Profile)
+    } else {
+        listOf(NavItem.Home, NavItem.Search)
+    }
 
     Box(
         modifier = Modifier
             .fillMaxWidth()
             .height(76.dp)
     ) {
-        // Fondo con forma base de la navbar
         Surface(
-            modifier = Modifier
+            modifier        = Modifier
                 .fillMaxWidth()
                 .height(76.dp)
                 .align(Alignment.BottomCenter),
-            color = Color.White,
+            color           = Color.White,
             shadowElevation = 0.dp,
-            tonalElevation = 0.dp,
-            shape = RoundedCornerShape(topStart = 32.dp, topEnd = 32.dp)
+            tonalElevation  = 0.dp,
+            shape           = RoundedCornerShape(topStart = 32.dp, topEnd = 32.dp)
         ) {
-            val items = NavItem.items.filterNot { it is NavItem.Chef }
             val navColors = NavigationBarItemDefaults.colors(
                 unselectedIconColor = Color.Black
             )
-
             Row(
-                modifier = Modifier
+                modifier            = Modifier
                     .fillMaxWidth()
                     .padding(horizontal = 24.dp),
                 horizontalArrangement = Arrangement.SpaceBetween,
-                verticalAlignment = Alignment.CenterVertically
+                verticalAlignment     = Alignment.CenterVertically
             ) {
-                items.forEachIndexed { index, item ->
-                    if (index == 2) {
-                        Spacer(modifier = Modifier.width(64.dp)) // espacio para FAB
-                    }
+                items.forEach { item ->
                     NavigationBarItem(
                         icon = {
-                            Icon(
-                                modifier = Modifier.size(26.dp),
-                                imageVector = item.icon!!,
-                                contentDescription = item.route
-
-                            )
+                            if (item.icon != null) {
+                                Icon(
+                                    imageVector     = item.icon,
+                                    contentDescription = item.route,
+                                    modifier        = Modifier.size(26.dp)
+                                )
+                            }
                         },
                         selected = currentRoute == item.route,
-                        onClick = {
+                        onClick  = {
                             if (currentRoute != item.route) {
                                 navController.navigate(item.route) {
                                     popUpTo(navController.graph.startDestinationId)
@@ -71,35 +76,37 @@ fun BottomNavBar(navController: NavController) {
                             }
                         },
                         alwaysShowLabel = false,
-                        colors = navColors
+                        colors          = navColors
                     )
                 }
             }
         }
 
-        // FAB centrado
-        FloatingActionButton(
-            onClick = {
-                if (currentRoute != NavItem.Chef.route) {
-                    navController.navigate(NavItem.Chef.route) {
-                        popUpTo(navController.graph.startDestinationId)
-                        launchSingleTop = true
+        // Sólo si es alumno, muestro el FAB de Chef
+        if (isAlumno) {
+            FloatingActionButton(
+                onClick        = {
+                    if (currentRoute != NavItem.Chef.route) {
+                        navController.navigate(NavItem.Chef.route) {
+                            popUpTo(navController.graph.startDestinationId)
+                            launchSingleTop = true
+                        }
                     }
-                }
-            },
-            shape = CircleShape,
-            containerColor = Color(0xFF00261C),
-            contentColor = Color.White,
-            modifier = Modifier
-                .align(Alignment.TopCenter)
-                .offset(y = (-20).dp)
-                .size(64.dp)
-        ) {
-            Icon(
-                painter = painterResource(id = R.drawable.ic_chef_hat),
-                contentDescription = "Chef",
-                modifier = Modifier.size(32.dp)
-            )
+                },
+                shape          = CircleShape,
+                containerColor = Color(0xFF00261C),
+                contentColor   = Color.White,
+                modifier       = Modifier
+                    .align(Alignment.TopCenter)
+                    .offset(y = (-20).dp)
+                    .size(64.dp)
+            ) {
+                Icon(
+                    painter             = painterResource(id = R.drawable.ic_chef_hat),
+                    contentDescription  = "Chef",
+                    modifier            = Modifier.size(32.dp)
+                )
+            }
         }
     }
 }

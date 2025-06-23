@@ -42,7 +42,8 @@ private val Sen = FontFamily(
 fun LoginScreen(
     viewModel: LoginViewModel = viewModel(),
     onLoginSuccess: (token: String) -> Unit,
-    onForgot: () -> Unit
+    onForgot: () -> Unit,
+    onVisitor: () -> Unit,
 ) {
     val context = LocalContext.current
     val prefs   = remember { UserPreferences(context) }
@@ -228,7 +229,7 @@ fun LoginScreen(
                     onClick = {
                         scope.launch {
                             SessionManager.setVisitante(context)
-                            onLoginSuccess("")
+                            onVisitor()
                         }
                     },
                     modifier = Modifier

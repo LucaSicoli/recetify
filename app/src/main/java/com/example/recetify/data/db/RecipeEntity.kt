@@ -15,5 +15,7 @@ data class RecipeEntity(
     val tipoPlato: String,
     val categoria: String,
     val usuarioCreadorAlias: String?,
-    val promedioRating: Double?
+    val promedioRating: Double?,
+    val estadoAprobacion: String   = "",
+    val estadoPublicacion: String? = null
 )

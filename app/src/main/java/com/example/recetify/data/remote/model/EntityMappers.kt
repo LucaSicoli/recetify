@@ -4,19 +4,20 @@ import com.example.recetify.data.db.*
 
 // ── Remoto → Room ───────────────────────────────────────────────
 
-fun RecipeResponse.toEntity(): RecipeEntity =
-    RecipeEntity(
-        id                  = id,
-        nombre              = nombre,
-        descripcion         = descripcion.orEmpty(),
-        mediaUrls           = mediaUrls ?: emptyList(),
-        tiempo              = tiempo,
-        porciones           = porciones,
-        tipoPlato           = tipoPlato,
-        categoria           = categoria,
-        usuarioCreadorAlias = usuarioCreadorAlias,
-        promedioRating      = promedioRating
-    )
+fun RecipeResponse.toEntity(): RecipeEntity = RecipeEntity(
+    id                  = id,
+    nombre              = nombre,
+    descripcion         = descripcion.orEmpty(),
+    mediaUrls           = mediaUrls.orEmpty(),
+    tiempo              = tiempo,
+    porciones           = porciones,
+    tipoPlato           = tipoPlato,
+    categoria           = categoria,
+    usuarioCreadorAlias = usuarioCreadorAlias,
+    promedioRating      = promedioRating,
+    estadoAprobacion    = estado,             // usas “estado” para aprobación
+    estadoPublicacion   = "PUBLICADO"         // o el string que quieras
+)
 
 fun IngredientDTO.toEntity(recipeId: Long): IngredientEntity =
     IngredientEntity(
@@ -64,8 +65,9 @@ fun RecipeWithDetails.toRecipeResponse(): RecipeResponse {
         categoria           = recipe.categoria,
         ingredients         = ingrDTOs,
         steps               = stepDTOs,
-        fechaCreacion       = "",
-        estado              = "",
+        fechaCreacion       = "",                            // o la fecha real
+        estado              = recipe.estadoAprobacion ?: "", // nunca null
+        estadoPublicacion   = recipe.estadoPublicacion ?: "",
         usuarioCreadorAlias = recipe.usuarioCreadorAlias,
         promedioRating      = recipe.promedioRating
     )

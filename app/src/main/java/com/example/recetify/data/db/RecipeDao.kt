@@ -14,4 +14,7 @@ interface RecipeDao {
 
     @Query("SELECT * FROM recipes ORDER BY id DESC")
     fun getAll(): Flow<List<RecipeEntity>>
+
+    @Query("SELECT * FROM recipes WHERE estadoPublicacion = :estado")
+    fun getByEstadoPublicacion(estado: String): Flow<List<RecipeEntity>>
 }

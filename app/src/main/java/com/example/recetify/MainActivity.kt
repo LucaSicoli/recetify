@@ -62,6 +62,7 @@ fun AppNavGraph() {
 
     // Flujos de sesión y conexión
     val isAlumno by SessionManager.isAlumnoFlow(context).collectAsState(initial = false)
+    val isLoggedIn by SessionManager.isLoggedInFlow(context).collectAsState(initial = false)
     val isOnline by rememberIsOnline()
     var offline by rememberSaveable { mutableStateOf(!isOnline) }
     LaunchedEffect(isOnline) { offline = !isOnline }
@@ -71,26 +72,24 @@ fun AppNavGraph() {
 
             // 1) Login / Home guardado
             composable("login") {
-                if (isAlumno) {
-                    LaunchedEffect(Unit) {
-                        navController.navigate("home") {
-                            popUpTo("login") { inclusive = true }
+                LoginScreen(
+                    viewModel      = viewModel<LoginViewModel>(),
+                    onLoginSuccess = { token ->
+                        scope.launch {
+                            SessionManager.setAlumno(context, token)
+                            navController.navigate("home") { popUpTo("login") { inclusive = true } }
                         }
-                    }
-                } else {
-                    LoginScreen(
-                        viewModel      = viewModel<LoginViewModel>(),
-                        onLoginSuccess = { token ->
-                            scope.launch {
-                                SessionManager.setAlumno(context, token)
-                                navController.navigate("home") {
-                                    popUpTo("login") { inclusive = true }
-                                }
+                    },
+                    onVisitor = {      // ← visitor va aquí
+                        scope.launch {
+                            // `setVisitante` ya lo hiciste en el screen, aquí solo navegas
+                            navController.navigate("home") {
+                                popUpTo("login") { inclusive = true }
                             }
-                        },
-                        onForgot = { navController.navigate("forgot") }
-                    )
-                }
+                        }
+                    },
+                    onForgot = { navController.navigate("forgot") }
+                )
             }
 
             // 2) Password reset flow
@@ -119,7 +118,7 @@ fun AppNavGraph() {
 
             // 3) Home y Detail
             composable("home") {
-                if (!isAlumno) {
+                if (!isLoggedIn) {
                     LaunchedEffect(Unit) {
                         navController.navigate("login") {
                             popUpTo("home") { inclusive = true }
@@ -159,7 +158,7 @@ fun AppNavGraph() {
         val route = backStackEntry?.destination?.route ?: ""
         if (!offline && (route == "home" || route.startsWith("recipe/")) || route == "createRecipe") {
             Box(Modifier.align(Alignment.BottomCenter)) {
-                BottomNavBar(navController)
+                BottomNavBar(navController, isAlumno)
             }
         }
 

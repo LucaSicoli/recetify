@@ -8,37 +8,50 @@ import androidx.datastore.preferences.preferencesDataStore
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.map
 
-private val Context.sessionPrefs by preferencesDataStore("session_prefs")
-private val KEY_IS_ALUMNO = booleanPreferencesKey("is_alumno")
+// 1) Extensión para obtener el DataStore
+private val Context.sessionPrefs by preferencesDataStore(name = "session_prefs")
 
-// SessionManager.kt
+// 2) Tus claves de Preferences
+private val KEY_IS_ALUMNO   = booleanPreferencesKey("is_alumno")
+private val KEY_IS_VISITOR  = booleanPreferencesKey("is_visitor")
+private val KEY_JWT_TOKEN   = stringPreferencesKey("jwt_token")
+
 object SessionManager {
     private var jwtToken: String? = null
-    private val Context.sessionPrefs by preferencesDataStore("session_prefs")
-    private val KEY_IS_ALUMNO    = booleanPreferencesKey("is_alumno")
-    private val KEY_JWT_TOKEN    = stringPreferencesKey("jwt_token")
 
     suspend fun setAlumno(context: Context, token: String) {
         jwtToken = token
-        context.sessionPrefs.edit {
-            it[KEY_IS_ALUMNO] = true
-            it[KEY_JWT_TOKEN] = token
+        context.sessionPrefs.edit { prefs ->
+            prefs[KEY_IS_ALUMNO]  = true
+            prefs[KEY_IS_VISITOR] = false
+            prefs[KEY_JWT_TOKEN]  = token
         }
     }
 
     suspend fun setVisitante(context: Context) {
         jwtToken = null
-        context.sessionPrefs.edit {
-            it[KEY_IS_ALUMNO] = false
-            it.remove(KEY_JWT_TOKEN)
+        context.sessionPrefs.edit { prefs ->
+            prefs[KEY_IS_ALUMNO]  = false
+            prefs[KEY_IS_VISITOR] = true
+            prefs.remove(KEY_JWT_TOKEN)
         }
     }
 
     fun getToken(): String? = jwtToken
 
     fun isAlumnoFlow(context: Context): Flow<Boolean> =
-        context.sessionPrefs.data.map { it[KEY_IS_ALUMNO] ?: false }
+        context.sessionPrefs.data.map { prefs ->
+            prefs[KEY_IS_ALUMNO] ?: false
+        }
+
+    fun isLoggedInFlow(context: Context): Flow<Boolean> =
+        context.sessionPrefs.data.map { prefs ->
+            (prefs[KEY_IS_ALUMNO]  == true) ||
+                    (prefs[KEY_IS_VISITOR] == true)
+        }
 
     fun tokenFlow(context: Context): Flow<String?> =
-        context.sessionPrefs.data.map { it[KEY_JWT_TOKEN] }
+        context.sessionPrefs.data.map { prefs ->
+            prefs[KEY_JWT_TOKEN]
+        }
 }

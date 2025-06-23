@@ -13,5 +13,7 @@ data class RecipeSummaryResponse(
     val tipoPlato: String,
     val categoria: String,
     val usuarioCreadorAlias: String?,
-    val promedioRating: Double?
+    val promedioRating: Double?,
+    val estadoAprobacion: String,            // <-- agregar en el DTO
+    val estadoPublicacion: String
 )

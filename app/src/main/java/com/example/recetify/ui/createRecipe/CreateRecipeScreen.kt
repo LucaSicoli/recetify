@@ -54,8 +54,10 @@ import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.text.input.KeyboardType
 import com.example.recetify.util.listaIngredientesConEmoji
 import android.content.Intent
+import android.widget.Toast
 import androidx.activity.result.contract.ActivityResultContracts.StartActivityForResult
 import androidx.compose.ui.viewinterop.AndroidView
+import com.example.recetify.data.remote.model.RecipeRequest
 import com.google.android.exoplayer2.MediaItem
 import com.google.android.exoplayer2.SimpleExoPlayer
 import com.google.android.exoplayer2.ui.PlayerView
@@ -77,6 +79,8 @@ fun CreateRecipeScreen(
     onSaved:    () -> Unit,
     onPublished:() -> Unit,
 ) {
+
+
     // --- Local & ViewModel state ---
 
     var localMediaUri by remember { mutableStateOf<Uri?>(null) }
@@ -109,6 +113,7 @@ fun CreateRecipeScreen(
     val uploading  by viewModel.uploading.collectAsState(initial = false)
     val error      by viewModel.error.collectAsState(initial = null)
 
+
     // Image picker
     val context  = LocalContext.current
     val anyLauncher = rememberLauncherForActivityResult(StartActivityForResult()) { result ->
@@ -123,6 +128,30 @@ fun CreateRecipeScreen(
             localMediaUri = uri
         }
     }
+
+    var draftId by remember { mutableStateOf<Long?>(null) }
+    val draftResult   by viewModel.draftSaved.collectAsState()
+    val publishResult by viewModel.publishResult.collectAsState()
+
+    // ② Ahora sí puedes usar `context` dentro de tus LaunchedEffect
+    LaunchedEffect(draftResult) {
+        draftResult?.onSuccess { recipe ->
+            draftId = recipe.id
+            Toast.makeText(context, "Borrador #${recipe.id} guardado", Toast.LENGTH_SHORT).show()
+        }?.onFailure {
+            Toast.makeText(context, "Error guardando borrador: ${it.message}", Toast.LENGTH_SHORT).show()
+        }
+    }
+
+    LaunchedEffect(publishResult) {
+        publishResult?.onSuccess {
+            Toast.makeText(context, "¡Borrador publicado!", Toast.LENGTH_SHORT).show()
+            onPublished()
+        }?.onFailure {
+            Toast.makeText(context, "Error publicando: ${it.message}", Toast.LENGTH_SHORT).show()
+        }
+    }
+
 
     val stepMediaLauncher = rememberLauncherForActivityResult(StartActivityForResult()) { result ->
         val uri = result.data?.data ?: return@rememberLauncherForActivityResult
@@ -140,6 +169,7 @@ fun CreateRecipeScreen(
         }
         anyLauncher.launch(intent)
     }
+
 
     Scaffold{ innerPadding ->
         Column(
@@ -705,11 +735,37 @@ fun CreateRecipeScreen(
                             .padding(horizontal = 24.dp, vertical = 16.dp),
                         horizontalArrangement = Arrangement.spacedBy(12.dp)
                     ) {
-                        // GUARDAR (opcional: local, borrador…)
                         OutlinedButton(
-                            onClick   = onSaved,
+                            onClick = {
+                                // 1️⃣ Validar campos (puedes extraerlo a función si quieres)
+                                if (nombre.isBlank() || descripcion.isBlank()
+                                    || selectedCategory == null || selectedTipo == null
+                                    || ingredients.isEmpty() || steps.isEmpty()
+                                ) {
+                                    // aquí podrías mostrar un Toast o Snackbar de “faltan campos”
+                                    return@OutlinedButton
+                                }
+
+                                // 2️⃣ Construir el RecipeRequest igual que en createRecipe
+                                val request = RecipeRequest(
+                                    nombre      = nombre,
+                                    descripcion = descripcion,
+                                    tiempo      = tiempo,
+                                    porciones   = porciones,
+                                    mediaUrls   = photoUrl?.let { listOf(it) } ?: emptyList(),
+                                    tipoPlato   = selectedTipo!!,
+                                    categoria   = selectedCategory!!,
+                                    ingredients = ingredients.toList(),
+                                    steps       = steps.toList()
+                                )
+
+                                // 3️⃣ Llamar al ViewModel para guardar borrador
+                                viewModel.saveDraft(request)
+                            },
                             enabled   = !viewModel.submitting.collectAsState().value,
-                            modifier  = Modifier.weight(1f).height(48.dp),
+                            modifier  = Modifier
+                                .weight(1f)
+                                .height(48.dp),
                             shape     = RoundedCornerShape(24.dp),
                             border    = BorderStroke(1.dp, Black)
                         ) {
@@ -1004,26 +1060,45 @@ private fun StepCard(
 
             // —— Botones “Agregar/Cambiar media” + “Eliminar” —————
             Row(
-                Modifier.fillMaxWidth(),
-                horizontalArrangement = Arrangement.SpaceBetween,
+                modifier             = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.spacedBy(12.dp),
                 verticalAlignment     = Alignment.CenterVertically
             ) {
+                // 1) Botón Cambiar/Agregar media
                 OutlinedButton(
-                    onClick = onAddMedia,
-                    shape   = RoundedCornerShape(8.dp),
-                    border  = BorderStroke(1.dp, Accent)
+                    onClick        = onAddMedia,
+                    modifier       = Modifier
+                        .weight(1f)
+                        .height(40.dp),
+                    shape          = RoundedCornerShape(8.dp),
+                    border         = BorderStroke(1.dp, Accent),
+                    contentPadding = PaddingValues(horizontal = 12.dp)
                 ) {
                     Icon(Icons.Default.CameraAlt, contentDescription = null, tint = Accent)
                     Spacer(Modifier.width(4.dp))
                     Text(
-                        text = if (firstMedia == null) "Agregar media" else "Cambiar media",
-                        color = Accent,
+                        text       = if (firstMedia == null) "Agregar media" else "Cambiar media",
+                        color      = Accent,
                         fontFamily = Destacado
                     )
                 }
 
-                IconButton(onClick = onDelete) {
-                    Icon(Icons.Default.Remove, contentDescription = "Eliminar paso", tint = Color.Red)
+                // 2) Botón Eliminar paso
+                Button(
+                    onClick        = onDelete,
+                    modifier       = Modifier
+                        .weight(1f)
+                        .height(40.dp),
+                    shape          = RoundedCornerShape(8.dp),
+                    colors         = ButtonDefaults.buttonColors(
+                        containerColor = Color.Red,
+                        contentColor   = Color.White
+                    ),
+                    contentPadding = PaddingValues(horizontal = 12.dp)
+                ) {
+                    Icon(Icons.Default.Remove, contentDescription = null)
+                    Spacer(Modifier.width(4.dp))
+                    Text("Eliminar paso", fontFamily = Destacado)
                 }
             }
         }

@@ -13,6 +13,7 @@ data class RecipeResponse(
     val steps: List<StepDTO> = emptyList(),
     val fechaCreacion: String,
     val estado: String,
+    val estadoPublicacion: String,
 
     // ------> NUEVAS (con default para que no crashee aún sin backend):
     val usuarioCreadorAlias: String? = null,

@@ -1,4 +1,3 @@
-// app/src/main/java/com/example/recetify/ui/createRecipe/CreateRecipeViewModel.kt
 package com.example.recetify.ui.createRecipe
 
 import android.app.Application
@@ -12,9 +11,11 @@ import com.example.recetify.data.db.DatabaseProvider
 import com.example.recetify.data.remote.RetrofitClient
 import com.example.recetify.data.remote.model.RecipeIngredientRequest
 import com.example.recetify.data.remote.model.RecipeRequest
+import com.example.recetify.data.remote.model.RecipeResponse
 import com.example.recetify.data.remote.model.RecipeStepRequest
 import com.example.recetify.util.FileUtil
 import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.launch
 import java.io.File
@@ -53,17 +54,27 @@ class CreateRecipeViewModel(
     private val repo: RecipeRepository
 ) : AndroidViewModel(app) {
 
-    private val _uploading   = MutableStateFlow(false)
-    val uploading           = _uploading.asStateFlow()
+    private val _uploading      = MutableStateFlow(false)
+    val uploading              = _uploading.asStateFlow()
 
-    private val _submitting  = MutableStateFlow(false)
-    val submitting          = _submitting.asStateFlow()
+    private val _submitting     = MutableStateFlow(false)
+    val submitting             = _submitting.asStateFlow()
 
-    private val _error       = MutableStateFlow<String?>(null)
-    val error               = _error.asStateFlow()
+    private val _error          = MutableStateFlow<String?>(null)
+    val error                  = _error.asStateFlow()
 
-    private val _photoUrl    = MutableStateFlow<String?>(null)
-    val photoUrl            = _photoUrl.asStateFlow()
+    private val _photoUrl       = MutableStateFlow<String?>(null)
+    val photoUrl               = _photoUrl.asStateFlow()
+
+    private val _draftSaved     = MutableStateFlow<Result<RecipeResponse>?>(null)
+    val draftSaved: StateFlow<Result<RecipeResponse>?> = _draftSaved
+
+    private val _publishResult  = MutableStateFlow<Result<RecipeResponse>?>(null)
+    val publishResult: StateFlow<Result<RecipeResponse>?> = _publishResult
+
+    // Aquí el flujo de borradores que cargaremos
+    private val _drafts         = MutableStateFlow<List<RecipeResponse>>(emptyList())
+    val drafts: StateFlow<List<RecipeResponse>> = _drafts.asStateFlow()
 
     fun uploadPhoto(file: File) = viewModelScope.launch {
         _uploading.value = true
@@ -78,6 +89,28 @@ class CreateRecipeViewModel(
         }
     }
 
+    /** Guarda un borrador */
+    fun saveDraft(request: RecipeRequest) = viewModelScope.launch {
+        runCatching { repo.saveDraft(request) }
+            .onSuccess { _draftSaved.value = Result.success(it) }
+            .onFailure { _draftSaved.value = Result.failure(it) }
+    }
+
+    /** Publica un borrador existente */
+    fun publishDraft(id: Long) = viewModelScope.launch {
+        runCatching { repo.publishDraft(id) }
+            .onSuccess { _publishResult.value = Result.success(it) }
+            .onFailure { _publishResult.value = Result.failure(it) }
+    }
+
+    /** Carga todos los borradores del usuario */
+    fun loadDrafts() = viewModelScope.launch {
+        runCatching { repo.listDrafts() }
+            .onSuccess { _drafts.value = it }
+            .onFailure { _error.value = it.localizedMessage }
+    }
+
+    /** Crea una receta para enviar a aprobación */
     fun createRecipe(
         nombre: String,
         descripcion: String,
@@ -92,7 +125,7 @@ class CreateRecipeViewModel(
         _submitting.value = true
         _error.value = null
         try {
-            // ➊ Subir media de los pasos (igual que antes)…
+            // ➊ Sube los medios de cada paso que sean locales…
             val uploadedSteps = steps.map { step ->
                 val locals = step.mediaUrls.orEmpty().filter { it.startsWith("content://") }
                 if (locals.isNotEmpty()) {
@@ -105,18 +138,18 @@ class CreateRecipeViewModel(
                 } else step
             }
 
-            // ➋ Aquí defines headerUrls a partir de _photoUrl
+            // ➋ La foto principal
             val headerUrls: List<String> = _photoUrl.value
                 ?.let { listOf(it) }
                 ?: emptyList()
 
-            // ➌ Construyes el RecipeRequest con mediaUrls = headerUrls
+            // ➌ Montas el request definitivo
             val req = RecipeRequest(
                 nombre      = nombre,
                 descripcion = descripcion,
                 tiempo      = tiempo,
                 porciones   = porciones,
-                mediaUrls   = headerUrls,       // <-- ahora existe
+                mediaUrls   = headerUrls,
                 tipoPlato   = tipoPlato,
                 categoria   = categoria,
                 ingredients = ingredients,

@@ -38,6 +38,21 @@ class RecipeRepository(
         return api.uploadImage(part)
     }
 
+    suspend fun saveDraft(req: RecipeRequest): RecipeResponse = withContext(Dispatchers.IO) {
+        check(connectivity.activeNetwork != null) { "Sin conexión" }
+        api.saveDraft(req)
+    }
+
+    suspend fun listDrafts(): List<RecipeResponse> = withContext(Dispatchers.IO) {
+        check(connectivity.activeNetwork != null) { "Sin conexión" }
+        api.listDrafts()
+    }
+
+    suspend fun publishDraft(id: Long): RecipeResponse = withContext(Dispatchers.IO) {
+        check(connectivity.activeNetwork != null) { "Sin conexión" }
+        api.publishDraft(id)
+    }
+
     /**
      * Envía el RecipeRequest al backend y devuelve la receta creada.
      */
@@ -46,31 +61,38 @@ class RecipeRepository(
         api.createRecipe(req)
     }
 
+    fun getPublishedRecipes(): Flow<List<RecipeEntity>> =
+        dao.getByEstadoPublicacion("PUBLICADO")
+
     /**
      * Descarga el listado de recetas (resumen) y actualiza el caché en Room.
      * Luego emite siempre el contenido de Room, para soporte offline.
      */
     fun getAllRecipes(): Flow<List<RecipeEntity>> = flow {
         if (connectivity.activeNetwork != null) {
-            val summary  = api.getAllRecipesSummary()
-            val entities = summary.map { s ->
+            // 1) Llamo al nuevo endpoint
+            val list = api.getAllRecipesSummary()
+            // 2) Mapeo cada RecipeSummaryResponse a RecipeEntity
+            val entities = list.map { s ->
                 RecipeEntity(
                     id                  = s.id,
                     nombre              = s.nombre,
-                    descripcion         = s.descripcion.orEmpty(),
-                    // Convertimos la sola fotoPrincipal en lista de 1 elemento:
-                    mediaUrls           = s.mediaUrls.orEmpty(),
+                    descripcion         = s.descripcion,
+                    mediaUrls           = s.mediaUrls,
                     tiempo              = s.tiempo.toInt(),
                     porciones           = s.porciones,
                     tipoPlato           = s.tipoPlato,
                     categoria           = s.categoria,
                     usuarioCreadorAlias = s.usuarioCreadorAlias,
-                    promedioRating      = s.promedioRating
+                    promedioRating      = s.promedioRating,
+                    estadoAprobacion    = "",    // si no lo traes aquí, déjalo vacío o añade el campo en el DTO
+                    estadoPublicacion   = null   // idem
                 )
             }
             dao.clearAll()
             dao.insertAll(entities)
         }
+        // 3) Emito siempre lo que hay en cache
         emitAll(dao.getAll())
     }.flowOn(Dispatchers.IO)
 }

@@ -7,9 +7,11 @@ import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.navigation.NavController
+import com.example.recetify.data.remote.model.SessionManager
 import com.example.recetify.data.remote.model.toRecipeResponse
 import com.example.recetify.data.remote.model.toRatingResponse
 import com.example.recetify.ui.navigation.BottomNavBar
@@ -20,17 +22,22 @@ fun RecipeDetailScreen(
     navController: NavController,
     viewModel: RecipeDetailViewModel = viewModel()
 ) {
+    val context = LocalContext.current
     val details          = viewModel.recipeWithDetails
     val loading          = viewModel.loading
     val showIngredients  = remember { mutableStateOf(true) }
     val currentStep      = remember { mutableStateOf(0) }
+    val isAlumno by SessionManager
+        .isAlumnoFlow(context)
+        .collectAsState(initial = false)
+
 
     LaunchedEffect(recipeId) {
         viewModel.fetchRecipe(recipeId)
     }
 
     Scaffold(
-        bottomBar     = { BottomNavBar(navController) },
+        bottomBar     = { BottomNavBar(navController, isAlumno) },
         containerColor = Color.White
     ) { padding ->
         Box(
