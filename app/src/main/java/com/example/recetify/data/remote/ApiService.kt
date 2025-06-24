@@ -75,7 +75,8 @@ interface ApiService {
     @POST("ratings")
     suspend fun addRating(@Body req: CreateRatingRequest): RatingResponse
 
-
+    @GET("recipes/created")
+    suspend fun getMyPublishedRecipes(): List<RecipeSummaryResponse>
 
 
     // —— Subida de imágenes ——
