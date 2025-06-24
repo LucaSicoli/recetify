@@ -50,7 +50,7 @@ fun ProfileScreen(
                 .fillMaxSize()
                 .verticalScroll(rememberScrollState())
                 .padding(horizontal = 24.dp)
-                .padding(top = 96.dp, bottom = 24.dp)
+                .padding(top = 72.dp, bottom = 24.dp)
         ) {
             // ─── HEADER ─────────────────────────────
             Row(
@@ -81,7 +81,7 @@ fun ProfileScreen(
                 }
             }
 
-            Spacer(Modifier.height(48.dp))
+            Spacer(Modifier.height(38.dp))
 
             // ─── STATS (4) ───────────────────────────
             Row(
