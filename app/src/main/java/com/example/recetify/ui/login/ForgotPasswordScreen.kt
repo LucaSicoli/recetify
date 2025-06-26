@@ -5,19 +5,14 @@ import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.foundation.text.KeyboardActions
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.MailOutline
-import androidx.compose.material3.Button
-import androidx.compose.material3.ButtonDefaults
-import androidx.compose.material3.CircularProgressIndicator
-import androidx.compose.material3.Icon
-import androidx.compose.material3.OutlinedTextField
-import androidx.compose.material3.Surface
-import androidx.compose.material3.Text
+import androidx.compose.material3.*
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.getValue
 import androidx.compose.runtime.collectAsState
+import androidx.compose.runtime.getValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
@@ -26,6 +21,7 @@ import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.font.Font
 import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
@@ -34,7 +30,7 @@ import com.example.recetify.R
 
 private val Sen = FontFamily(
     Font(R.font.sen_regular, weight = FontWeight.Normal),
-    Font(R.font.sen_bold,    weight = FontWeight.Bold)
+    Font(R.font.sen_bold, weight = FontWeight.Bold)
 )
 
 @Composable
@@ -46,6 +42,7 @@ fun ForgotPasswordScreen(
     val state by viewModel.state.collectAsState()
 
     Column(modifier = Modifier.fillMaxSize()) {
+
         // — PARTE SUPERIOR OSCURA —
         Box(
             modifier = Modifier
@@ -92,7 +89,7 @@ fun ForgotPasswordScreen(
                     .fillMaxSize()
                     .padding(24.dp)
             ) {
-                // Campo de email (single line para que no "brinque" al escribir)
+                // Campo de email (con acción enter configurada)
                 OutlinedTextField(
                     value = state.email,
                     onValueChange = viewModel::onEmailChange,
@@ -114,7 +111,13 @@ fun ForgotPasswordScreen(
                     },
                     modifier = Modifier.fillMaxWidth(),
                     shape = RoundedCornerShape(12.dp),
-                    keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Email),
+                    keyboardOptions = KeyboardOptions(
+                        keyboardType = KeyboardType.Email,
+                        imeAction = ImeAction.Done
+                    ),
+                    keyboardActions = KeyboardActions(
+                        onDone = { viewModel.requestReset(onNext) }
+                    ),
                     textStyle = TextStyle(
                         color = Color.Black,
                         fontFamily = Sen,
@@ -122,7 +125,6 @@ fun ForgotPasswordScreen(
                     )
                 )
 
-                // empujamos el botón hacia abajo
                 Spacer(modifier = Modifier.weight(0.6f))
 
                 // Botón "ENVIAR CÓDIGO"
@@ -149,7 +151,6 @@ fun ForgotPasswordScreen(
                     }
                 }
 
-                // un pequeño espacio antes del texto de registro
                 Spacer(modifier = Modifier.height(8.dp))
 
                 // Texto "¿No tenés una cuenta? REGISTRATE"
@@ -173,7 +174,6 @@ fun ForgotPasswordScreen(
                     )
                 }
 
-                // y algo de padding final para que no quede pegado al borde
                 Spacer(modifier = Modifier.height(90.dp))
             }
         }

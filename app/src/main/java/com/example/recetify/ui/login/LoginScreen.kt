@@ -5,6 +5,7 @@ import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.foundation.text.KeyboardActions
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Visibility
@@ -14,6 +15,7 @@ import androidx.compose.runtime.*
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.focus.focusRequester
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.painterResource
@@ -21,6 +23,7 @@ import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.font.Font
 import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.text.input.PasswordVisualTransformation
 import androidx.compose.ui.text.input.VisualTransformation
@@ -32,6 +35,12 @@ import com.example.recetify.R
 import com.example.recetify.data.local.UserPreferences
 import com.example.recetify.data.remote.model.SessionManager
 import kotlinx.coroutines.launch
+
+import androidx.compose.ui.focus.FocusRequester
+import androidx.compose.ui.focus.focusRequester
+import androidx.compose.ui.focus.focusTarget
+import androidx.compose.ui.platform.LocalFocusManager
+
 
 private val Sen = FontFamily(
     Font(R.font.sen_regular, weight = FontWeight.Normal),
@@ -45,16 +54,15 @@ fun LoginScreen(
     onForgot: () -> Unit
 ) {
     val context = LocalContext.current
-    val prefs   = remember { UserPreferences(context) }
-    val scope   = rememberCoroutineScope()
+    val prefs = remember { UserPreferences(context) }
+    val scope = rememberCoroutineScope()
 
     val state by viewModel.state.collectAsState()
 
-    // Credenciales guardadas
     val savedRemember by prefs.rememberFlow.collectAsState(initial = false)
-    val savedAlias    by prefs.aliasFlow.collectAsState(initial = "")
-    val savedEmail    by prefs.emailFlow.collectAsState(initial = "")
-    val savedPwd      by prefs.passwordFlow.collectAsState(initial = "")
+    val savedAlias by prefs.aliasFlow.collectAsState(initial = "")
+    val savedEmail by prefs.emailFlow.collectAsState(initial = "")
+    val savedPwd by prefs.passwordFlow.collectAsState(initial = "")
 
     var rememberMe by rememberSaveable { mutableStateOf(false) }
     LaunchedEffect(savedRemember) { rememberMe = savedRemember }
@@ -65,13 +73,13 @@ fun LoginScreen(
             viewModel.onPasswordChanged(savedPwd ?: "")
         }
     }
+
     LaunchedEffect(state.token) {
         state.token?.let { token ->
-            // 1) Guardar o limpiar credenciales
             if (rememberMe) {
                 prefs.saveLoginData(
-                    alias    = state.alias,
-                    email    = state.email,
+                    alias = state.alias,
+                    email = state.email,
                     password = state.password,
                     remember = true
                 )
@@ -79,16 +87,18 @@ fun LoginScreen(
                 prefs.clearLoginData()
             }
 
-            // 2) Setear el token de alumno
             SessionManager.setAlumno(context, token)
-
-            // 3) Navegar a Home
             onLoginSuccess(token)
         }
     }
 
+    // Focus requesters para navegación entre campos
+    val aliasFocusRequester = remember { FocusRequester() }
+    val emailFocusRequester = remember { FocusRequester() }
+    val passwordFocusRequester = remember { FocusRequester() }
+
     Column(modifier = Modifier.fillMaxSize()) {
-        // ── PARTE SUPERIOR OSCURA ───────────────────────────────────────────────
+        // Parte superior
         Box(
             modifier = Modifier
                 .fillMaxWidth()
@@ -124,7 +134,7 @@ fun LoginScreen(
             }
         }
 
-        // ── PARTE INFERIOR BLANCA ───────────────────────────────────────────────
+        // Parte inferior
         Surface(
             modifier = Modifier.fillMaxSize(),
             color = Color.White,
@@ -142,9 +152,16 @@ fun LoginScreen(
                     onValueChange = viewModel::onAliasChanged,
                     label = { Text("Alias") },
                     placeholder = { Text("Tu alias") },
-                    modifier = Modifier.fillMaxWidth(),
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .focusRequester(aliasFocusRequester),
                     shape = RoundedCornerShape(12.dp),
-                    textStyle = TextStyle(color = Color.Black, fontSize = 16.sp)
+                    singleLine = true,
+                    textStyle = TextStyle(color = Color.Black, fontSize = 16.sp),
+                    keyboardOptions = KeyboardOptions.Default.copy(imeAction = ImeAction.Next),
+                    keyboardActions = KeyboardActions(
+                        onNext = { emailFocusRequester.requestFocus() }
+                    )
                 )
 
                 // Email
@@ -153,10 +170,19 @@ fun LoginScreen(
                     onValueChange = viewModel::onEmailChanged,
                     label = { Text("Email") },
                     placeholder = { Text("example@gmail.com") },
-                    modifier = Modifier.fillMaxWidth(),
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .focusRequester(emailFocusRequester),
                     shape = RoundedCornerShape(12.dp),
-                    keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Email),
-                    textStyle = TextStyle(color = Color.Black, fontSize = 16.sp)
+                    singleLine = true,
+                    textStyle = TextStyle(color = Color.Black, fontSize = 16.sp),
+                    keyboardOptions = KeyboardOptions(
+                        keyboardType = KeyboardType.Email,
+                        imeAction = ImeAction.Next
+                    ),
+                    keyboardActions = KeyboardActions(
+                        onNext = { passwordFocusRequester.requestFocus() }
+                    )
                 )
 
                 // Contraseña
@@ -165,9 +191,19 @@ fun LoginScreen(
                     onValueChange = viewModel::onPasswordChanged,
                     label = { Text("Contraseña") },
                     placeholder = { Text("••••••••") },
-                    modifier = Modifier.fillMaxWidth(),
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .focusRequester(passwordFocusRequester),
                     shape = RoundedCornerShape(12.dp),
+                    singleLine = true,
                     textStyle = TextStyle(color = Color.Black, fontSize = 16.sp),
+                    keyboardOptions = KeyboardOptions(
+                        keyboardType = KeyboardType.Password,
+                        imeAction = ImeAction.Done
+                    ),
+                    keyboardActions = KeyboardActions(
+                        onDone = { viewModel.onLoginClicked() }
+                    ),
                     visualTransformation = if (state.isPasswordVisible)
                         VisualTransformation.None
                     else
@@ -194,14 +230,10 @@ fun LoginScreen(
                         checked = rememberMe,
                         onCheckedChange = { rememberMe = it }
                     )
-                    Text(
-                        "Recordarme",
-                        fontSize = 14.sp,
-                        color = Color(0xFF555555)
-                    )
+                    Text("Recordarme", fontSize = 14.sp, color = Color(0xFF555555))
                 }
 
-                // Botón INICIAR SESIÓN
+                // Botón iniciar sesión
                 Button(
                     onClick = viewModel::onLoginClicked,
                     modifier = Modifier
@@ -217,13 +249,11 @@ fun LoginScreen(
                             color = Color.White
                         )
                     } else {
-                        Text(
-                            "INICIAR SESIÓN",
-                            color = Color.White,
-                            fontFamily = Sen
-                        )
+                        Text("INICIAR SESIÓN", color = Color.White, fontFamily = Sen)
                     }
                 }
+
+                // Botón visitante
                 Button(
                     onClick = {
                         scope.launch {
@@ -234,14 +264,14 @@ fun LoginScreen(
                     modifier = Modifier
                         .fillMaxWidth()
                         .height(48.dp)
-                        .offset(y = (-6).dp),     // <-- esto lo sube 4dp
+                        .offset(y = (-6).dp),
                     shape = RoundedCornerShape(12.dp),
-                    colors = ButtonDefaults.buttonColors(containerColor = Color.Gray))
-                {
+                    colors = ButtonDefaults.buttonColors(containerColor = Color.Gray)
+                ) {
                     Text("INGRESAR COMO VISITANTE", color = Color.White, fontFamily = Sen)
                 }
 
-                // — Enlaces pequeños debajo —
+                // Enlaces inferiores
                 Column(modifier = Modifier.fillMaxWidth()) {
                     Text(
                         "¿Olvidaste la contraseña?",

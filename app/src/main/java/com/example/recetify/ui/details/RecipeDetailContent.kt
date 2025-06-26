@@ -4,10 +4,12 @@ import android.R.attr.divider
 import androidx.compose.animation.animateContentSize
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.background
+import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.IntrinsicSize
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
@@ -15,10 +17,12 @@ import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.offset
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.layout.widthIn
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
@@ -29,6 +33,8 @@ import androidx.compose.material.icons.filled.ArrowDropDown
 import androidx.compose.material.icons.filled.ArrowDropUp
 import androidx.compose.material.icons.filled.Star
 import androidx.compose.material.icons.filled.AccessTime
+import androidx.compose.material.icons.filled.Restaurant
+import androidx.compose.material.icons.filled.Schedule
 import androidx.compose.material.icons.outlined.Person
 import androidx.compose.material.icons.outlined.StarBorder
 import androidx.compose.material3.Card
@@ -42,9 +48,14 @@ import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
+import androidx.compose.material3.LocalTextStyle
+import androidx.compose.material3.OutlinedTextFieldDefaults
+import androidx.compose.material3.TextField
+import androidx.compose.material3.TextFieldDefaults
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.MutableState
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateListOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
@@ -71,6 +82,14 @@ import com.example.recetify.data.remote.model.RatingResponse
 import com.example.recetify.ui.details.RecipeDetailViewModel
 import com.example.recetify.util.obtenerEmoji
 import java.net.URI
+import kotlin.math.roundToInt
+
+data class EditableIngredient(
+    val nombre: String,
+    val unidadMedida: String,
+    val originalCantidad: Float,
+    var cantidadActual: Float
+)
 
 
 private val Destacado = FontFamily(
@@ -339,6 +358,20 @@ fun RecipeDetailContent(
     }.getOrNull() ?: originalMain
     val fullUrl = if (pathMain.startsWith("/")) "$baseUrl$pathMain" else pathMain
 
+    val isEditing = remember { mutableStateOf(false) }
+    val ingredientes = remember(receta.id) {
+        mutableStateListOf(*receta.ingredients.map {
+            EditableIngredient(
+                nombre = it.nombre,
+                unidadMedida = it.unidadMedida,
+                originalCantidad = it.cantidad.toFloat(),
+                cantidadActual = it.cantidad.toFloat()
+            )
+        }.toTypedArray())
+    }
+
+
+
     Column(
         modifier = Modifier
             .padding(padding)
@@ -397,33 +430,76 @@ fun RecipeDetailContent(
 
                 Spacer(Modifier.height(16.dp))
 
-                // Tiempo, creador y promedio
-                Row(verticalAlignment = Alignment.CenterVertically) {
-                    Icon(
-                        imageVector = Icons.Outlined.Person,
-                        contentDescription = "Creador",
-                        tint = Color.Black,
-                        modifier = Modifier.size(16.dp),
-                    )
-                    Spacer(Modifier.width(4.dp))
-                    Text(
-                        text = receta.usuarioCreadorAlias.orEmpty(),
-                        style = MaterialTheme.typography.bodySmall.copy(color = Color.Black),
-                        fontFamily = Destacado
-                    )
-                    Spacer(Modifier.width(16.dp))
-                    Icon(
-                        imageVector = Icons.Filled.Star,
-                        contentDescription = "Promedio",
-                        tint = Color(0xFFFFD700),
-                        modifier = Modifier.size(18.dp)
-                    )
-                    Spacer(Modifier.width(4.dp))
-                    Text(
-                        text = "%,.1f".format(receta.promedioRating ?: 0.0),
-                        style = MaterialTheme.typography.bodyMedium.copy(color = Color.Black)
-                    )
+                // Tiempo, creador,  promedio y porciones
+                Row(
+                    verticalAlignment = Alignment.CenterVertically,
+                    horizontalArrangement = Arrangement.spacedBy(20.dp)
+                ) {
+                    // 👤 Creador
+                    Row(verticalAlignment = Alignment.CenterVertically) {
+                        Icon(
+                            imageVector = Icons.Outlined.Person,
+                            contentDescription = "Creador",
+                            tint = Color.Black,
+                            modifier = Modifier.size(16.dp)
+                        )
+                        Spacer(Modifier.width(4.dp))
+                        Text(
+                            text = receta.usuarioCreadorAlias.orEmpty(),
+                            style = MaterialTheme.typography.bodySmall.copy(color = Color.Black),
+                            fontFamily = Destacado
+                        )
+                    }
+
+                    // ⭐ Promedio
+                    Row(verticalAlignment = Alignment.CenterVertically) {
+                        Icon(
+                            imageVector = Icons.Filled.Star,
+                            contentDescription = "Promedio",
+                            tint = Color(0xFFFFD700),
+                            modifier = Modifier.size(18.dp)
+                        )
+                        Spacer(Modifier.width(4.dp))
+                        Text(
+                            text = "%,.1f".format(receta.promedioRating ?: 0.0),
+                            style = MaterialTheme.typography.bodyMedium.copy(color = Color.Black)
+                        )
+                    }
+
+                    // ⏱️ Tiempo estimado
+                    Row(verticalAlignment = Alignment.CenterVertically) {
+                        Icon(
+                            imageVector = Icons.Default.Schedule,
+                            contentDescription = "Tiempo estimado",
+                            tint = Color.Black,
+                            modifier = Modifier.size(16.dp)
+                        )
+                        Spacer(Modifier.width(4.dp))
+                        Text(
+                            text = "${receta.tiempo ?: "N/A"} min",
+                            style = MaterialTheme.typography.bodySmall.copy(color = Color.Black),
+                            fontFamily = Destacado
+                        )
+                    }
+
+                    // 🍽️ Porciones
+                    Row(verticalAlignment = Alignment.CenterVertically) {
+                        Icon(
+                            imageVector = Icons.Default.Restaurant,
+                            contentDescription = "Porciones",
+                            tint = Color.Black,
+                            modifier = Modifier.size(16.dp)
+                        )
+                        Spacer(Modifier.width(4.dp))
+                        Text(
+                            text = "${receta.porciones ?: "N/A"}",
+                            style = MaterialTheme.typography.bodySmall.copy(color = Color.Black),
+                            fontFamily = Destacado
+                        )
+                    }
                 }
+
+
 
                 Spacer(Modifier.height(20.dp))
 
@@ -494,6 +570,18 @@ fun RecipeDetailContent(
 
 
                 Spacer(Modifier.height(16.dp))
+                Button(
+                    onClick = { isEditing.value = !isEditing.value },
+                    modifier = Modifier.align(Alignment.End),
+                    colors = ButtonDefaults.buttonColors(containerColor = Color(0xFF995850))
+                ) {
+                    Text(
+                        text = if (isEditing.value) "Finalizar edición" else "Personalizar",
+                        color = Color.White
+                    )
+                }
+                Spacer(Modifier.height(8.dp))
+
 
                 // ── Mostrar lista de ingredientes o paso a paso ────────────────
                 if (showIngredients.value) {
@@ -526,7 +614,7 @@ fun RecipeDetailContent(
                         )
                     }
                     Spacer(Modifier.height(8.dp))
-                    receta.ingredients.forEach { ing ->
+                    ingredientes.forEachIndexed { index, ing ->
                         Card(
                             modifier = Modifier
                                 .fillMaxWidth()
@@ -534,7 +622,6 @@ fun RecipeDetailContent(
                             shape = RoundedCornerShape(16.dp),
                             colors = CardDefaults.cardColors(containerColor = ingredientCardColor),
                             elevation = CardDefaults.cardElevation(defaultElevation = 2.dp)
-
                         ) {
                             Row(
                                 modifier = Modifier
@@ -563,20 +650,100 @@ fun RecipeDetailContent(
                                         fontFamily = Destacado
                                     )
                                 }
-                                androidx.compose.material3.Surface(
-                                    shape = RoundedCornerShape(8.dp),
-                                    color = unitBackgroundColor
-                                ) {
-                                    Text(
-                                        text = "${ing.cantidad} ${ing.unidadMedida}",
-                                        modifier = Modifier.padding(horizontal = 8.dp, vertical = 2.dp),
-                                        color = unitTextColor,
-                                        fontSize = 12.sp
-                                    )
+
+                                if (isEditing.value) {
+                                    Surface(
+                                        shape = RoundedCornerShape(8.dp),
+                                        color = unitBackgroundColor,
+                                        modifier = Modifier
+                                            .heightIn(min = 55.dp)
+                                            .padding(start = 4.dp)
+                                    ) {
+                                        Row(
+                                            verticalAlignment = Alignment.CenterVertically,
+                                            modifier = Modifier.padding(horizontal = 8.dp, vertical = 4.dp)
+                                        ) {
+                                            // Contenedor blanco con borde para el TextField
+                                            Box(
+                                                modifier = Modifier
+                                                    .widthIn(min = 40.dp, max = 70.dp)
+                                                    .height(46.dp)
+                                                    .background(unitBackgroundColor.copy(alpha = 0.5f), RoundedCornerShape(6.dp))
+                                                    .border(1.dp, unitBackgroundColor, RoundedCornerShape(6.dp)),
+                                            ) {
+                                                OutlinedTextField(
+                                                    value = ing.cantidadActual.toString(),
+                                                    onValueChange = { value: String ->
+                                                        value.toFloatOrNull()?.let { newCantidad ->
+                                                            val factor = newCantidad / ingredientes[index].originalCantidad
+                                                            ingredientes.forEachIndexed { i, item ->
+                                                                ingredientes[i] = item.copy(
+                                                                    cantidadActual = (item.originalCantidad * factor * 100).roundToInt() / 100f
+                                                                )
+                                                            }
+                                                        }
+                                                    },
+                                                    modifier = Modifier
+                                                        .widthIn(min = 70.dp, max = 100.dp)
+                                                        .height(46.dp),
+                                                    singleLine = true,
+                                                    textStyle = TextStyle(
+                                                        fontSize = 14.sp,
+                                                        color = Color.Black
+                                                    ),
+                                                    colors = OutlinedTextFieldDefaults.colors(
+                                                        focusedBorderColor = unitBackgroundColor,
+                                                        unfocusedBorderColor = unitBackgroundColor,
+                                                        cursorColor = Color.Black,
+                                                        focusedTextColor = Color.Black,
+                                                        unfocusedTextColor = Color.Black,
+                                                        focusedContainerColor = Color.White,
+                                                        unfocusedContainerColor = Color.White
+                                                    ),
+                                                    placeholder = {
+                                                        Text("0.0", color = Color.Gray)
+                                                    }
+                                                )
+
+                                            }
+
+                                            Spacer(modifier = Modifier.width(8.dp))
+
+                                            Box(
+                                                modifier = Modifier
+                                                    .background(unitBackgroundColor, shape = RoundedCornerShape(6.dp))
+                                                    .padding(horizontal = 12.dp, vertical = 8.dp)
+                                            ) {
+                                                Text(
+                                                    text = ing.unidadMedida,
+                                                    color = Color.White,
+                                                    fontSize = 12.sp
+                                                )
+                                            }
+                                        }
+                                    }
+
+
+
+
+
+                                } else {
+                                    androidx.compose.material3.Surface(
+                                        shape = RoundedCornerShape(8.dp),
+                                        color = unitBackgroundColor
+                                    ) {
+                                        Text(
+                                            text = "${ing.cantidadActual} ${ing.unidadMedida}",
+                                            modifier = Modifier.padding(horizontal = 8.dp, vertical = 2.dp),
+                                            color = unitTextColor,
+                                            fontSize = 12.sp
+                                        )
+                                    }
                                 }
                             }
                         }
                     }
+
                 } else {
                     // Instrucciones paso a paso
                     Text(
