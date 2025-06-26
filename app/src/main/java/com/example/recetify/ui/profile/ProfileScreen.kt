@@ -89,15 +89,15 @@ fun ProfileScreen(
                 horizontalArrangement = Arrangement.Center,
                 verticalAlignment     = Alignment.CenterVertically
             ) {
+                StatItem(published.size, "Publicadas")
+                Spacer(Modifier.width(12.dp))
+                StatSeparator(height = 40.dp)
+                Spacer(Modifier.width(12.dp))
                 StatItem(drafts.size,    "Borradores")
                 Spacer(Modifier.width(12.dp))
                 StatSeparator(height = 40.dp)
                 Spacer(Modifier.width(12.dp))
                 StatItem(favs.size,      "Favoritas")
-                Spacer(Modifier.width(12.dp))
-                StatSeparator(height = 40.dp)
-                Spacer(Modifier.width(12.dp))
-                StatItem(published.size, "Publicadas")
                 Spacer(Modifier.width(12.dp))
                 StatSeparator(height = 40.dp)
                 Spacer(Modifier.width(12.dp))
