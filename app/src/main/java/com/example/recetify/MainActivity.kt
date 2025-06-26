@@ -7,6 +7,7 @@ import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.material3.Text
 import androidx.compose.runtime.*
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.ui.Alignment
@@ -21,6 +22,7 @@ import androidx.navigation.compose.composable
 import androidx.navigation.compose.currentBackStackEntryAsState
 import androidx.navigation.compose.rememberNavController
 import com.example.recetify.data.remote.RetrofitClient
+import com.example.recetify.data.remote.model.RecipeResponse
 import com.example.recetify.data.remote.model.SessionManager
 import com.example.recetify.ui.common.NoConnectionScreen
 import com.example.recetify.ui.common.rememberIsOnline
@@ -28,10 +30,12 @@ import com.example.recetify.ui.createRecipe.CreateRecipeScreen
 import com.example.recetify.ui.createRecipe.CreateRecipeViewModel
 import com.example.recetify.ui.createRecipe.CreateRecipeViewModelFactory
 import com.example.recetify.ui.details.RecipeDetailScreen
+import com.example.recetify.ui.drafts.EditDraftRecipeScreen
 import com.example.recetify.ui.home.HomeScreen
 import com.example.recetify.ui.login.*
 import com.example.recetify.ui.navigation.BottomNavBar
 import com.example.recetify.ui.profile.ProfileScreen
+import com.example.recetify.ui.profile.ProfileViewModel
 import com.example.recetify.ui.theme.RecetifyTheme
 import kotlinx.coroutines.launch
 
@@ -60,6 +64,7 @@ fun AppNavGraph() {
     val scope         = rememberCoroutineScope()
 
     val passwordVm: PasswordResetViewModel = viewModel()
+    val profileViewModel: ProfileViewModel = viewModel()
     val isOnline by rememberIsOnline()
 
     var offline by rememberSaveable { mutableStateOf(!isOnline) }
@@ -147,6 +152,24 @@ fun AppNavGraph() {
                     HomeScreen(navController = navController)
                 }
             }
+            composable("editRecipe/{id}") { backStackEntry ->
+                val recipeId = backStackEntry.arguments?.getString("id")?.toLongOrNull()
+                if (recipeId != null) {
+                    val vm: CreateRecipeViewModel = viewModel(
+                        factory = CreateRecipeViewModelFactory(
+                            context.applicationContext as Application,
+                            editingRecipeId = recipeId
+                        )
+                    )
+                    CreateRecipeScreen(
+                        viewModel = vm,
+                        //isEditing = true,
+                        onClose = { navController.popBackStack() },
+                        onSaved = { navController.popBackStack() },
+                        onPublished = { navController.popBackStack() }
+                    )
+                }
+            }
 
             composable("profile") {
                 if (!isAlumno) {
@@ -157,7 +180,8 @@ fun AppNavGraph() {
                     }
                 } else {
                     ProfileScreen(
-                        navController = navController
+                        navController = navController ,
+                        viewModel = profileViewModel
                        /* onUnauthorized = {
                             SessionManager.clearToken()
                             isAlumno = false
@@ -181,6 +205,29 @@ fun AppNavGraph() {
                     }
             }
 
+            composable("editDraft/{id}") { backStackEntry ->
+                val recipeId = backStackEntry.arguments?.getString("id")?.toLongOrNull()
+
+
+
+
+                if (recipeId == null) {
+                    Text("ID inválido")
+                    return@composable
+                }
+
+
+                val draftList = profileViewModel.draftRecipes
+                val draftRecipe = draftList.find { it.id == recipeId }
+
+                if (draftRecipe != null) {
+                    EditDraftRecipeScreen(recipeId = recipeId, navController = navController)
+                } else {
+                    Text("No se pudo cargar el borrador con ID $recipeId")
+                }
+            }
+
+
             composable("createRecipe") {
                 val vm: CreateRecipeViewModel = viewModel(
                     factory = CreateRecipeViewModelFactory(
@@ -194,6 +241,7 @@ fun AppNavGraph() {
                     onPublished = { navController.popBackStack() }
                 )
             }
+
         }
 
         // Mostrar BottomNavBar solo si estamos online y en home/recipe/createRecipe

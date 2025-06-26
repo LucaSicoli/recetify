@@ -8,6 +8,7 @@ import com.example.recetify.data.remote.model.JwtResponse
 import com.example.recetify.data.remote.model.LoginRequest
 import com.example.recetify.data.remote.model.ProfileSummaryDTO
 import com.example.recetify.data.remote.model.RatingResponse
+import com.example.recetify.data.remote.model.RecipeDetailResponse
 import com.example.recetify.data.remote.model.RecipeRequest
 import com.example.recetify.data.remote.model.RecipeResponse
 import com.example.recetify.data.remote.model.RecipeSummaryResponse
@@ -20,6 +21,7 @@ import retrofit2.http.Body
 import retrofit2.http.GET
 import retrofit2.http.Multipart
 import retrofit2.http.POST
+import retrofit2.http.PUT
 import retrofit2.http.Part
 import retrofit2.http.Path
 
@@ -65,12 +67,22 @@ interface ApiService {
     @GET("recipes/my-recipes")
     suspend fun getMyRecipes(): List<RecipeResponse>
 
+    @GET("recipes/drafts")
+    suspend fun getMyDraftRecipes(): List<RecipeResponse>
+
     // —— Ratings ——
     @GET("ratings/recipe/{recipeId}")
     suspend fun getRatingsForRecipe(@Path("recipeId") recipeId: Long): List<RatingResponse>
 
     @POST("ratings")
     suspend fun addRating(@Body req: CreateRatingRequest): RatingResponse
+
+
+    @PUT("recipes/drafts/{id}")
+    suspend fun updateRecipe(@Path("id") id: Long, @Body recipe: RecipeRequest)
+
+    @GET("recipes/drafts/{id}")
+    suspend fun getDraftRecipeById(@Path("id") id: Long): RecipeDetailResponse
 
 
     // —— Subida de imágenes ——

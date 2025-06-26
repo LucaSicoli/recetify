@@ -14,6 +14,7 @@ import com.example.recetify.data.db.DatabaseProvider
 import com.example.recetify.data.remote.RetrofitClient
 import com.example.recetify.data.remote.model.RecipeIngredientRequest
 import com.example.recetify.data.remote.model.RecipeRequest
+import com.example.recetify.data.remote.model.RecipeResponse
 import com.example.recetify.data.remote.model.RecipeStepRequest
 import com.example.recetify.util.FileUtil
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -43,7 +44,8 @@ object RecipeRepositoryProvider {
  * Factory para CreateRecipeViewModel, inyectando el repositorio.
  */
 class CreateRecipeViewModelFactory(
-    private val app: Application
+    private val app: Application,
+    private val editingRecipeId: Long? = null
 ) : ViewModelProvider.Factory {
     override fun <T : ViewModel> create(modelClass: Class<T>): T {
         if (modelClass.isAssignableFrom(CreateRecipeViewModel::class.java)) {
@@ -62,7 +64,8 @@ class CreateRecipeViewModelFactory(
  */
 class CreateRecipeViewModel(
     app: Application,
-    private val repo: RecipeRepository
+    private val repo: RecipeRepository,
+    private val editingRecipeId: Long? = null
 ) : AndroidViewModel(app) {
 
     private val _uploading = MutableStateFlow(false)
@@ -77,6 +80,104 @@ class CreateRecipeViewModel(
     // ← Cambiado a StateFlow para poder hacer collectAsState()
     private val _photoUrl = MutableStateFlow<String?>(null)
     val photoUrl = _photoUrl.asStateFlow()
+
+
+
+   /* init {
+        if (editingRecipeId != null) {
+            viewModelScope.launch {
+                val receta = RetrofitClient.api.getRecipeById(editingRecipeId)
+                loadFromRecipe(receta)
+            }
+        }
+    }*/
+    /*fun loadFromRecipe(recipe: RecipeResponse) {
+        // Inicializa los campos desde la receta
+        nombre.value        = recipe.nombre
+        descripcion.value   = recipe.descripcion.orEmpty()
+        tiempo.value        = recipe.tiempo.toString()
+        porciones.value     = recipe.porciones.toString()
+        categoria.value     = recipe.categoria
+        tipoPlato.value     = recipe.tipoPlato
+        fotoPrincipalUrl    = recipe.fotoPrincipal
+
+        ingredientes.clear()
+        ingredientes.addAll(recipe.ingredients.map {
+            IngredientInput(
+                nombre = it.nombre,
+                cantidad = it.cantidad.toString(),
+                unidad = it.unidadMedida
+            )
+        })
+
+        pasos.clear()
+        pasos.addAll(recipe.steps.sortedBy { it.numeroPaso }.map {
+            StepInput(
+                titulo = it.titulo,
+                descripcion = it.descripcion,
+                url = it.urlMedia.orEmpty()
+            )
+        })
+    }*/
+
+    private suspend fun buildRecipeRequest(
+        nombre: String,
+        descripcion: String,
+        tiempo: Int,
+        porciones: Int,
+        tipoPlato: String,
+        categoria: String,
+        ingredients: List<RecipeIngredientRequest>,
+        steps: List<RecipeStepRequest>
+    ): RecipeRequest {
+        val uploadedSteps = steps.map { step ->
+            val local = step.urlMedia
+            if (!local.isNullOrBlank() && local.startsWith("content://")) {
+                val file = File(FileUtil.from(getApplication(), Uri.parse(local)).path)
+                val remoteUrl = repo.uploadPhoto(file)
+                step.copy(urlMedia = remoteUrl)
+            } else step
+        }
+
+        return RecipeRequest(
+            nombre        = nombre,
+            descripcion   = descripcion,
+            tiempo        = tiempo,
+            porciones     = porciones,
+            fotoPrincipal = photoUrl.value,
+            tipoPlato     = tipoPlato,
+            categoria     = categoria,
+            ingredients   = ingredients,
+            steps         = uploadedSteps
+        )
+    }
+
+    fun updateDraftRecipe(
+        recipeId: Long,
+        nombre: String,
+        descripcion: String,
+        tiempo: Int,
+        porciones: Int,
+        tipoPlato: String,
+        categoria: String,
+        ingredients: List<RecipeIngredientRequest>,
+        steps: List<RecipeStepRequest>
+    ) {
+        viewModelScope.launch {
+            val updated = buildRecipeRequest(nombre, descripcion, tiempo, porciones, tipoPlato, categoria, ingredients, steps)
+            RetrofitClient.api.updateRecipe(recipeId, updated)
+        }
+    }
+
+   /* fun publishDraftRecipe(recipeId: Long) {
+        viewModelScope.launch {
+            val updated = buildRecipeRequest().copy(estado = "PENDIENTE")
+            RetrofitClient.api.updateRecipe(recipeId, updated)
+        }
+    }*/
+
+
+
 
     /**
      * Sube la foto seleccionada y guarda la URL devuelta.
@@ -138,4 +239,5 @@ class CreateRecipeViewModel(
             _submitting.value = false
         }
     }
+
 }

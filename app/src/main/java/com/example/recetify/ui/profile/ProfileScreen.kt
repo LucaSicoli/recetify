@@ -6,6 +6,7 @@ import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.*
+import androidx.compose.material3.TextFieldDefaults
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -18,9 +19,10 @@ import androidx.compose.ui.unit.dp
 import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.navigation.NavController
 import coil.compose.AsyncImage
-import androidx.compose.material3.TextFieldDefaults
 import androidx.compose.foundation.isSystemInDarkTheme
 import com.example.recetify.data.remote.model.SessionManager
+import com.example.recetify.ui.common.RecipeCardDraft
+
 
 @Composable
 fun ProfileScreen(
@@ -31,16 +33,9 @@ fun ProfileScreen(
     val isLoading = viewModel.isLoading
     val error = viewModel.errorMessage
     val isDarkTheme = isSystemInDarkTheme()
-
-    val backgroundColor = if (isDarkTheme) {
-        MaterialTheme.colorScheme.background
-    } else {
-        Color.White
-    }
-
+    val backgroundColor = if (isDarkTheme) MaterialTheme.colorScheme.background else Color.White
     var showLogoutDialog by remember { mutableStateOf(false) }
 
-    // Setear callback y cargar perfil sólo 1 vez
     LaunchedEffect(Unit) {
         viewModel.onUnauthorized = {
             SessionManager.clearToken()
@@ -53,7 +48,7 @@ fun ProfileScreen(
     }
 
     if (isLoading) {
-        Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
+        Box(Modifier.fillMaxSize(), Alignment.Center) {
             CircularProgressIndicator()
         }
         return
@@ -66,22 +61,46 @@ fun ProfileScreen(
 
     profile?.let {
         Column(
-            modifier = Modifier
+            Modifier
                 .fillMaxSize()
                 .background(backgroundColor)
                 .padding(24.dp)
         ) {
-            // Título
-            Text(
-                "Mi Perfil",
-                style = MaterialTheme.typography.headlineSmall,
-                fontWeight = FontWeight.Bold,
-                color = MaterialTheme.colorScheme.onBackground
-            )
+            // Título y botón para alternar vista
+            Row(
+                Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.SpaceBetween,
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+                Text(
+                    if (viewModel.showDrafts) "Mis Borradores" else "Mi Perfil",
+                    style = MaterialTheme.typography.headlineSmall,
+                    fontWeight = FontWeight.Bold
+                )
+                Button(
+                    onClick = viewModel::toggleView,
+                    shape = RoundedCornerShape(8.dp)
+                ) {
+                    Text(if (viewModel.showDrafts) "Ver Perfil" else "Ver Borradores")
+                }
+            }
 
             Spacer(Modifier.height(24.dp))
 
-            // Foto + info
+            if (viewModel.showDrafts) {
+                if (viewModel.draftRecipes.isEmpty()) {
+                    Text("No tenés recetas en borrador aún.")
+                } else {
+                    Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
+                        viewModel.draftRecipes.forEach { recipe ->
+                            RecipeCardDraft(recipe = recipe, navController = navController)
+                        }
+                    }
+                }
+                return@Column
+            }
+
+            // FOTO DE PERFIL + INFO
             Row(
                 verticalAlignment = Alignment.CenterVertically,
                 modifier = Modifier.fillMaxWidth()
@@ -113,7 +132,7 @@ fun ProfileScreen(
 
             Spacer(Modifier.height(24.dp))
 
-            // Estadísticas
+            // ESTADÍSTICAS
             Row(
                 modifier = Modifier.fillMaxWidth(),
                 horizontalArrangement = Arrangement.SpaceEvenly
@@ -125,7 +144,7 @@ fun ProfileScreen(
 
             Spacer(Modifier.height(32.dp))
 
-            // Email (no editable)
+            // EMAIL
             Text(
                 "MAIL",
                 style = MaterialTheme.typography.labelSmall,
@@ -148,7 +167,7 @@ fun ProfileScreen(
 
             Spacer(Modifier.height(12.dp))
 
-            // Alias (no editable)
+            // ALIAS
             Text(
                 "ALIAS",
                 style = MaterialTheme.typography.labelSmall,
@@ -171,13 +190,10 @@ fun ProfileScreen(
 
             Spacer(Modifier.height(32.dp))
 
-            // Botón cerrar sesión
+            // BOTÓN CERRAR SESIÓN
             OutlinedButton(
                 onClick = { showLogoutDialog = true },
-                border = BorderStroke(
-                    width = 1.dp,
-                    brush = SolidColor(MaterialTheme.colorScheme.error)
-                ),
+                border = BorderStroke(1.dp, SolidColor(MaterialTheme.colorScheme.error)),
                 shape = RoundedCornerShape(8.dp),
                 modifier = Modifier
                     .fillMaxWidth()
@@ -198,16 +214,14 @@ fun ProfileScreen(
             title = { Text("Cerrar sesión") },
             text = { Text("¿Estás seguro que querés cerrar sesión?") },
             confirmButton = {
-                TextButton(
-                    onClick = {
-                        SessionManager.clearToken()
-                        showLogoutDialog = false
-                        navController.navigate("login") {
-                            popUpTo(navController.graph.startDestinationId) { inclusive = true }
-                            launchSingleTop = true
-                        }
+                TextButton(onClick = {
+                    SessionManager.clearToken()
+                    showLogoutDialog = false
+                    navController.navigate("login") {
+                        popUpTo(navController.graph.startDestinationId) { inclusive = true }
+                        launchSingleTop = true
                     }
-                ) {
+                }) {
                     Text("Sí")
                 }
             },

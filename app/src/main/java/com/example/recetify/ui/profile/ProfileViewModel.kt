@@ -1,11 +1,10 @@
 package com.example.recetify.ui.profile
 
-import androidx.compose.runtime.getValue
-import androidx.compose.runtime.mutableStateOf
-import androidx.compose.runtime.setValue
+import androidx.compose.runtime.*
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.example.recetify.data.remote.RetrofitClient
+import com.example.recetify.data.remote.model.RecipeResponse
 import com.example.recetify.data.remote.model.UserDto
 import kotlinx.coroutines.launch
 import retrofit2.HttpException
@@ -32,7 +31,10 @@ class ProfileViewModel : ViewModel() {
     var resenasPublicadas by mutableStateOf(0)
         private set
 
-    // NO llamar fetchProfile() en init para evitar error si onUnauthorized no está seteado aún
+    var draftRecipes by mutableStateOf<List<RecipeResponse>>(emptyList())
+        private set
+
+    var showDrafts by mutableStateOf(false)
 
     fun fetchProfile() {
         viewModelScope.launch {
@@ -45,6 +47,8 @@ class ProfileViewModel : ViewModel() {
                 recetasPublicadas = resumen.recetasPublicadas
                 recetasGuardadas = resumen.recetasGuardadas
                 resenasPublicadas = resumen.reseñasPublicadas
+
+                fetchDrafts()
 
                 errorMessage = null
             } catch (e: HttpException) {
@@ -59,5 +63,20 @@ class ProfileViewModel : ViewModel() {
                 isLoading = false
             }
         }
+    }
+
+    fun fetchDrafts() {
+        viewModelScope.launch {
+            try {
+                val drafts = RetrofitClient.api.getMyDraftRecipes()
+                draftRecipes = drafts
+            } catch (_: Exception) {
+                draftRecipes = emptyList()
+            }
+        }
+    }
+
+    fun toggleView() {
+        showDrafts = !showDrafts
     }
 }
