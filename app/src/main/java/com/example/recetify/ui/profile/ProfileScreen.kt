@@ -1,5 +1,6 @@
 package com.example.recetify.ui.profile
 
+import java.net.URI
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
@@ -17,12 +18,16 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.navigation.NavController
+import coil.compose.AsyncImage
+import coil.request.ImageRequest
+import com.example.recetify.data.remote.RetrofitClient
 import com.example.recetify.data.remote.model.SessionManager
 import kotlinx.coroutines.launch
 
@@ -33,13 +38,19 @@ fun ProfileScreen(
     favVm: FavouriteViewModel = viewModel(),
     myRecipesVm: MyRecipesViewModel = viewModel()
 ) {
+    // 1) Listas
     val drafts    by draftVm.drafts.collectAsState()
     val favs      by favVm.favourites.collectAsState()
     val published by myRecipesVm.recipes.collectAsState(initial = emptyList())
 
+    // 2) Usuario
+    val profileInfoVm: ProfileInfoViewModel = viewModel()
+    val userState = profileInfoVm.user.collectAsState()
+    val user = userState.value
+
+    val ctx = LocalContext.current
     var showLogoutDialog by remember { mutableStateOf(false) }
-    val context = LocalContext.current
-    val scope   = rememberCoroutineScope()
+    val scope = rememberCoroutineScope()
 
     Surface(
         modifier = Modifier.fillMaxSize(),
@@ -58,20 +69,47 @@ fun ProfileScreen(
                 horizontalArrangement = Arrangement.Center,
                 verticalAlignment     = Alignment.CenterVertically
             ) {
-                Icon(
-                    imageVector        = Icons.Default.AccountCircle,
-                    contentDescription = "Avatar",
-                    modifier           = Modifier
-                        .size(88.dp)
-                        .clip(CircleShape)
-                        .border(3.dp, Color(0xFF2E3A59), CircleShape),
-                    tint               = Color.Gray.copy(alpha = 0.4f)
-                )
+                // Avatar dinámico
+                if (user != null && !user.urlFotoPerfil.isNullOrBlank()) {
+                    // Normalizar URL igual que en HomeScreen
+                    val base   = RetrofitClient.BASE_URL.trimEnd('/')
+                    val remote = user.urlFotoPerfil!!
+                    val path   = runCatching {
+                        val uri = URI(remote)
+                        uri.rawPath + (uri.rawQuery?.let { "?$it" } ?: "")
+                    }.getOrDefault(remote)
+                    val finalUrl = if (path.startsWith("/")) "$base$path" else remote
+
+                    AsyncImage(
+                        model = ImageRequest.Builder(ctx)
+                            .data(finalUrl)
+                            .crossfade(true)
+                            .build(),
+                        contentDescription = "Avatar",
+                        contentScale = ContentScale.Crop,
+                        modifier = Modifier
+                            .size(88.dp)
+                            .clip(CircleShape)
+                            .border(3.dp, Color(0xFF2E3A59), CircleShape)
+                    )
+                } else {
+                    Icon(
+                        imageVector        = Icons.Default.AccountCircle,
+                        contentDescription = "Avatar",
+                        modifier = Modifier
+                            .size(88.dp)
+                            .clip(CircleShape)
+                            .border(3.dp, Color(0xFF2E3A59), CircleShape),
+                        tint = Color.Gray.copy(alpha = 0.4f)
+                    )
+                }
+
                 Spacer(Modifier.width(16.dp))
+
                 Column {
                     Text(
-                        text      = "Natalia Luca",
-                        style     = MaterialTheme.typography.titleLarge.copy(fontWeight = FontWeight.Bold)
+                        text  = user?.alias.orEmpty().ifBlank { "Usuario" },
+                        style = MaterialTheme.typography.titleLarge.copy(fontWeight = FontWeight.Bold)
                     )
                     Text(
                         text  = "Apasionada por la cocina",
@@ -164,7 +202,7 @@ fun ProfileScreen(
                 TextButton(onClick = {
                     showLogoutDialog = false
                     scope.launch {
-                        SessionManager.clearSession(context)
+                        SessionManager.clearSession(ctx)
                         navController.navigate("login") {
                             popUpTo(navController.graph.startDestinationId) { inclusive = true }
                             launchSingleTop = true

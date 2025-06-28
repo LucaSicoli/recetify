@@ -1,186 +1,215 @@
-// app/src/main/java/com/example/recetify/MainActivity.kt
-package com.example.recetify
+package com.example.recetify.ui.profile
 
-import android.app.Application
-import android.os.Bundle
-import androidx.activity.ComponentActivity
-import androidx.activity.compose.setContent
-import androidx.compose.foundation.layout.Box
-import androidx.compose.foundation.layout.fillMaxSize
+import java.net.URI
+import androidx.compose.foundation.background
+import androidx.compose.foundation.border
+import androidx.compose.foundation.clickable
+import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.shape.CircleShape
+import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.foundation.verticalScroll
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.AccountCircle
+import androidx.compose.material.icons.filled.ArrowForwardIos
+import androidx.compose.material3.*
 import androidx.compose.runtime.*
-import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.clip
+import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalContext
-import androidx.core.view.WindowCompat
-import androidx.core.view.WindowInsetsCompat
-import androidx.core.view.WindowInsetsControllerCompat
+import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.unit.Dp
+import androidx.compose.ui.unit.dp
 import androidx.lifecycle.viewmodel.compose.viewModel
-import androidx.navigation.compose.NavHost
-import androidx.navigation.compose.composable
-import androidx.navigation.compose.currentBackStackEntryAsState
-import androidx.navigation.compose.rememberNavController
+import androidx.navigation.NavController
+import coil.compose.AsyncImage
+import coil.request.ImageRequest
+import com.example.recetify.data.remote.RetrofitClient
 import com.example.recetify.data.remote.model.SessionManager
-import com.example.recetify.ui.common.NoConnectionScreen
-import com.example.recetify.ui.common.rememberIsOnline
-import com.example.recetify.ui.createRecipe.CreateRecipeScreen
-import com.example.recetify.ui.createRecipe.CreateRecipeViewModel
-import com.example.recetify.ui.createRecipe.CreateRecipeViewModelFactory
-import com.example.recetify.ui.details.RecipeDetailScreen
-import com.example.recetify.ui.home.HomeScreen
-import com.example.recetify.ui.login.*
-import com.example.recetify.ui.navigation.BottomNavBar
-import com.example.recetify.ui.profile.DraftViewModel
-import com.example.recetify.ui.profile.FavouriteViewModel
-import com.example.recetify.ui.profile.ProfileScreen
-import com.example.recetify.ui.theme.RecetifyTheme
 import kotlinx.coroutines.launch
 
-class MainActivity : ComponentActivity() {
-    override fun onCreate(savedInstanceState: Bundle?) {
-        super.onCreate(savedInstanceState)
-        // Fullscreen edge-to-edge
-        WindowCompat.setDecorFitsSystemWindows(window, false)
-        WindowInsetsControllerCompat(window, window.decorView).apply {
-            systemBarsBehavior = WindowInsetsControllerCompat.BEHAVIOR_SHOW_TRANSIENT_BARS_BY_SWIPE
-            hide(WindowInsetsCompat.Type.systemBars())
-        }
+@Composable
+fun ProfileScreen(
+    navController: NavController,
+    draftVm: DraftViewModel = viewModel(),
+    favVm: FavouriteViewModel = viewModel(),
+    myRecipesVm: MyRecipesViewModel = viewModel(),
+    profileInfoVm: ProfileInfoViewModel = viewModel()
+) {
+    val drafts    by draftVm.drafts.collectAsState()
+    val favs      by favVm.favourites.collectAsState()
+    val published by myRecipesVm.recipes.collectAsState(initial = emptyList())
+    val user      by profileInfoVm.user.collectAsState()
 
-        setContent {
-            RecetifyTheme {
-                AppNavGraph()
+    var showLogoutDialog by remember { mutableStateOf(false) }
+    val context = LocalContext.current
+    val scope   = rememberCoroutineScope()
+
+    Surface(
+        modifier = Modifier.fillMaxSize(),
+        color    = Color.White
+    ) {
+        Column(
+            modifier = Modifier
+                .fillMaxSize()
+                .verticalScroll(rememberScrollState())
+                .padding(horizontal = 24.dp)
+                .padding(top = 72.dp, bottom = 24.dp)
+        ) {
+            // ─── HEADER ─────────────────────────────
+            Row(
+                modifier              = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.Center,
+                verticalAlignment     = Alignment.CenterVertically
+            ) {
+                if (user?.urlFotoPerfil?.isNotBlank() == true) {
+                    // 1) construimos la URL completa tal como en HomeScreen
+                    val base   = RetrofitClient.BASE_URL.trimEnd('/')
+                    val remote = user!!.urlFotoPerfil!!
+                    val path   = runCatching<String> {
+                        val uri = URI(remote)
+                        uri.rawPath + (uri.rawQuery?.let { "?$it" } ?: "")
+                    }.getOrElse { remote }
+                    val finalUrl = if (path.startsWith("/")) "$base$path" else remote
+
+                    AsyncImage(
+                        model = ImageRequest.Builder(context)
+                            .data(finalUrl)
+                            .crossfade(true)
+                            .build(),
+                        contentDescription = "Avatar",
+                        contentScale = ContentScale.Crop,
+                        modifier = Modifier
+                            .size(88.dp)
+                            .clip(CircleShape)
+                            .border(3.dp, Color(0xFF2E3A59), CircleShape)
+                    )
+                } else {
+                    Icon(
+                        imageVector        = Icons.Default.AccountCircle,
+                        contentDescription = "Avatar",
+                        modifier           = Modifier
+                            .size(88.dp)
+                            .clip(CircleShape)
+                            .border(3.dp, Color(0xFF2E3A59), CircleShape),
+                        tint               = Color.Gray.copy(alpha = 0.4f)
+                    )
+                }
+
+                Spacer(Modifier.width(16.dp))
+
+                Column {
+                    Text(
+                        text  = user?.alias.orEmpty().ifBlank { "Usuario" },
+                        style = MaterialTheme.typography.titleLarge.copy(fontWeight = FontWeight.Bold)
+                    )
+                    Text(
+                        text  = "Apasionada por la cocina",
+                        style = MaterialTheme.typography.bodyMedium,
+                        color = Color.Gray
+                    )
+                }
             }
+
+            Spacer(Modifier.height(38.dp))
+
+            // ─── STATS ───────────────────────────
+            Row(
+                modifier              = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.Center,
+                verticalAlignment     = Alignment.CenterVertically
+            ) {
+                StatItem(published.size, "Publicadas")
+                Spacer(Modifier.width(12.dp))
+                StatSeparator(height = 40.dp)
+                Spacer(Modifier.width(12.dp))
+                StatItem(favs.size,      "Favoritas")
+                Spacer(Modifier.width(12.dp))
+                StatSeparator(height = 40.dp)
+                Spacer(Modifier.width(12.dp))
+                StatItem(drafts.size,    "Borradores")
+            }
+
+            Spacer(Modifier.height(32.dp))
+
+            // ─── OPCIONES ────────────────────────
+            OptionRow("Información de perfil") { navController.navigate("profileInfo") }
+            Spacer(Modifier.height(16.dp))
+            OptionRow("Mis recetas publicadas") { navController.navigate("myRecipes") }
+            Spacer(Modifier.height(16.dp))
+            OptionRow("Mis recetas favoritas") { navController.navigate("saved") }
+            Spacer(Modifier.height(16.dp))
+            OptionRow("Mis borradores") { navController.navigate("drafts") }
+
+            Spacer(Modifier.height(32.dp))
+
+            // ─── CERRAR SESIÓN ────────────────────
+            Button(
+                onClick = { showLogoutDialog = true },
+                modifier = Modifier.fillMaxWidth().height(48.dp),
+                shape    = RoundedCornerShape(8.dp),
+                colors   = ButtonDefaults.buttonColors(containerColor = Color.Black)
+            ) {
+                Text("Cerrar sesión", color = Color.White)
+            }
+        }
+    }
+
+    // ─── DIALOGO LOGOUT ──────────────────────
+    if (showLogoutDialog) {
+        AlertDialog(
+            onDismissRequest = { showLogoutDialog = false },
+            title            = { Text("Cerrar sesión") },
+            text             = { Text("¿Estás seguro de que querés cerrar sesión?") },
+            confirmButton    = {
+                TextButton(onClick = {
+                    showLogoutDialog = false
+                    scope.launch {
+                        SessionManager.clearSession(context)
+                        navController.navigate("login") {
+                            popUpTo(navController.graph.startDestinationId) { inclusive = true }
+                            launchSingleTop = true
+                        }
+                    }
+                }) { Text("Sí") }
+            },
+            dismissButton    = {
+                TextButton(onClick = { showLogoutDialog = false }) { Text("No") }
+            }
+        )
+    }
+}
+
+@Composable
+private fun OptionRow(title: String, onClick: () -> Unit) {
+    Card(
+        modifier  = Modifier.fillMaxWidth().height(64.dp).clickable(onClick = onClick),
+        shape     = RoundedCornerShape(12.dp),
+        elevation = CardDefaults.cardElevation(defaultElevation = 2.dp)
+    ) {
+        Row(
+            Modifier.fillMaxSize().padding(horizontal = 20.dp),
+            verticalAlignment = Alignment.CenterVertically
+        ) {
+            Text(title, style = MaterialTheme.typography.titleMedium)
+            Spacer(Modifier.weight(1f))
+            Icon(Icons.Default.ArrowForwardIos, contentDescription = null, tint = Color.Gray)
         }
     }
 }
 
 @Composable
-fun AppNavGraph() {
-    val context       = LocalContext.current
-    val navController = rememberNavController()
-    val scope         = rememberCoroutineScope()
-
-    // ViewModel único para todo el flow de password reset
-    val passwordVm: PasswordResetViewModel = viewModel()
-    val draftVm: DraftViewModel = viewModel()
-    val favVm: FavouriteViewModel = viewModel()
-
-    // Flujos de sesión y conexión
-    val isAlumno by SessionManager.isAlumnoFlow(context).collectAsState(initial = false)
-    val isLoggedIn by SessionManager.isLoggedInFlow(context).collectAsState(initial = false)
-    val isOnline by rememberIsOnline()
-    var offline by rememberSaveable { mutableStateOf(!isOnline) }
-    LaunchedEffect(isOnline) { offline = !isOnline }
-
-    Box(Modifier.fillMaxSize()) {
-        NavHost(navController, startDestination = "login") {
-
-            // 1) Login / Home guardado
-            composable("login") {
-                LoginScreen(
-                    viewModel      = viewModel<LoginViewModel>(),
-                    onLoginSuccess = { token ->
-                        scope.launch {
-                            SessionManager.setAlumno(context, token)
-                            navController.navigate("home") { popUpTo("login") { inclusive = true } }
-                        }
-                    },
-                    onVisitor = {      // ← visitor va aquí
-                        scope.launch {
-                            // `setVisitante` ya lo hiciste en el screen, aquí solo navegas
-                            navController.navigate("home") {
-                                popUpTo("login") { inclusive = true }
-                            }
-                        }
-                    },
-                    onForgot = { navController.navigate("forgot") }
-                )
-            }
-
-            // 2) Password reset flow
-            composable("forgot") {
-                ForgotPasswordScreen(
-                    viewModel = passwordVm,
-                    onNext    = { navController.navigate("verify") }
-                )
-            }
-            composable("verify") {
-                VerifyCodeScreen(
-                    viewModel = passwordVm,
-                    onNext    = { navController.navigate("reset") }
-                )
-            }
-            composable("reset") {
-                ResetPasswordScreen(
-                    viewModel = passwordVm,
-                    onFinish  = {
-                        navController.navigate("login") {
-                            popUpTo("forgot") { inclusive = true }
-                        }
-                    }
-                )
-            }
-
-            // 3) Home y Detail
-            composable("home") {
-                if (!isLoggedIn) {
-                    LaunchedEffect(Unit) {
-                        navController.navigate("login") {
-                            popUpTo("home") { inclusive = true }
-                        }
-                    }
-                } else {
-                    HomeScreen(navController = navController)
-                }
-            }
-            composable("recipe/{id}") { back ->
-                back.arguments
-                    ?.getString("id")
-                    ?.toLongOrNull()
-                    ?.let { id ->
-                        RecipeDetailScreen(recipeId = id, navController = navController)
-                    }
-            }
-
-            // 4) Create Recipe
-            composable("createRecipe") {
-                val vm: CreateRecipeViewModel = viewModel(
-                    factory = CreateRecipeViewModelFactory(
-                        context.applicationContext as Application
-                    )
-                )
-                CreateRecipeScreen(
-                    viewModel   = vm,
-                    onClose     = { navController.popBackStack() },
-                    onSaved     = { navController.popBackStack() },
-                    onPublished = { navController.popBackStack() }
-                )
-            }
-
-            composable("profile") {
-                // Para que pueda volver a refrescar cuando entres
-                LaunchedEffect(Unit) {
-                    draftVm.refresh()
-                    favVm.loadFavourites()
-                }
-                ProfileScreen(navController = navController)
-            }
-        }
-
-        // BottomNavBar sólo en home/recipe y online
-        val backStackEntry by navController.currentBackStackEntryAsState()
-        val route = backStackEntry?.destination?.route ?: ""
-        if (!offline && (route == "home" || route.startsWith("recipe/")) || route == "createRecipe" || route == "profile") {
-            Box(Modifier.align(Alignment.BottomCenter)) {
-                BottomNavBar(navController, isAlumno)
-            }
-        }
-
-        // Overlay "Sin conexión"
-        if (offline) {
-            NoConnectionScreen(
-                onContinueOffline = { offline = false }
-            )
-        }
+private fun StatItem(count: Int, label: String) {
+    Column(horizontalAlignment = Alignment.CenterHorizontally) {
+        Text(count.toString(), style = MaterialTheme.typography.titleLarge.copy(fontWeight = FontWeight.Bold))
+        Text(label,    style = MaterialTheme.typography.bodyMedium)
     }
+}
+
+@Composable
+private fun StatSeparator(height: Dp) {
+    Box(Modifier.width(1.dp).height(height).background(Color.LightGray))
 }

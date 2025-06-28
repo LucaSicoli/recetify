@@ -13,6 +13,7 @@ import com.example.recetify.data.remote.model.RecipeSummaryResponse
 import com.example.recetify.data.remote.model.ResetDTO
 import com.example.recetify.data.remote.model.RecipeStepRequest
 import com.example.recetify.data.remote.model.RecipeIngredientRequest
+import com.example.recetify.data.remote.model.UserResponse
 import com.example.recetify.data.remote.model.UserSavedRecipeDTO
 import okhttp3.MultipartBody
 import retrofit2.http.Body
@@ -77,6 +78,9 @@ interface ApiService {
 
     @GET("recipes/created")
     suspend fun getMyPublishedRecipes(): List<RecipeSummaryResponse>
+
+    @GET("/users/me")
+    suspend fun getCurrentUser(): UserResponse
 
 
     // —— Subida de imágenes ——
