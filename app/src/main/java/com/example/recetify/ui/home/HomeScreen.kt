@@ -51,10 +51,10 @@ import com.example.recetify.ui.common.LoopingVideoPlayer
 import androidx.core.net.toUri
 
 // Fuentes
-private val Sen = FontFamily(
+internal val Sen = FontFamily(
     Font(R.font.pacifico_regular, weight = FontWeight.Light)
 )
-private val Destacado = FontFamily(
+internal val Destacado = FontFamily(
     Font(R.font.sen_semibold, weight = FontWeight.ExtraBold)
 )
 

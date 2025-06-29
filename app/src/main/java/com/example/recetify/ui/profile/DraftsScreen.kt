@@ -1,51 +1,83 @@
 package com.example.recetify.ui.profile
 
-import java.net.URI
+import androidx.compose.foundation.ExperimentalFoundationApi
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
-import androidx.compose.foundation.lazy.LazyColumn
-import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.lazy.*
 import androidx.compose.foundation.shape.RoundedCornerShape
-import androidx.compose.material3.Card
-import androidx.compose.material3.CardDefaults
-import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.Text
-import androidx.compose.runtime.Composable
-import androidx.compose.runtime.collectAsState
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.Star
+import androidx.compose.material3.*
+import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.Shape
 import androidx.compose.ui.layout.ContentScale
+import androidx.compose.ui.text.PlatformTextStyle
+import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.sp
+import androidx.compose.ui.zIndex
 import androidx.lifecycle.viewmodel.compose.viewModel
 import coil.compose.AsyncImage
 import com.example.recetify.data.remote.RetrofitClient
 import com.example.recetify.data.remote.model.RecipeSummaryResponse
 import com.example.recetify.ui.common.LoopingVideoPlayer
+import com.example.recetify.ui.home.Destacado
+import com.example.recetify.ui.home.Sen
+import java.net.URI
 import androidx.core.net.toUri
 
+@OptIn(ExperimentalFoundationApi::class)
 @Composable
 fun DraftsScreen(
     draftVm: DraftViewModel = viewModel(),
     onDraftClick: (Long) -> Unit = {}
 ) {
-    // Recogemos el StateFlow inicializado a lista vacía para evitar errores
-    val drafts = draftVm.drafts.collectAsState(initial = emptyList()).value
+    val drafts by draftVm.drafts.collectAsState(initial = emptyList())
+    val listState = rememberLazyListState()
 
     LazyColumn(
-        modifier = Modifier
-            .fillMaxSize()
-            .padding(vertical = 12.dp),
-        verticalArrangement = Arrangement.spacedBy(16.dp),
-        contentPadding = PaddingValues(horizontal = 24.dp)
+        state = listState,
+        modifier = Modifier.fillMaxSize(),
+        contentPadding = PaddingValues(bottom = 80.dp),
+        verticalArrangement = Arrangement.spacedBy(16.dp)
     ) {
-        items(
-            items = drafts,
-            key = { it.id }
-        ) { draft ->
-            DraftRecipeCard(draft = draft, onClick = onDraftClick)
+        // Espacio superior
+        item { Spacer(Modifier.height(24.dp)) }
+
+        // Sticky header idéntico a HomeScreen
+        stickyHeader {
+            val stuck by remember { derivedStateOf { listState.firstVisibleItemIndex > 0 } }
+            Box(
+                Modifier
+                    .fillMaxWidth()
+                    // colapsa hacia arriba
+                    .offset(y = if (!stuck) (-24).dp else 0.dp)
+                    // ajusta padding horizontal igual que Home
+                    .padding(horizontal = if (stuck) 0.dp else 24.dp)
+                    .background(Color.Transparent)
+                    .zIndex(10f)
+            ) {
+                DraftsHeader(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .height(if (stuck) 100.dp else 90.dp),
+                    title = "MIS BORRADORES",
+                    shape = if (stuck) RoundedCornerShape(0.dp) else RoundedCornerShape(8.dp)
+                )
+            }
+        }
+
+        // Lista de cards
+        items(drafts, key = { it.id }) { draft ->
+            Box(Modifier.padding(horizontal = 24.dp)) {
+                DraftRecipeCard(draft = draft, onClick = onDraftClick)
+            }
         }
     }
 }
@@ -55,38 +87,28 @@ private fun DraftRecipeCard(
     draft: RecipeSummaryResponse,
     onClick: (Long) -> Unit
 ) {
-    // 1) Normalizamos la URL igual que en HomeScreen
-    val base     = RetrofitClient.BASE_URL.trimEnd('/')
+    val base = RetrofitClient.BASE_URL.trimEnd('/')
     val original = draft.mediaUrls?.firstOrNull().orEmpty()
     val pathOnly = runCatching {
         val uri = URI(original)
         uri.rawPath + (uri.rawQuery?.let { "?$it" } ?: "")
     }.getOrNull() ?: original
-    // Aquí está la clave: SIEMPRE anteponemos base + "/" + pathOnly
-    val finalUrl = if (pathOnly.startsWith("/")) {
-        "$base$pathOnly"
-    } else {
-        "$base/$pathOnly"
-    }
-
-    // 2) Detectamos si es vídeo
-    val isVideo = finalUrl.endsWith(".mp4", ignoreCase = true) ||
-            finalUrl.endsWith(".webm", ignoreCase = true)
+    val finalUrl = if (pathOnly.startsWith("/")) "$base$pathOnly" else "$base/$pathOnly"
+    val isVideo = finalUrl.endsWith(".mp4", true) || finalUrl.endsWith(".webm", true)
 
     Box(
-        modifier = Modifier
+        Modifier
             .fillMaxWidth()
             .clickable { onClick(draft.id) }
     ) {
         Card(
-            modifier  = Modifier.fillMaxWidth(),
-            shape     = RoundedCornerShape(8.dp),
+            modifier = Modifier.fillMaxWidth(),
+            shape = RoundedCornerShape(8.dp),
             elevation = CardDefaults.cardElevation(defaultElevation = 4.dp),
-            colors    = CardDefaults.cardColors(containerColor = Color.White)
+            colors = CardDefaults.cardColors(containerColor = Color.White)
         ) {
             Column {
                 if (isVideo) {
-                    // Vídeo en bucle igual que en HomeScreen
                     LoopingVideoPlayer(
                         uri = finalUrl.toUri(),
                         modifier = Modifier
@@ -95,41 +117,40 @@ private fun DraftRecipeCard(
                             .clip(RoundedCornerShape(topStart = 8.dp, topEnd = 8.dp))
                     )
                 } else {
-                    // Imagen estática
                     AsyncImage(
-                        model              = finalUrl,
+                        model = finalUrl,
                         contentDescription = draft.nombre,
-                        modifier           = Modifier
+                        modifier = Modifier
                             .fillMaxWidth()
                             .height(180.dp)
                             .clip(RoundedCornerShape(topStart = 8.dp, topEnd = 8.dp)),
-                        contentScale       = ContentScale.Crop
+                        contentScale = ContentScale.Crop
                     )
                 }
-
                 Spacer(Modifier.height(12.dp))
-
                 Column(Modifier.padding(horizontal = 16.dp, vertical = 12.dp)) {
                     Text(
-                        text     = draft.nombre,
-                        style    = MaterialTheme.typography.titleLarge,
+                        text = draft.nombre,
+                        style = MaterialTheme.typography.titleLarge,
                         maxLines = 1,
-                        color    = Color.Black
+                        overflow = TextOverflow.Ellipsis,
+                        color = Color.Black
                     )
                     Spacer(Modifier.height(4.dp))
                     Text(
-                        text     = draft.descripcion.orEmpty(),
-                        style    = MaterialTheme.typography.bodyMedium,
+                        text = draft.descripcion.orEmpty(),
+                        style = MaterialTheme.typography.bodyMedium,
                         maxLines = 2,
-                        color    = Color.DarkGray
+                        overflow = TextOverflow.Ellipsis,
+                        color = Color.DarkGray
                     )
                 }
             }
         }
 
-        // Tag "BORRADOR" superpuesto en la esquina
+        // Badge "BORRADOR"
         Box(
-            modifier = Modifier
+            Modifier
                 .align(Alignment.TopEnd)
                 .offset(x = (-8).dp, y = 8.dp)
                 .background(
@@ -139,9 +160,72 @@ private fun DraftRecipeCard(
                 .padding(horizontal = 8.dp, vertical = 4.dp)
         ) {
             Text(
-                text  = "BORRADOR",
+                text = "BORRADOR",
                 style = MaterialTheme.typography.labelSmall.copy(color = Color.Black)
             )
+        }
+    }
+}
+
+@Composable
+fun DraftsHeader(
+    modifier: Modifier = Modifier,
+    title: String = "BORRADORES",
+    subtitle: String = "",
+    shape: Shape = RoundedCornerShape(2.dp)
+) {
+    Card(
+        modifier = modifier,
+        shape = shape,
+        elevation = CardDefaults.cardElevation(defaultElevation = 8.dp),
+        colors = CardDefaults.cardColors(containerColor = Color.Transparent)
+    ) {
+        Box(
+            Modifier
+                .fillMaxSize()
+                .background(Color(0xFF5A6F8A))
+        ) {
+            Box(Modifier.align(Alignment.Center)) {
+                Row(
+                    modifier = Modifier.wrapContentWidth(),
+                    horizontalArrangement = Arrangement.Center,
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    Icon(
+                        imageVector = Icons.Filled.Star,
+                        contentDescription = null,
+                        tint = Color.White,
+                        modifier = Modifier.size(28.dp)
+                    )
+                    Spacer(Modifier.width(12.dp))
+                    Text(
+                        text = title,
+                        maxLines = 1,
+                        overflow = TextOverflow.Clip,
+                        style = MaterialTheme.typography.titleMedium.copy(
+                            color = Color.White,
+                            fontFamily = Destacado,
+                            fontWeight = FontWeight.Bold,
+                            fontSize = 20.sp,
+                            platformStyle = PlatformTextStyle(includeFontPadding = false)
+                        )
+                    )
+                    if (subtitle.isNotEmpty()) {
+                        Spacer(Modifier.width(8.dp))
+                        Text(
+                            text = subtitle,
+                            maxLines = 1,
+                            overflow = TextOverflow.Clip,
+                            style = MaterialTheme.typography.bodyMedium.copy(
+                                color = Color.White.copy(alpha = 0.9f),
+                                fontFamily = Sen,
+                                fontSize = 20.sp,
+                                platformStyle = PlatformTextStyle(includeFontPadding = false)
+                            )
+                        )
+                    }
+                }
+            }
         }
     }
 }
