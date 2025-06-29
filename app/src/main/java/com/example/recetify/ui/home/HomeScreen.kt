@@ -185,7 +185,7 @@ fun HomeScreen(
 }
 
 @Composable
-private fun FeaturedHeader(
+fun FeaturedHeader(
     modifier: Modifier = Modifier,
     title: String = "DESTACADOS",
     subtitle: String = "del día",

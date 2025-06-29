@@ -26,6 +26,7 @@ import com.example.recetify.ui.common.rememberIsOnline
 import com.example.recetify.ui.createRecipe.CreateRecipeScreen
 import com.example.recetify.ui.createRecipe.CreateRecipeViewModel
 import com.example.recetify.ui.createRecipe.CreateRecipeViewModelFactory
+import com.example.recetify.ui.createRecipe.EditRecipeScreen
 import com.example.recetify.ui.details.RecipeDetailScreen
 import com.example.recetify.ui.home.HomeScreen
 import com.example.recetify.ui.login.*
@@ -157,6 +158,28 @@ fun AppNavGraph() {
                     onPublished = { navController.popBackStack() }
                 )
             }
+            composable("editRecipe/{recipeId}") { backStack ->
+                val recipeId = backStack.arguments
+                    ?.getString("recipeId")
+                    ?.toLongOrNull() ?: return@composable
+
+                // Usamos el mismo ViewModel de creación, inyectado igual que en Create
+                val vm: CreateRecipeViewModel =
+                    viewModel(factory = CreateRecipeViewModelFactory(
+                        LocalContext.current.applicationContext as Application
+                    ))
+
+                EditRecipeScreen(
+                    recipeId    = recipeId,
+                    viewModel   = vm,
+                    onClose     = { navController.popBackStack() },
+                    onSaved     = {
+                        draftVm.refresh()
+                        navController.popBackStack()
+                    },
+                    onPublished = { navController.popBackStack() }
+                )
+            }
 
             // 5) Profile flow
             composable("profile") {
@@ -170,7 +193,7 @@ fun AppNavGraph() {
             // endpoints para tus pantallas de perfil
             composable("drafts") {
                 DraftsScreen(onDraftClick = { id ->
-                    navController.navigate("recipe/$id")
+                    navController.navigate("editRecipe/$id")
                 })
             }
             composable("saved") {

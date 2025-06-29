@@ -58,9 +58,21 @@ interface ApiService {
     @POST("recipes/draft")
     suspend fun saveDraft(@Body req: RecipeRequest): RecipeResponse
 
+    @PUT("recipes/{id}/draft/full")
+    suspend fun syncDraftFull(
+        @Path("id") id: Long,
+        @Body req: RecipeRequest
+    ): RecipeResponse    // ¡sigue siendo RecipeResponse!
+
     /** Listar borradores del usuario autenticado */
     @GET("recipes/drafts")
     suspend fun listDrafts(): List<RecipeSummaryResponse>
+
+    @PUT("recipes/{id}/draft")
+    suspend fun updateDraft(
+        @Path("id") id: Long,
+        @Body req: RecipeRequest
+    ): RecipeResponse
 
     @GET("/recipes/saved")
     suspend fun listSavedRecipes(): List<UserSavedRecipeDTO>

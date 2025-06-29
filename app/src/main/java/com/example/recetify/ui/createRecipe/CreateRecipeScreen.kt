@@ -760,7 +760,7 @@ fun CreateRecipeScreen(
                                 )
 
                                 // 3️⃣ Llamar al ViewModel para guardar borrador
-                                viewModel.saveDraft(request)
+                                viewModel.saveDraftWithMedia(request, localMediaUri)
                             },
                             enabled   = !viewModel.submitting.collectAsState().value,
                             modifier  = Modifier

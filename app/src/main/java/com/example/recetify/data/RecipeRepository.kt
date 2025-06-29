@@ -36,6 +36,12 @@ class RecipeRepository(
         api.uploadImage(part)
     }
 
+    // app/src/main/java/com/example/recetify/data/RecipeRepository.kt
+
+    /** Carga un borrador completo (o receta) por su ID usando el endpoint /recipes/{id} */
+    suspend fun getDraftById(id: Long): RecipeResponse =
+        api.getRecipeById(id)
+
     suspend fun saveDraft(req: RecipeRequest): RecipeResponse = withContext(Dispatchers.IO) {
         check(connectivity.activeNetwork != null) { "Sin conexión" }
         api.saveDraft(req)
@@ -46,9 +52,14 @@ class RecipeRepository(
         api.listDrafts()
     }
 
+
     suspend fun listSavedRecipes(): List<UserSavedRecipeDTO> = withContext(Dispatchers.IO) {
         check(connectivity.activeNetwork != null) { "Sin conexión" }
         api.listSavedRecipes()
+    }
+
+    suspend fun syncDraftFull(id: Long, request: RecipeRequest): RecipeResponse {
+        return api.syncDraftFull(id, request)
     }
 
     suspend fun publishDraft(id: Long): RecipeResponse = withContext(Dispatchers.IO) {
