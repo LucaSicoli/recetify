@@ -9,7 +9,7 @@ import retrofit2.converter.scalars.ScalarsConverterFactory
 
 object RetrofitClient {
 
-    const val BASE_URL = "http://192.168.1.42:8080/"
+    const val BASE_URL = "https://recipeapp-production-7ecc.up.railway.app/"
 
     private val gson = GsonBuilder()
         .setDateFormat("yyyy-MM-dd'T'HH:mm:ss.SSSSSS")
