@@ -203,7 +203,7 @@ fun AppNavGraph() {
             }
             composable("myRecipes") {
                 MyRecipesScreen(onRecipeClick = { id ->
-                    navController.navigate("recipe/$id")
+                    navController.navigate("editRecipe/$id")
                 })
             }
             composable("profileInfo") {
