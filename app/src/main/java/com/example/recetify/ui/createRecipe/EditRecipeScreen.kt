@@ -147,7 +147,9 @@ fun EditRecipeScreen(
                 ?.firstOrNull()
                 ?.let { url ->
                     localMediaUri = Uri.parse(url)
-                    isVideo       = false
+                    // Detectar vídeo vs imagen:
+                    isVideo = url.endsWith(".mp4", ignoreCase = true)
+                            || url.endsWith(".webm", ignoreCase = true)
                 }
         }
     }
