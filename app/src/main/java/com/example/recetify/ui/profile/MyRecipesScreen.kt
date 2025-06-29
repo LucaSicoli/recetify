@@ -30,7 +30,6 @@ import com.example.recetify.data.remote.RetrofitClient
 import com.example.recetify.data.remote.model.RecipeSummaryResponse
 import com.example.recetify.ui.common.LoopingVideoPlayer
 import com.example.recetify.ui.home.Destacado
-import com.example.recetify.ui.home.Sen
 import java.net.URI
 import androidx.core.net.toUri
 
@@ -77,7 +76,7 @@ fun MyRecipesScreen(
                         .fillMaxWidth()
                         .height(if (stuck) 100.dp else 90.dp),
                     title = "MIS PUBLICADAS",
-                    shape = if (stuck) RoundedCornerShape(0.dp) else RoundedCornerShape(8.dp)
+                    shape = if (stuck) RoundedCornerShape(0.dp) else RoundedCornerShape(8.dp),
                 )
             }
         }
@@ -223,7 +222,8 @@ fun PublicHeader(
                     style      = MaterialTheme.typography.titleMedium.copy(
                         color      = Color.White,
                         fontWeight = FontWeight.Bold,
-                        fontSize   = 20.sp
+                        fontSize   = 20.sp,
+                        fontFamily = Destacado
                     )
                 )
             }

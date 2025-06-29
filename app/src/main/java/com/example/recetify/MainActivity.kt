@@ -64,6 +64,8 @@ fun AppNavGraph() {
     val passwordVm: PasswordResetViewModel = viewModel()
     val draftVm: DraftViewModel           = viewModel()
     val favVm: FavouriteViewModel         = viewModel()
+    val myRecipesVm: MyRecipesViewModel   = viewModel()
+
 
     // Estados de sesión y conexión
     val isAlumno   by SessionManager.isAlumnoFlow(context).collectAsState(initial = false)
@@ -174,10 +176,22 @@ fun AppNavGraph() {
                     viewModel   = vm,
                     onClose     = { navController.popBackStack() },
                     onSaved     = {
+                        // 1) recarga borradores
                         draftVm.refresh()
-                        navController.popBackStack()
+                        // 2) recarga publicadas
+                        myRecipesVm.refresh()
+                        // 3) volvemos atrás
+                        navController.navigate("profile") {
+                            popUpTo("profile") { inclusive = false }
+                        }
                     },
-                    onPublished = { navController.popBackStack() }
+                    onPublished = {
+                        draftVm.refresh()
+                        myRecipesVm.refresh()
+                        navController.navigate("profile") {
+                            popUpTo("profile") { inclusive = false }
+                        }
+                    }
                 )
             }
 
@@ -187,6 +201,7 @@ fun AppNavGraph() {
                 LaunchedEffect(Unit) {
                     draftVm.refresh()
                     favVm.loadFavourites()
+                    myRecipesVm.refresh()
                 }
                 ProfileScreen(navController = navController)
             }

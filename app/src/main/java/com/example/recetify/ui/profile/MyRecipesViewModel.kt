@@ -32,4 +32,7 @@ class MyRecipesViewModel(app: Application) : AndroidViewModel(app) {
             }
         }
     }
+
+    fun refresh() = loadMyRecipes()
+
 }
