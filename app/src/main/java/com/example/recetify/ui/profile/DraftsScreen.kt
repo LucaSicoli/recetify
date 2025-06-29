@@ -7,7 +7,6 @@ import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.*
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.Star
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
@@ -31,6 +30,7 @@ import com.example.recetify.ui.home.Destacado
 import com.example.recetify.ui.home.Sen
 import java.net.URI
 import androidx.core.net.toUri
+import androidx.compose.material.icons.filled.Book
 
 @OptIn(ExperimentalFoundationApi::class)
 @Composable
@@ -196,7 +196,7 @@ fun DraftsHeader(
                     verticalAlignment     = Alignment.CenterVertically
                 ) {
                     Icon(
-                        imageVector        = Icons.Filled.Star,
+                        imageVector        = Icons.Filled.Book,
                         contentDescription = null,
                         tint               = Color.White,
                         modifier           = Modifier.size(28.dp)
