@@ -65,6 +65,7 @@ fun AppNavGraph() {
     val draftVm: DraftViewModel           = viewModel()
     val favVm: FavouriteViewModel         = viewModel()
     val myRecipesVm: MyRecipesViewModel   = viewModel()
+    val reviewCountVm: ReviewCountViewModel = viewModel()
 
 
     // Estados de sesión y conexión
@@ -197,13 +198,22 @@ fun AppNavGraph() {
 
             // 5) Profile flow
             composable("profile") {
-                // refresca drafts y favs
-                LaunchedEffect(Unit) {
+                // 1) observa la entrada actual del NavController:
+                val backStackEntry by navController.currentBackStackEntryAsState()
+                // 2) siempre que cambie (o sea, vuelvas aquí), recarga TODOS tus VMs:
+                LaunchedEffect(backStackEntry) {
                     draftVm.refresh()
                     favVm.loadFavourites()
                     myRecipesVm.refresh()
+                    reviewCountVm.loadCount()
                 }
-                ProfileScreen(navController = navController)
+                ProfileScreen(
+                    navController   = navController,
+                    draftVm         = draftVm,
+                    favVm           = favVm,
+                    myRecipesVm     = myRecipesVm,
+                    reviewCountVm   = reviewCountVm
+                )
             }
             // endpoints para tus pantallas de perfil
             composable("drafts") {

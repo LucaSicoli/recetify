@@ -36,7 +36,8 @@ fun ProfileScreen(
     navController: NavController,
     draftVm: DraftViewModel = viewModel(),
     favVm: FavouriteViewModel = viewModel(),
-    myRecipesVm: MyRecipesViewModel = viewModel()
+    myRecipesVm: MyRecipesViewModel = viewModel(),
+    reviewCountVm: ReviewCountViewModel       = viewModel()
 ) {
     // 1) Listas
     val drafts    by draftVm.drafts.collectAsState()
@@ -51,6 +52,9 @@ fun ProfileScreen(
     val ctx = LocalContext.current
     var showLogoutDialog by remember { mutableStateOf(false) }
     val scope = rememberCoroutineScope()
+
+    val reviewCount by reviewCountVm.count.collectAsState()
+    LaunchedEffect(Unit) { reviewCountVm.loadCount() }
 
     Surface(
         modifier = Modifier.fillMaxSize(),
@@ -139,7 +143,7 @@ fun ProfileScreen(
                 Spacer(Modifier.width(12.dp))
                 StatSeparator(height = 40.dp)
                 Spacer(Modifier.width(12.dp))
-                StatItem(43,             "Reseñas")
+                StatItem(reviewCount,             "Reseñas")
             }
 
             Spacer(Modifier.height(32.dp))

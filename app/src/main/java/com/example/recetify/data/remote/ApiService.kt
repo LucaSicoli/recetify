@@ -94,6 +94,8 @@ interface ApiService {
     @GET("/users/me")
     suspend fun getCurrentUser(): UserResponse
 
+    @GET("ratings/count/me")
+    suspend fun countMyReviews(): Int
 
     // —— Subida de imágenes ——
     @Multipart
