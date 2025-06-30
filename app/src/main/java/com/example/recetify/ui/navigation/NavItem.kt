@@ -12,7 +12,7 @@ sealed class NavItem(val route: String, val icon: ImageVector?) {
     object Home      : NavItem("home",    Icons.Rounded.Home)
     object Search    : NavItem("search",  Icons.Outlined.Search)
     object Chef      : NavItem("createRecipe",    null)
-    object Favorites : NavItem("favorites", Icons.Rounded.Favorite)
+    object Favorites : NavItem("saved",   Icons.Rounded.Favorite)
     object Profile   : NavItem("profile", Icons.Outlined.Person)
 
     companion object {

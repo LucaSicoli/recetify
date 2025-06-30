@@ -195,8 +195,8 @@ fun PublicHeader(
                 .background(
                     Brush.horizontalGradient(
                         colors = listOf(
-                            Color(0xFF8B6A00), // goldenrod oscuro
-                            Color(0xFFFFD700)  // gold
+                            Color(0xFF2E7D32), // verde bosque (más serio)
+                            Color(0xFF66BB6A)
                         )
                     )
                 )

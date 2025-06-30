@@ -78,7 +78,7 @@ interface ApiService {
     @GET("/recipes/saved")
     suspend fun listSavedRecipes(): List<UserSavedRecipeDTO>
 
-    @PUT("recipes/{id}/saved")
+    @PUT("recipes/{id}/save")
     suspend fun saveRecipe(@Path("id") recipeId: Long): Unit
 
     /** Quitar de favoritos */

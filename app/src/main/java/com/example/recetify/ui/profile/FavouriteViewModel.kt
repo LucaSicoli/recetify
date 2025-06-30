@@ -30,6 +30,17 @@ class FavouriteViewModel(application: Application) : AndroidViewModel(applicatio
         loadFavourites()
     }
 
+    fun removeFavorite(recipeId: Long) {
+        viewModelScope.launch {
+            try {
+                // llama al endpoint DELETE /recipes/{id}/save
+                RetrofitClient.api.unsaveRecipe(recipeId)
+            } catch (_: Exception) { /* opcional: loguear error */ }
+            // recarga la lista para que la UI se actualice
+            loadFavourites()
+        }
+    }
+
     /** Carga o recarga las recetas guardadas */
     fun loadFavourites() {
         viewModelScope.launch {
