@@ -1,5 +1,6 @@
 package com.example.recetify.ui.home
 
+import android.annotation.SuppressLint
 import androidx.activity.compose.BackHandler
 import androidx.compose.animation.core.animateFloatAsState
 import androidx.compose.animation.core.tween
@@ -11,6 +12,7 @@ import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.lazy.rememberLazyListState
+import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Star
@@ -71,6 +73,11 @@ fun HomeScreen(
     val recipes  by homeVm.recipes.collectAsState()
     val isLoading by homeVm.isLoading.collectAsState()
 
+    val summaries by homeVm.summaries.collectAsState(initial = emptyList())
+
+    // 2) Mapa id-receta → RecipeSummaryResponse
+    val summaryMap = remember(summaries) { summaries.associateBy { it.id } }
+
     val listState = rememberLazyListState()
     var showLogoutDialog by remember { mutableStateOf(false) }
 
@@ -83,6 +90,7 @@ fun HomeScreen(
         }
     }.value
     val logoAlpha by animateFloatAsState(rawAlpha, tween(500))
+
 
     BackHandler { showLogoutDialog = true }
 
@@ -140,13 +148,19 @@ fun HomeScreen(
 
                 // ── Items ─────────────────────────────────────────
                 items(recipes, key = { it.id }) { recipe ->
-                    Box(
-                        Modifier
-                            .fillMaxWidth()
-                            .padding(horizontal = 24.dp)
-                            .clickable { navController.navigate("recipe/${recipe.id}") }
+                    // 1. Extraemos la URL de perfil desde el map de resúmenes:
+                    val profileUrl = summaryMap[recipe.id]?.usuarioFotoPerfil
+
+                    Box(Modifier
+                        .fillMaxWidth()
+                        .padding(horizontal = 24.dp)
+                        .clickable { navController.navigate("recipe/${recipe.id}") }
                     ) {
-                        RecipeCard(recipe)
+                        // 2. Le pasamos profileUrl a RecipeCard:
+                        RecipeCard(
+                            recipe     = recipe,
+                            profileUrl = profileUrl
+                        )
                     }
                 }
             }
@@ -253,18 +267,33 @@ fun FeaturedHeader(
         }
     }
 }
+
+
+@SuppressLint("DefaultLocale")
 @Composable
 private fun RecipeCard(
     recipe: RecipeEntity,
+    profileUrl: String?,
     modifier: Modifier = Modifier
 ) {
-    val base     = RetrofitClient.BASE_URL.trimEnd('/')
+    val base = RetrofitClient.BASE_URL.trimEnd('/')
+
+    // ── Normaliza la URL de la miniatura de la receta ───────────────
     val original = recipe.mediaUrls?.firstOrNull().orEmpty()
     val pathOnly = runCatching {
         val uri = URI(original)
         uri.rawPath + uri.rawQuery?.let { "?$it" }.orEmpty()
-    }.getOrNull() ?: original
-    val finalUrl = if (pathOnly.startsWith("/")) "$base$pathOnly" else "$base/$pathOnly"
+    }.getOrDefault(original)
+    val finalUrl = if (pathOnly.startsWith("/")) "$base$pathOnly" else original
+
+    // ── Normaliza la URL de la foto de perfil ─────────────────────────
+    val finalProfileUrl = profileUrl?.let { remote ->
+        val pPath = runCatching {
+            val uri = URI(remote)
+            uri.rawPath + uri.rawQuery?.let { "?$it" }.orEmpty()
+        }.getOrDefault(remote)
+        if (pPath.startsWith("/")) "$base$pPath" else remote
+    }
 
     Card(
         modifier  = modifier.fillMaxWidth(),
@@ -273,11 +302,10 @@ private fun RecipeCard(
         colors    = CardDefaults.cardColors(containerColor = Color.White)
     ) {
         Column {
-            if (finalUrl.endsWith(".mp4",  true) ||
-                finalUrl.endsWith(".webm", true)
-            ) {
+            // ── Media (foto o vídeo) ────────────────────────────────
+            if (finalUrl.endsWith(".mp4", true) || finalUrl.endsWith(".webm", true)) {
                 LoopingVideoPlayer(
-                    uri      = finalUrl.toUri(),
+                    uri = finalUrl.toUri(),
                     modifier = Modifier
                         .fillMaxWidth()
                         .height(180.dp)
@@ -298,79 +326,78 @@ private fun RecipeCard(
             Spacer(Modifier.height(12.dp))
 
             Column(Modifier.padding(horizontal = 16.dp)) {
-                // Título un poco más grande
+                // ── Título ───────────────────────────────────────────
                 Text(
                     text      = recipe.nombre,
                     style     = MaterialTheme.typography.titleLarge.copy(fontWeight = FontWeight.SemiBold),
                     color     = Color.Black,
                     maxLines  = 1,
                     overflow  = TextOverflow.Ellipsis,
-                    fontFamily = Destacado
+                    fontFamily= Destacado
                 )
 
                 Spacer(Modifier.height(8.dp))
 
-                // Una única fila con perfil, rating y tiempo
+                // ── Fila con avatar, alias, rating y tiempo ──────────────
                 Row(verticalAlignment = Alignment.CenterVertically) {
-                    // Icono y alias del chef
-                    Icon(
-                        imageVector     = Icons.Outlined.Person,
-                        contentDescription = "Chef",
-                        tint            = Color.Black,
-                        modifier        = Modifier.size(16.dp)
-                    )
-                    Spacer(Modifier.width(4.dp))
+                    if (!finalProfileUrl.isNullOrBlank()) {
+                        AsyncImage(
+                            model           = finalProfileUrl,
+                            contentDescription = "Avatar del chef",
+                            modifier        = Modifier
+                                .size(32.dp)
+                                .clip(CircleShape),
+                            contentScale    = ContentScale.Crop
+                        )
+                    } else {
+                        Icon(
+                            imageVector        = Icons.Outlined.Person,
+                            contentDescription = "Chef",
+                            tint               = Color.Black,
+                            modifier           = Modifier.size(22.dp)
+                        )
+                    }
+
+                    Spacer(Modifier.width(8.dp))
+
                     Text(
                         text  = recipe.usuarioCreadorAlias.orEmpty(),
-                        style = MaterialTheme.typography.bodySmall.copy(color = Color.Black),
-                        fontFamily = Destacado
+                        style = MaterialTheme.typography.bodySmall.copy(fontWeight = FontWeight.Bold)
                     )
 
                     Spacer(Modifier.width(16.dp))
 
-                    // Rating
                     Icon(
-                        imageVector     = Icons.Outlined.Star,
+                        imageVector        = Icons.Outlined.Star,
                         contentDescription = "Rating",
-                        tint            = Color(0xFFFFD700),
-                        modifier        = Modifier.size(18.dp)
+                        tint               = Color(0xFFFFD700),
+                        modifier           = Modifier.size(18.dp)
                     )
                     Spacer(Modifier.width(4.dp))
                     Text(
-                        text  = "%,.1f".format(recipe.promedioRating ?: 0.0),
+                        text = recipe.promedioRating?.let {
+                            if (it % 1.0 == 0.0) "${it.toInt()}" else String.format("%.1f", it)
+                        } ?: "–",
                         style = MaterialTheme.typography.bodySmall.copy(color = Color(0xFFe29587))
                     )
 
                     Spacer(Modifier.width(16.dp))
 
-                    // Tiempo
                     Icon(
-                        imageVector     = Icons.Outlined.Timer,
+                        imageVector        = Icons.Outlined.Timer,
                         contentDescription = "Tiempo",
-                        tint            = Color.Black,
-                        modifier        = Modifier.size(18.dp)
+                        tint               = Color.Black,
+                        modifier           = Modifier.size(18.dp)
                     )
                     Spacer(Modifier.width(4.dp))
                     Text(
                         text  = "${recipe.tiempo} min",
-                        style = MaterialTheme.typography.bodySmall.copy(color = Color.Black)
+                        style = MaterialTheme.typography.bodySmall
                     )
                 }
 
-                Spacer(Modifier.height(8.dp))
-
-                // Descripción
-                Text(
-                    text      = recipe.descripcion.orEmpty(),
-                    style     = MaterialTheme.typography.bodyMedium.copy(color = Color.Black),
-                    maxLines  = 2,
-                    overflow  = TextOverflow.Ellipsis,
-                    color = Color(0xFF333333)
-
-                )
+                Spacer(Modifier.height(12.dp))
             }
-
-            Spacer(Modifier.height(12.dp))
         }
     }
 }

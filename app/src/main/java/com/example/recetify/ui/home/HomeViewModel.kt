@@ -1,4 +1,3 @@
-// app/src/main/java/com/example/recetify/ui/home/HomeViewModel.kt
 package com.example.recetify.ui.home
 
 import android.app.Application
@@ -9,7 +8,14 @@ import com.example.recetify.data.RecipeRepository
 import com.example.recetify.data.db.DatabaseProvider
 import com.example.recetify.data.db.RecipeEntity
 import com.example.recetify.data.remote.RetrofitClient
-import kotlinx.coroutines.flow.*
+import com.example.recetify.data.remote.model.RecipeSummaryResponse
+import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.StateFlow
+import kotlinx.coroutines.flow.asStateFlow
+import kotlinx.coroutines.flow.SharingStarted
+import kotlinx.coroutines.flow.onEach
+import kotlinx.coroutines.flow.onStart
+import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.launch
 
 class HomeViewModel(app: Application) : AndroidViewModel(app) {
@@ -20,19 +26,17 @@ class HomeViewModel(app: Application) : AndroidViewModel(app) {
     private val dao  = DatabaseProvider.getInstance(app).recipeDao()
     private val repo = RecipeRepository(dao, RetrofitClient.api, connectivity)
 
-    // Indicador de carga
+    // Indicador de carga para la lista de recetas
     private val _isLoading = MutableStateFlow(true)
     val isLoading: StateFlow<Boolean> = _isLoading.asStateFlow()
 
-    // Lista de recetas (actualiza _isLoading cuando emite)
+    // 1) Lista de recetas cacheadas (Room) que oculta el loading tras la primera emisión
     val recipes: StateFlow<List<RecipeEntity>> =
         repo.getAllRecipes()
             .onStart {
-                // justo antes de pedir la lista, muestro loading
                 _isLoading.value = true
             }
             .onEach {
-                // tras recibir la primera emisión (cache o red), oculto loading
                 _isLoading.value = false
             }
             .stateIn(
@@ -40,4 +44,20 @@ class HomeViewModel(app: Application) : AndroidViewModel(app) {
                 started = SharingStarted.Lazily,
                 initialValue = emptyList()
             )
+
+    // 2) Lista de resúmenes remotos (para foto de perfil, alias, rating…)
+    private val _summaries = MutableStateFlow<List<RecipeSummaryResponse>>(emptyList())
+    val summaries: StateFlow<List<RecipeSummaryResponse>> = _summaries.asStateFlow()
+
+    init {
+        // Carga inicial de los resúmenes desde la API
+        viewModelScope.launch {
+            try {
+                val list = RetrofitClient.api.getAllRecipesSummary()
+                _summaries.value = list
+            } catch (e: Exception) {
+                // Aquí podrías loguear o manejar el error
+            }
+        }
+    }
 }
