@@ -17,6 +17,7 @@ import com.example.recetify.data.remote.model.UserResponse
 import com.example.recetify.data.remote.model.UserSavedRecipeDTO
 import okhttp3.MultipartBody
 import retrofit2.http.Body
+import retrofit2.http.DELETE
 import retrofit2.http.GET
 import retrofit2.http.Multipart
 import retrofit2.http.POST
@@ -76,6 +77,13 @@ interface ApiService {
 
     @GET("/recipes/saved")
     suspend fun listSavedRecipes(): List<UserSavedRecipeDTO>
+
+    @PUT("recipes/{id}/saved")
+    suspend fun saveRecipe(@Path("id") recipeId: Long): Unit
+
+    /** Quitar de favoritos */
+    @DELETE("recipes/{id}/save")
+    suspend fun unsaveRecipe(@Path("id") recipeId: Long): Unit
 
     /** Publicar un borrador */
     @PUT("recipes/{id}/publish")

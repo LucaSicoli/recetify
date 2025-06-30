@@ -65,6 +65,8 @@ import com.example.recetify.data.remote.model.RatingResponse
 import com.example.recetify.util.obtenerEmoji
 import java.net.URI
 import android.net.Uri
+import androidx.compose.material.icons.filled.Favorite
+import androidx.compose.material.icons.outlined.FavoriteBorder
 import com.example.recetify.ui.common.LoopingVideoPlayer
 import coil.compose.AsyncImage
 
@@ -315,7 +317,9 @@ fun RecipeDetailContent(
     showIngredients: MutableState<Boolean>,
     currentStep: MutableState<Int>,
     navController: NavController,
-    onSendRating: (comentario: String, puntos: Int) -> Unit
+    onSendRating: (comentario: String, puntos: Int) -> Unit,
+    isFavorite: Boolean,
+    onToggleFavorite: () -> Unit
 ) {
     val primaryTextColor = Color(0xFF042628)
     val selectedButtonColor = Color(0xFF042628)
@@ -376,6 +380,21 @@ fun RecipeDetailContent(
                     imageVector = Icons.Default.ArrowBack,
                     contentDescription = "Volver",
                     tint = Color.White
+                )
+            }
+
+            IconButton(
+                onClick = { onToggleFavorite() },
+                modifier = Modifier
+                    .padding(16.dp)
+                    .size(40.dp)
+                    .background(Color.Black.copy(alpha = 0.4f), shape = CircleShape)
+                    .align(Alignment.TopEnd)
+            ) {
+                Icon(
+                    imageVector = if (isFavorite) Icons.Filled.Favorite else Icons.Outlined.FavoriteBorder,
+                    contentDescription = if (isFavorite) "Quitar favorito" else "Agregar favorito",
+                    tint = if (isFavorite) Color.Red else Color.White
                 )
             }
         }
