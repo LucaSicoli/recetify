@@ -245,7 +245,8 @@ fun AppNavGraph() {
                             route == "createRecipe" ||
                             route == "profile" ||
                             route == "drafts" ||
-                            route == "saved"
+                            route == "saved" ||
+                            route == "myRecipes"
                     )
         ) {
             Box(Modifier.align(Alignment.BottomCenter)) {

@@ -158,7 +158,7 @@ fun ProfileScreen(
             Spacer(Modifier.height(16.dp))
 
             OptionRow(
-                color = Color(0xFF8E4B40),
+                color = Color(0xFF2E7D32),
                 title = "Mis recetas publicadas"
             ) {
                 navController.navigate("myRecipes")
@@ -166,7 +166,7 @@ fun ProfileScreen(
             Spacer(Modifier.height(16.dp))
 
             OptionRow(
-                color = Color(0xFF7A8C99),
+                color = Color(0xFFCC3366),
                 title = "Mis recetas favoritas"
             ) {
                 navController.navigate("saved")
