@@ -14,9 +14,9 @@ import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Star
-import androidx.compose.material.icons.filled.Timer
 import androidx.compose.material.icons.outlined.Person
 import androidx.compose.material.icons.outlined.Star
+import androidx.compose.material.icons.outlined.Timer
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
@@ -332,7 +332,7 @@ private fun RecipeCard(
                     Icon(
                         imageVector     = Icons.Outlined.Star,
                         contentDescription = "Rating",
-                        tint            = Color(0xFFe29587),
+                        tint            = Color(0xFFFFD700),
                         modifier        = Modifier.size(18.dp)
                     )
                     Spacer(Modifier.width(4.dp))
@@ -345,7 +345,7 @@ private fun RecipeCard(
 
                     // Tiempo
                     Icon(
-                        imageVector     = Icons.Filled.Timer,
+                        imageVector     = Icons.Outlined.Timer,
                         contentDescription = "Tiempo",
                         tint            = Color.Black,
                         modifier        = Modifier.size(18.dp)
