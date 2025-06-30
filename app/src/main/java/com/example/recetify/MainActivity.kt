@@ -16,10 +16,12 @@ import androidx.core.view.WindowCompat
 import androidx.core.view.WindowInsetsCompat
 import androidx.core.view.WindowInsetsControllerCompat
 import androidx.lifecycle.viewmodel.compose.viewModel
+import androidx.navigation.NavType
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.compose.currentBackStackEntryAsState
 import androidx.navigation.compose.rememberNavController
+import androidx.navigation.navArgument
 import com.example.recetify.data.remote.model.SessionManager
 import com.example.recetify.ui.common.NoConnectionScreen
 import com.example.recetify.ui.common.rememberIsOnline
@@ -138,13 +140,25 @@ fun AppNavGraph() {
                     HomeScreen(navController = navController)
                 }
             }
-            composable("recipe/{id}") { back ->
-                back.arguments
-                    ?.getString("id")
-                    ?.toLongOrNull()
-                    ?.let { id ->
-                        RecipeDetailScreen(recipeId = id, navController = navController)
-                    }
+            composable(
+                route = "recipe/{id}?photo={photo}",
+                arguments = listOf(
+                    navArgument("id")   { type = NavType.LongType },
+                    navArgument("photo"){ type = NavType.StringType; defaultValue = "" }
+                )
+            ) { back ->
+                val id    = back.arguments!!.getLong("id")
+                // decodificamos la URL si vino no vacía
+                val photo = back.arguments!!
+                    .getString("photo")
+                    ?.takeIf(String::isNotBlank)
+                    ?.let { java.net.URLDecoder.decode(it, "UTF-8") }
+
+                RecipeDetailScreen(
+                    recipeId        = id,
+                    profilePhotoUrl = photo,              // ← aquí le pasamos la foto
+                    navController   = navController
+                )
             }
 
             // 4) Create Recipe

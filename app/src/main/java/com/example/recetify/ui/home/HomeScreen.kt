@@ -148,18 +148,23 @@ fun HomeScreen(
 
                 // ── Items ─────────────────────────────────────────
                 items(recipes, key = { it.id }) { recipe ->
-                    // 1. Extraemos la URL de perfil desde el map de resúmenes:
-                    val profileUrl = summaryMap[recipe.id]?.usuarioFotoPerfil
+                    // 1) Sacamos la URL cruda del map de resúmenes
+                    val raw     = summaryMap[recipe.id]?.usuarioFotoPerfil.orEmpty()
+                    // 2) La codificamos para pasarla en la ruta
+                    val encoded = java.net.URLEncoder.encode(raw, "UTF-8")
 
-                    Box(Modifier
-                        .fillMaxWidth()
-                        .padding(horizontal = 24.dp)
-                        .clickable { navController.navigate("recipe/${recipe.id}") }
+                    Box(
+                        Modifier
+                            .fillMaxWidth()
+                            .padding(horizontal = 24.dp)
+                            .clickable {
+                                // 3) Navegamos incluyendo el parámetro `photo`
+                                navController.navigate("recipe/${recipe.id}?photo=$encoded")
+                            }
                     ) {
-                        // 2. Le pasamos profileUrl a RecipeCard:
                         RecipeCard(
                             recipe     = recipe,
-                            profileUrl = profileUrl
+                            profileUrl = summaryMap[recipe.id]?.usuarioFotoPerfil
                         )
                     }
                 }

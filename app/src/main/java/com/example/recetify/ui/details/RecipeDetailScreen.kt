@@ -21,6 +21,7 @@ import com.example.recetify.ui.profile.FavouriteViewModel
 fun RecipeDetailScreen(
     recipeId: Long,
     navController: NavController,
+    profilePhotoUrl: String?,
     viewModel: RecipeDetailViewModel = viewModel(),
     favVm: FavouriteViewModel = viewModel()   // inyectamos el VM de favoritos
 ) {
@@ -66,6 +67,7 @@ fun RecipeDetailScreen(
                         showIngredients = showIngredients,
                         currentStep     = currentStep,
                         navController   = navController,
+                        profileUrl      = profilePhotoUrl,
                         onSendRating    = { comentario, puntos ->
                             viewModel.postRating(details.recipe.id, comentario, puntos)
                         },

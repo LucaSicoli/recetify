@@ -155,7 +155,7 @@ private fun DraftRecipeCard(
             Modifier
                 .align(Alignment.TopStart)
                 .background(
-                    color = Color(0xFFE95E5A),
+                    color = Color(0xFF5A6F8A),
                     shape = RoundedCornerShape(topStart = 8.dp, bottomEnd = 8.dp)
                 )
                 .padding(horizontal = 12.dp, vertical = 6.dp)
