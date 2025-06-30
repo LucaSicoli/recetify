@@ -116,7 +116,10 @@ fun ProfileScreen(
                         style = MaterialTheme.typography.titleLarge.copy(fontWeight = FontWeight.Bold)
                     )
                     Text(
-                        text  = "Apasionada por la cocina",
+                        text = user?.descripcion
+                            .takeIf { !it.isNullOrBlank() }
+                            .orEmpty()
+                            .ifBlank { "Sin descripción" },
                         style = MaterialTheme.typography.bodyMedium,
                         color = Color.Gray
                     )

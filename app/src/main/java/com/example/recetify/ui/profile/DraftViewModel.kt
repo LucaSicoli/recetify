@@ -28,6 +28,7 @@ class DraftViewModel(application: Application) : AndroidViewModel(application) {
     )
 
     private val _drafts = MutableStateFlow<List<RecipeSummaryResponse>>(emptyList())
+
     /** Lista de borradores del usuario, cada uno con alias, rating y estados */
     val drafts: StateFlow<List<RecipeSummaryResponse>> = _drafts
 
