@@ -1,6 +1,7 @@
 // File: app/src/main/java/com/example/recetify/ui/search/SearchScreen.kt
 package com.example.recetify.ui.search
 
+import android.net.ConnectivityManager
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.ExperimentalFoundationApi
 import androidx.compose.foundation.background
@@ -21,6 +22,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.layout.ContentScale
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
@@ -28,6 +30,7 @@ import androidx.core.net.toUri
 import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.navigation.NavController
 import coil.compose.AsyncImage
+import com.example.recetify.data.db.DatabaseProvider
 import com.example.recetify.data.remote.ApiService
 import com.example.recetify.data.remote.RetrofitClient
 import com.example.recetify.data.remote.model.RecipeSummaryResponse
@@ -39,18 +42,30 @@ import java.nio.charset.StandardCharsets
 @OptIn(ExperimentalMaterial3Api::class, ExperimentalFoundationApi::class)
 @Composable
 fun SearchScreen(navController: NavController) {
-    val api  = RetrofitClient.api as ApiService
-    val repo = remember { SearchRepository(api) }
-    val vm: SearchViewModel = viewModel(factory = SearchViewModel.provideFactory(repo, api))
+    val context = LocalContext.current
 
-    val results      by vm.results.collectAsState()
-    val currentTipo  by vm.tipoPlato.collectAsState()
-    val currentCat   by vm.categoria.collectAsState()
-    val sortOrder    by vm.sortOrder.collectAsState()
-    val savedIds     by vm.savedIds.collectAsState()
+    // 2) API, DAO y ConnectivityManager
+    val api          = RetrofitClient.api as ApiService
+    val db           = DatabaseProvider.getInstance(context)
+    val dao          = db.recipeDao()
+    val connectivity = context.getSystemService(ConnectivityManager::class.java)!!
 
-    var query        by remember { mutableStateOf("") }
-    var showFilters  by remember { mutableStateOf(false) }
+    // 3) Repositorio offline‐ready
+    val repo = remember { SearchRepository(api, dao, connectivity) }
+
+    // 4) ViewModel con el repo completo
+    val vm: SearchViewModel = viewModel(
+        factory = SearchViewModel.provideFactory(repo, api)
+    )
+
+    val results     by vm.results.collectAsState()
+    val currentTipo by vm.tipoPlato.collectAsState()
+    val currentCat  by vm.categoria.collectAsState()
+    val sortOrder   by vm.sortOrder.collectAsState()
+    val savedIds    by vm.savedIds.collectAsState()
+
+    var query       by remember { mutableStateOf("") }
+    var showFilters by remember { mutableStateOf(false) }
 
     LaunchedEffect(Unit) { vm.doSearch() }
 
