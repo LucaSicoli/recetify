@@ -98,7 +98,6 @@ private fun SavedRecipeCard(
     onClick: () -> Unit,
     onUnsave: () -> Unit
 ) {
-    // Preparamos URL de media (foto o vídeo)
     val base     = RetrofitClient.BASE_URL.trimEnd('/')
     val original = item.mediaUrls.firstOrNull().orEmpty()
     val pathOnly = runCatching {
@@ -108,7 +107,7 @@ private fun SavedRecipeCard(
     val finalUrl = if (pathOnly.startsWith("/")) "$base$pathOnly" else pathOnly
     val isVideo  = finalUrl.endsWith(".mp4", true) || finalUrl.endsWith(".webm", true)
 
-    // Formato de fecha
+    // Formateo de la fecha de guardado
     val formatter = remember {
         DateTimeFormatter.ofPattern("dd MMM yyyy, HH:mm", Locale("es"))
     }
@@ -131,44 +130,44 @@ private fun SavedRecipeCard(
             colors    = CardDefaults.cardColors(containerColor = Color.White)
         ) {
             Column {
+                val mediaModifier = Modifier
+                    .fillMaxWidth()
+                    .aspectRatio(16f / 9f)
+                    .clip(RoundedCornerShape(topStart = 8.dp, topEnd = 8.dp))
+
                 if (isVideo) {
                     LoopingVideoPlayer(
-                        uri = finalUrl.toUri(),
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .height(180.dp)
-                            .clip(RoundedCornerShape(topStart = 8.dp, topEnd = 8.dp))
+                        uri      = finalUrl.toUri(),
+                        modifier = mediaModifier
                     )
                 } else {
                     AsyncImage(
                         model              = finalUrl,
                         contentDescription = item.recipeNombre,
-                        modifier           = Modifier
-                            .fillMaxWidth()
-                            .height(180.dp)
-                            .clip(RoundedCornerShape(topStart = 8.dp, topEnd = 8.dp)),
+                        modifier           = mediaModifier,
                         contentScale       = ContentScale.Crop
                     )
                 }
-                Spacer(Modifier.height(12.dp))
+
+                Spacer(Modifier.height(8.dp))
+
                 Column(Modifier.padding(horizontal = 16.dp, vertical = 12.dp)) {
                     Text(
-                        text      = item.recipeNombre,
-                        style     = MaterialTheme.typography.titleLarge,
-                        maxLines  = 1,
-                        overflow  = TextOverflow.Ellipsis
+                        text     = item.recipeNombre,
+                        style    = MaterialTheme.typography.titleLarge,
+                        maxLines = 1,
+                        overflow = TextOverflow.Ellipsis
                     )
                     Spacer(Modifier.height(4.dp))
                     Text(
-                        text      = "Guardada: $niceDate",
-                        style     = MaterialTheme.typography.bodyMedium,
-                        color     = Color.Gray
+                        text  = "Guardada: $niceDate",
+                        style = MaterialTheme.typography.bodyMedium.copy(color = Color.Gray)
                     )
                 }
             }
         }
 
-        // Etiqueta "GUARDADA" en la esquina
+        // Badge "GUARDADA"
         Box(
             Modifier
                 .align(Alignment.TopStart)
@@ -187,7 +186,6 @@ private fun SavedRecipeCard(
             )
         }
 
-        // Botón de “dislike” (quita de favoritos)
         IconButton(
             onClick = onUnsave,
             modifier = Modifier
@@ -196,9 +194,9 @@ private fun SavedRecipeCard(
                 .size(28.dp)
         ) {
             Icon(
-                imageVector = Icons.Filled.Favorite,
+                imageVector        = Icons.Filled.Favorite,
                 contentDescription = "Quitar favorito",
-                tint = Color(0xFFE91E63)
+                tint               = Color(0xFFE91E63)
             )
         }
     }

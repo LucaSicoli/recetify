@@ -86,7 +86,6 @@ private fun DraftRecipeCard(
     draft: RecipeSummaryResponse,
     onClick: (Long) -> Unit
 ) {
-    // 1) Normalizamos la URL igual que en HomeScreen
     val base     = RetrofitClient.BASE_URL.trimEnd('/')
     val original = draft.mediaUrls?.firstOrNull().orEmpty()
     val pathOnly = runCatching {
@@ -104,53 +103,52 @@ private fun DraftRecipeCard(
         Card(
             modifier  = Modifier.fillMaxWidth(),
             shape     = RoundedCornerShape(8.dp),
-            elevation = CardDefaults.cardElevation(defaultElevation = 4.dp),
+            elevation = CardDefaults.cardElevation(4.dp),
             colors    = CardDefaults.cardColors(containerColor = Color.White)
         ) {
             Column {
+                // → reemplazamos altura fija por aspectRatio 16:9
+                val mediaModifier = Modifier
+                    .fillMaxWidth()
+                    .aspectRatio(16f / 9f)
+                    .clip(RoundedCornerShape(topStart = 8.dp, topEnd = 8.dp))
+
                 if (isVideo) {
                     LoopingVideoPlayer(
-                        uri = finalUrl.toUri(),
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .height(180.dp)
-                            .clip(RoundedCornerShape(topStart = 8.dp, topEnd = 8.dp))
+                        uri      = finalUrl.toUri(),
+                        modifier = mediaModifier
                     )
                 } else {
                     AsyncImage(
-                        model              = finalUrl,
+                        model           = finalUrl,
                         contentDescription = draft.nombre,
-                        modifier           = Modifier
-                            .fillMaxWidth()
-                            .height(180.dp)
-                            .clip(RoundedCornerShape(topStart = 8.dp, topEnd = 8.dp)),
-                        contentScale       = ContentScale.Crop
+                        modifier        = mediaModifier,
+                        contentScale    = ContentScale.Crop
                     )
                 }
 
-                Spacer(Modifier.height(12.dp))
+                Spacer(Modifier.height(8.dp))
 
                 Column(Modifier.padding(horizontal = 16.dp, vertical = 12.dp)) {
                     Text(
-                        text      = draft.nombre,
-                        style     = MaterialTheme.typography.titleLarge,
-                        maxLines  = 1,
-                        overflow  = TextOverflow.Ellipsis,
-                        color     = Color.Black
+                        text     = draft.nombre,
+                        style    = MaterialTheme.typography.titleLarge,
+                        maxLines = 1,
+                        overflow = TextOverflow.Ellipsis,
+                        color    = Color.Black
                     )
                     Spacer(Modifier.height(4.dp))
                     Text(
-                        text      = draft.descripcion.orEmpty(),
-                        style     = MaterialTheme.typography.bodyMedium,
-                        maxLines  = 2,
-                        overflow  = TextOverflow.Ellipsis,
-                        color     = Color.DarkGray
+                        text     = draft.descripcion.orEmpty(),
+                        style    = MaterialTheme.typography.bodyMedium,
+                        maxLines = 2,
+                        overflow = TextOverflow.Ellipsis,
+                        color    = Color.DarkGray
                     )
                 }
             }
         }
 
-        // === Etiqueta BORRADOR pegada al borde superior izquierdo ===
         Box(
             Modifier
                 .align(Alignment.TopStart)

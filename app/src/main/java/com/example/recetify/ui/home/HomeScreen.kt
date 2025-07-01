@@ -283,7 +283,7 @@ private fun RecipeCard(
 ) {
     val base = RetrofitClient.BASE_URL.trimEnd('/')
 
-    // ── Normaliza la URL de la miniatura de la receta ───────────────
+    // Normalizar URL de media
     val original = recipe.mediaUrls?.firstOrNull().orEmpty()
     val pathOnly = runCatching {
         val uri = URI(original)
@@ -291,7 +291,7 @@ private fun RecipeCard(
     }.getOrDefault(original)
     val finalUrl = if (pathOnly.startsWith("/")) "$base$pathOnly" else original
 
-    // ── Normaliza la URL de la foto de perfil ─────────────────────────
+    // Normalizar URL de perfil
     val finalProfileUrl = profileUrl?.let { remote ->
         val pPath = runCatching {
             val uri = URI(remote)
@@ -301,102 +301,114 @@ private fun RecipeCard(
     }
 
     Card(
-        modifier  = modifier.fillMaxWidth(),
-        shape     = RoundedCornerShape(8.dp),
-        elevation = CardDefaults.cardElevation(defaultElevation = 4.dp),
-        colors    = CardDefaults.cardColors(containerColor = Color.White)
+        modifier = modifier
+            .fillMaxWidth()
+            .heightIn(min = 220.dp),        // altura mínima
+        shape = RoundedCornerShape(8.dp),
+        elevation = CardDefaults.cardElevation(4.dp),
+        colors = CardDefaults.cardColors(containerColor = Color.White)
     ) {
         Column {
-            // ── Media (foto o vídeo) ────────────────────────────────
+            // Media responsiva 16:9
+            val mediaModifier = Modifier
+                .fillMaxWidth()
+                .aspectRatio(16f / 9f)
+                .clip(RoundedCornerShape(topStart = 8.dp, topEnd = 8.dp))
+
             if (finalUrl.endsWith(".mp4", true) || finalUrl.endsWith(".webm", true)) {
                 LoopingVideoPlayer(
                     uri = finalUrl.toUri(),
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .height(180.dp)
-                        .clip(RoundedCornerShape(topStart = 8.dp, topEnd = 8.dp))
+                    modifier = mediaModifier
                 )
             } else {
                 AsyncImage(
-                    model           = finalUrl,
+                    model = finalUrl,
                     contentDescription = recipe.nombre,
-                    modifier        = Modifier
-                        .fillMaxWidth()
-                        .height(180.dp)
-                        .clip(RoundedCornerShape(topStart = 8.dp, topEnd = 8.dp)),
-                    contentScale    = ContentScale.Crop
+                    contentScale = ContentScale.Crop,
+                    modifier = mediaModifier
                 )
             }
 
-            Spacer(Modifier.height(12.dp))
+            Spacer(Modifier.height(8.dp))
 
             Column(Modifier.padding(horizontal = 16.dp)) {
-                // ── Título ───────────────────────────────────────────
+                // Título
                 Text(
-                    text      = recipe.nombre,
-                    style     = MaterialTheme.typography.titleLarge.copy(fontWeight = FontWeight.SemiBold),
-                    color     = Color.Black,
-                    maxLines  = 1,
-                    overflow  = TextOverflow.Ellipsis,
-                    fontFamily= Destacado
+                    text = recipe.nombre,
+                    style = MaterialTheme.typography.titleLarge.copy(fontWeight = FontWeight.SemiBold),
+                    color = Color.Black,
+                    maxLines = 1,
+                    overflow = TextOverflow.Ellipsis,
+                    fontFamily = Destacado
+                )
+
+                Spacer(Modifier.height(4.dp))
+
+                // Descripción
+                Text(
+                    text = recipe.descripcion.orEmpty(),
+                    style = MaterialTheme.typography.bodyMedium,
+                    color = Color.DarkGray,
+                    maxLines = 2,
+                    overflow = TextOverflow.Ellipsis
                 )
 
                 Spacer(Modifier.height(8.dp))
 
-                // ── Fila con avatar, alias, rating y tiempo ──────────────
+                // Fila de avatar, alias, rating y tiempo
                 Row(verticalAlignment = Alignment.CenterVertically) {
                     if (!finalProfileUrl.isNullOrBlank()) {
                         AsyncImage(
-                            model           = finalProfileUrl,
+                            model = finalProfileUrl,
                             contentDescription = "Avatar del chef",
-                            modifier        = Modifier
+                            modifier = Modifier
                                 .size(32.dp)
                                 .clip(CircleShape),
-                            contentScale    = ContentScale.Crop
+                            contentScale = ContentScale.Crop
                         )
                     } else {
                         Icon(
-                            imageVector        = Icons.Outlined.Person,
+                            imageVector = Icons.Outlined.Person,
                             contentDescription = "Chef",
-                            tint               = Color.Black,
-                            modifier           = Modifier.size(22.dp)
+                            tint = Color.Black,
+                            modifier = Modifier.size(22.dp)
                         )
                     }
 
                     Spacer(Modifier.width(8.dp))
 
                     Text(
-                        text  = recipe.usuarioCreadorAlias.orEmpty(),
+                        text = recipe.usuarioCreadorAlias.orEmpty(),
                         style = MaterialTheme.typography.bodySmall.copy(fontWeight = FontWeight.Bold)
                     )
 
                     Spacer(Modifier.width(16.dp))
 
                     Icon(
-                        imageVector        = Icons.Outlined.Star,
+                        imageVector = Icons.Outlined.Star,
                         contentDescription = "Rating",
-                        tint               = Color(0xFFFFD700),
-                        modifier           = Modifier.size(18.dp)
+                        tint = Color(0xFFFFD700),
+                        modifier = Modifier.size(18.dp)
                     )
                     Spacer(Modifier.width(4.dp))
                     Text(
-                        text = recipe.promedioRating?.let {
-                            if (it % 1.0 == 0.0) "${it.toInt()}" else String.format("%.1f", it)
-                        } ?: "–",
+                        text = recipe.promedioRating
+                            ?.let { if (it % 1.0 == 0.0) "${it.toInt()}" else String.format("%.1f", it) }
+                            ?: "–",
                         style = MaterialTheme.typography.bodySmall.copy(color = Color(0xFFe29587))
                     )
 
                     Spacer(Modifier.width(16.dp))
 
                     Icon(
-                        imageVector        = Icons.Outlined.Timer,
+                        imageVector = Icons.Outlined.Timer,
                         contentDescription = "Tiempo",
-                        tint               = Color.Black,
-                        modifier           = Modifier.size(18.dp)
+                        tint = Color.Black,
+                        modifier = Modifier.size(18.dp)
                     )
                     Spacer(Modifier.width(4.dp))
                     Text(
-                        text  = "${recipe.tiempo} min",
+                        text = "${recipe.tiempo} min",
                         style = MaterialTheme.typography.bodySmall
                     )
                 }
