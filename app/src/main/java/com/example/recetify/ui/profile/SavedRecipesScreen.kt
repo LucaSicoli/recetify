@@ -7,6 +7,7 @@ import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.lazy.rememberLazyListState
+import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Favorite
@@ -123,6 +124,7 @@ private fun SavedRecipeCard(
             .fillMaxWidth()
             .clickable(onClick = onClick)
     ) {
+        // Tarjeta principal
         Card(
             modifier  = Modifier.fillMaxWidth(),
             shape     = RoundedCornerShape(8.dp),
@@ -142,10 +144,10 @@ private fun SavedRecipeCard(
                     )
                 } else {
                     AsyncImage(
-                        model              = finalUrl,
+                        model           = finalUrl,
                         contentDescription = item.recipeNombre,
-                        modifier           = mediaModifier,
-                        contentScale       = ContentScale.Crop
+                        modifier        = mediaModifier,
+                        contentScale    = ContentScale.Crop
                     )
                 }
 
@@ -186,17 +188,21 @@ private fun SavedRecipeCard(
             )
         }
 
-        IconButton(
-            onClick = onUnsave,
-            modifier = Modifier
+        // Botón de “dislike” con fondo oscuro y área mayor
+        Box(
+            Modifier
                 .align(Alignment.TopEnd)
                 .padding(8.dp)
-                .size(28.dp)
+                .size(40.dp)                                      // área clickable más grande
+                .background(Color(0x88000000), shape = CircleShape) // fondo semitransparente
+                .clickable(onClick = onUnsave),
+            contentAlignment = Alignment.Center
         ) {
             Icon(
                 imageVector        = Icons.Filled.Favorite,
                 contentDescription = "Quitar favorito",
-                tint               = Color(0xFFE91E63)
+                tint               = Color(0xFFE91E63),
+                modifier           = Modifier.size(24.dp)        // tamaño del icono
             )
         }
     }
