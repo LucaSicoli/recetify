@@ -13,6 +13,7 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.*
 import androidx.compose.material.icons.outlined.Person
 import androidx.compose.material.icons.outlined.Schedule
+import com.example.recetify.ui.home.Destacado
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
@@ -64,7 +65,7 @@ fun SearchScreen(navController: NavController) {
                     vm.updateName(it.ifBlank { null })
                     vm.doSearch()          // ← Aquí disparas la nueva búsqueda en caliente
                 },
-                placeholder   = { Text("Buscar receta…") },
+                placeholder   = { Text("Buscar receta…", fontFamily = Destacado) },
                 leadingIcon   = {
                     Icon(Icons.Default.Search, contentDescription = null, tint = Color.Black)
                 },
@@ -104,7 +105,8 @@ fun SearchScreen(navController: NavController) {
                         label      = {
                             Text(
                                 tipo,
-                                color = if (currentTipo == tipo) Color.White else Color.Black
+                                color = if (currentTipo == tipo) Color.White else Color.Black,
+                                fontFamily = Destacado
                             )
                         },
                         shape      = RoundedCornerShape(16.dp),
@@ -137,7 +139,8 @@ fun SearchScreen(navController: NavController) {
                         label      = {
                             Text(
                                 cat,
-                                color = if (currentCat == cat) Color.White else Color.Black
+                                color = if (currentCat == cat) Color.White else Color.Black,
+                                fontFamily = Destacado
                             )
                         },
                         shape      = RoundedCornerShape(16.dp),
@@ -164,7 +167,7 @@ fun SearchScreen(navController: NavController) {
                     horizontalArrangement = Arrangement.SpaceBetween,
                     verticalAlignment     = Alignment.CenterVertically
                 ) {
-                    Text("Buscador", style = MaterialTheme.typography.titleLarge)
+                    Text("Buscador", style = MaterialTheme.typography.titleLarge, fontFamily = Destacado)
                     val isAlphaSort = (sortOrder == "name")
                     OutlinedButton(
                         onClick = {
@@ -180,7 +183,7 @@ fun SearchScreen(navController: NavController) {
                         ),
                         contentPadding = PaddingValues(horizontal = 12.dp, vertical = 4.dp)
                     ) {
-                        Text("Ordenar alfabéticamente")
+                        Text("Ordenar alfabéticamente", fontFamily = Destacado)
                         val arrow = if (isAlphaSort) Icons.Default.ArrowDropUp else Icons.Default.ArrowDropDown
                         // icono hereda contentColor, así que saldrá blanco o negro según el estado
                         Icon(arrow, contentDescription = null, Modifier.size(20.dp))
