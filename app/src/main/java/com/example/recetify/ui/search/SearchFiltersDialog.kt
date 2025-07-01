@@ -1,8 +1,8 @@
+// File: app/src/main/java/com/example/recetify/ui/search/SearchFiltersDialog.kt
 package com.example.recetify.ui.search
 
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
-import androidx.compose.foundation.lazy.LazyRow
-import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Close
@@ -12,25 +12,28 @@ import androidx.compose.material3.*
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.window.Dialog
 
 @Composable
 fun SearchFiltersDialog(
-    tipoOptions: List<String>,
-    selectedTipo: String?,
     currentIngredient: String?,
+    currentExclude: String?,
     currentUser: String?,
     currentRating: Int?,
-    onTipoSelect: (String) -> Unit,
     onIngredientChange: (String) -> Unit,
+    onExcludeChange: (String) -> Unit,
     onUserChange: (String) -> Unit,
     onRatingSelect: (Int?) -> Unit,
     onApply: () -> Unit,
     onDismiss: () -> Unit
 ) {
     Dialog(onDismissRequest = onDismiss) {
-        Card(shape = RoundedCornerShape(16.dp)) {
+        Card(
+            shape = RoundedCornerShape(16.dp),
+            colors = CardDefaults.cardColors(containerColor = Color.White)
+        ) {
             Column(Modifier.padding(16.dp)) {
                 // Header
                 Row(
@@ -45,22 +48,8 @@ fun SearchFiltersDialog(
                 }
                 Spacer(Modifier.height(12.dp))
 
-                // Tipo
-                Text("TIPO", style = MaterialTheme.typography.labelMedium)
-                Spacer(Modifier.height(8.dp))
-                LazyRow(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                    items(tipoOptions) { tipo ->
-                        FilterChip(
-                            selected = tipo == selectedTipo,
-                            onClick = { onTipoSelect(tipo) },
-                            label = { Text(tipo) }
-                        )
-                    }
-                }
-
-                Spacer(Modifier.height(16.dp))
+                // Ingrediente
                 Text("INGREDIENTE", style = MaterialTheme.typography.labelMedium)
-                Spacer(Modifier.height(8.dp))
                 OutlinedTextField(
                     value = currentIngredient.orEmpty(),
                     onValueChange = onIngredientChange,
@@ -68,10 +57,21 @@ fun SearchFiltersDialog(
                     singleLine = true,
                     modifier = Modifier.fillMaxWidth()
                 )
-
                 Spacer(Modifier.height(16.dp))
+
+                // Sin ingrediente
+                Text("SIN INGREDIENTE", style = MaterialTheme.typography.labelMedium)
+                OutlinedTextField(
+                    value = currentExclude.orEmpty(),
+                    onValueChange = onExcludeChange,
+                    placeholder = { Text("Excluir…") },
+                    singleLine = true,
+                    modifier = Modifier.fillMaxWidth()
+                )
+                Spacer(Modifier.height(16.dp))
+
+                // Usuario
                 Text("USUARIO", style = MaterialTheme.typography.labelMedium)
-                Spacer(Modifier.height(8.dp))
                 OutlinedTextField(
                     value = currentUser.orEmpty(),
                     onValueChange = onUserChange,
@@ -79,31 +79,36 @@ fun SearchFiltersDialog(
                     singleLine = true,
                     modifier = Modifier.fillMaxWidth()
                 )
-
                 Spacer(Modifier.height(16.dp))
+
+                // Rating
                 Text("RATING", style = MaterialTheme.typography.labelMedium)
-                Spacer(Modifier.height(8.dp))
-                Row {
+                Row(
+                    Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.spacedBy(8.dp)
+                ) {
                     (1..5).forEach { star ->
-                        IconButton(onClick = {
-                            onRatingSelect(if (currentRating == star) null else star)
-                        }) {
-                            Icon(
-                                imageVector = if (currentRating != null && star <= currentRating)
-                                    Icons.Filled.Star else Icons.Outlined.StarBorder,
-                                contentDescription = null
-                            )
-                        }
+                        Icon(
+                            imageVector = if (currentRating != null && star <= currentRating)
+                                Icons.Default.Star else Icons.Outlined.StarBorder,
+                            contentDescription = null,
+                            modifier = Modifier
+                                .size(32.dp)
+                                .clickable {
+                                    onRatingSelect(if (currentRating == star) null else star)
+                                }
+                        )
                     }
                 }
-
                 Spacer(Modifier.height(24.dp))
+
                 Button(
                     onClick = onApply,
                     modifier = Modifier.fillMaxWidth(),
-                    shape = RoundedCornerShape(8.dp)
+                    shape = RoundedCornerShape(8.dp),
+                    colors = ButtonDefaults.buttonColors(containerColor = Color(0xFFFFEB3B))
                 ) {
-                    Text("APLICAR")
+                    Text("APLICAR", color = Color.Black)
                 }
             }
         }

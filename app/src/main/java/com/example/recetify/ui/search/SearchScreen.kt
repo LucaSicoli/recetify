@@ -1,3 +1,4 @@
+// File: app/src/main/java/com/example/recetify/ui/search/SearchScreen.kt
 package com.example.recetify.ui.search
 
 import androidx.compose.foundation.BorderStroke
@@ -10,6 +11,7 @@ import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.*
+import androidx.compose.material.icons.outlined.Person
 import androidx.compose.material.icons.outlined.Schedule
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
@@ -18,43 +20,41 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.layout.ContentScale
+import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
+import androidx.core.net.toUri
 import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.navigation.NavController
 import coil.compose.AsyncImage
 import com.example.recetify.data.remote.ApiService
 import com.example.recetify.data.remote.RetrofitClient
 import com.example.recetify.data.remote.model.RecipeSummaryResponse
-import kotlinx.coroutines.launch
+import com.example.recetify.ui.common.LoopingVideoPlayer
+import java.net.URI
 import java.net.URLEncoder
 import java.nio.charset.StandardCharsets
 
 @OptIn(ExperimentalMaterial3Api::class, ExperimentalFoundationApi::class)
 @Composable
 fun SearchScreen(navController: NavController) {
-    // Inicializamos API, repo y VM
     val api  = RetrofitClient.api as ApiService
     val repo = remember { SearchRepository(api) }
-    val vm: SearchViewModel = viewModel(
-        factory = SearchViewModel.provideFactory(repo, api)
-    )
-    val scope = rememberCoroutineScope()
+    val vm: SearchViewModel = viewModel(factory = SearchViewModel.provideFactory(repo, api))
 
-    // Collectamos los estados
-    val results     by vm.results.collectAsState()
-    val currentType by vm.type.collectAsState()
-    val sortOrder   by vm.sortOrder.collectAsState()
-    val savedIds    by vm.savedIds.collectAsState()
+    val results      by vm.results.collectAsState()
+    val currentTipo  by vm.tipoPlato.collectAsState()
+    val currentCat   by vm.categoria.collectAsState()
+    val sortOrder    by vm.sortOrder.collectAsState()
+    val savedIds     by vm.savedIds.collectAsState()
 
-    var query       by remember { mutableStateOf("") }
-    var showFilters by remember { mutableStateOf(false) }
+    var query        by remember { mutableStateOf("") }
+    var showFilters  by remember { mutableStateOf(false) }
 
-    // Búsqueda inicial
     LaunchedEffect(Unit) { vm.doSearch() }
 
-    LazyColumn(Modifier.fillMaxSize()) {
-        // — Buscador —
+    LazyColumn(modifier = Modifier.fillMaxSize()) {
+        // — Search bar —
         item {
             Spacer(Modifier.height(12.dp))
             OutlinedTextField(
@@ -62,40 +62,57 @@ fun SearchScreen(navController: NavController) {
                 onValueChange = {
                     query = it
                     vm.updateName(it.ifBlank { null })
+                    vm.doSearch()          // ← Aquí disparas la nueva búsqueda en caliente
                 },
                 placeholder   = { Text("Buscar receta…") },
-                leadingIcon   = { Icon(Icons.Default.Search, contentDescription = null) },
+                leadingIcon   = {
+                    Icon(Icons.Default.Search, contentDescription = null, tint = Color.Black)
+                },
                 trailingIcon  = {
                     IconButton(onClick = { showFilters = true }) {
-                        Icon(Icons.Default.FilterList, contentDescription = null)
+                        Icon(Icons.Default.FilterList, contentDescription = "Filtros", tint = Color.Black)
                     }
                 },
-                singleLine = true,
-                shape      = RoundedCornerShape(24.dp),
-                modifier   = Modifier
+                textStyle     = TextStyle(color = Color.Black),
+                singleLine    = true,
+                shape         = RoundedCornerShape(24.dp),
+                modifier      = Modifier
                     .fillMaxWidth()
                     .padding(horizontal = 16.dp)
             )
             Spacer(Modifier.height(12.dp))
         }
 
-        // — Chips de categoría (enum Categoria) —
+        // — Tipo de Plato Chips —
         item {
-            val categories = listOf("Desayuno","Almuerzo","Merienda","Cena","Snack","Postre")
+            val tipos = listOf(
+                "FIDEOS","PIZZA","HAMBURGUESA","ENSALADA","SOPA",
+                "PASTA","ARROZ","PESCADO","CARNE","POLLO",
+                "VEGETARIANO","VEGANO","SIN_TACC","RAPIDO","SALUDABLE"
+            )
             LazyRow(
                 contentPadding       = PaddingValues(horizontal = 16.dp),
                 horizontalArrangement = Arrangement.spacedBy(8.dp)
             ) {
-                items(categories) { cat ->
+                items(tipos) { tipo ->
                     FilterChip(
-                        selected   = currentType == cat,
+                        selected   = currentTipo == tipo,
                         onClick    = {
-                            vm.updateType(cat)
+                            vm.updateTipoPlato(if (currentTipo == tipo) null else tipo)
                             vm.doSearch()
                         },
-                        label      = { Text(cat) },
+                        label      = {
+                            Text(
+                                tipo,
+                                color = if (currentTipo == tipo) Color.White else Color.Black
+                            )
+                        },
                         shape      = RoundedCornerShape(16.dp),
-                        colors     = FilterChipDefaults.filterChipColors(containerColor = Color(0xFFF5F5F5)),
+                        colors     = FilterChipDefaults.filterChipColors(
+                            containerColor         = if (currentTipo == tipo) Color.Black else Color(0xFFF5F5F5),
+                            selectedContainerColor = Color.Black,
+                            selectedLabelColor     = Color.White
+                        ),
                         modifier   = Modifier.height(32.dp)
                     )
                 }
@@ -103,32 +120,69 @@ fun SearchScreen(navController: NavController) {
             Spacer(Modifier.height(16.dp))
         }
 
-        // — Sticky header “Destacados” —
+        // — Categoría Chips —
+        item {
+            val categorias = listOf("DESAYUNO","ALMUERZO","MERIENDA","CENA","SNACK","POSTRE")
+            LazyRow(
+                contentPadding       = PaddingValues(horizontal = 16.dp),
+                horizontalArrangement = Arrangement.spacedBy(8.dp)
+            ) {
+                items(categorias) { cat ->
+                    FilterChip(
+                        selected   = currentCat == cat,
+                        onClick    = {
+                            vm.updateCategoria(if (currentCat == cat) null else cat)
+                            vm.doSearch()
+                        },
+                        label      = {
+                            Text(
+                                cat,
+                                color = if (currentCat == cat) Color.White else Color.Black
+                            )
+                        },
+                        shape      = RoundedCornerShape(16.dp),
+                        colors     = FilterChipDefaults.filterChipColors(
+                            containerColor         = if (currentCat == cat) Color.Black else Color(0xFFF5F5F5),
+                            selectedContainerColor = Color.Black,
+                            selectedLabelColor     = Color.White
+                        ),
+                        modifier   = Modifier.height(32.dp)
+                    )
+                }
+            }
+            Spacer(Modifier.height(16.dp))
+        }
+
+        // — Sticky header “Buscador” —
         stickyHeader {
             Surface(color = Color.White, tonalElevation = 4.dp) {
                 Row(
                     Modifier
                         .fillMaxWidth()
+                        .background(Color.White)
                         .padding(horizontal = 16.dp, vertical = 8.dp),
                     horizontalArrangement = Arrangement.SpaceBetween,
                     verticalAlignment     = Alignment.CenterVertically
                 ) {
-                    Text("Destacados", style = MaterialTheme.typography.titleLarge)
-                    val arrow = if (sortOrder == "name") Icons.Default.ArrowDropDown else Icons.Default.ArrowDropUp
+                    Text("Buscador", style = MaterialTheme.typography.titleLarge)
+                    val isAlphaSort = (sortOrder == "name")
                     OutlinedButton(
                         onClick = {
-                            vm.updateSort(if (sortOrder=="name") "newest" else "name")
+                            vm.updateSort(if (isAlphaSort) "newest" else "name")
                             vm.doSearch()
                         },
-                        shape         = RoundedCornerShape(16.dp),
-                        border        = BorderStroke(1.dp, Color(0xFFE6EBF2)),
-                        colors        = ButtonDefaults.outlinedButtonColors(
-                            containerColor = Color(0xFFE6EBF2),
-                            contentColor   = Color(0xFF042628)
+                        shape   = RoundedCornerShape(16.dp),
+                        border  = BorderStroke(1.dp, if (isAlphaSort) Color.Black else Color.LightGray),
+                        colors  = ButtonDefaults.outlinedButtonColors(
+                            // cuando está seleccionado:
+                            containerColor = if (isAlphaSort) Color.Black else Color.Transparent,
+                            contentColor   = if (isAlphaSort) Color.White else Color.Black
                         ),
                         contentPadding = PaddingValues(horizontal = 12.dp, vertical = 4.dp)
                     ) {
-                        Text("Nombre")
+                        Text("Ordenar alfabéticamente")
+                        val arrow = if (isAlphaSort) Icons.Default.ArrowDropUp else Icons.Default.ArrowDropDown
+                        // icono hereda contentColor, así que saldrá blanco o negro según el estado
                         Icon(arrow, contentDescription = null, Modifier.size(20.dp))
                     }
                 }
@@ -136,11 +190,12 @@ fun SearchScreen(navController: NavController) {
         }
 
         // — Resultados —
-        items(results) { summary ->
+        items(results, key = { it.id }) { summary ->
+            val isSaved = summary.id in savedIds
             SearchResultCard(
                 summary       = summary,
                 navController = navController,
-                isSaved       = summary.id in savedIds,
+                isSaved       = isSaved,
                 onToggleSave  = { vm.toggleSave(summary.id) }
             )
             Spacer(Modifier.height(12.dp))
@@ -149,16 +204,15 @@ fun SearchScreen(navController: NavController) {
         item { Spacer(Modifier.height(80.dp)) }
     }
 
-    // — Diálogo de filtros (igual que antes) —
+    // — Filtros: sólo Ingrediente, Sin ingrediente, Usuario, Rating —
     if (showFilters) {
         SearchFiltersDialog(
-            tipoOptions       = listOf("Hamburguesas","Pizzas","Arroz","Fideos","Carnes y Pescados"),
-            selectedTipo      = currentType,
             currentIngredient = vm.ingredient.collectAsState().value,
+            currentExclude    = vm.exclude.collectAsState().value,
             currentUser       = vm.userAlias.collectAsState().value,
             currentRating     = vm.rating.collectAsState().value,
-            onTipoSelect      = { vm.updateType(it) },
             onIngredientChange= { vm.updateIngredient(it) },
+            onExcludeChange   = { vm.updateExclude(it) },
             onUserChange      = { vm.updateUserAlias(it) },
             onRatingSelect    = { vm.updateRating(it) },
             onApply           = {
@@ -177,97 +231,106 @@ private fun SearchResultCard(
     isSaved: Boolean,
     onToggleSave: () -> Unit
 ) {
+    val firstMedia = summary.mediaUrls?.firstOrNull().orEmpty()
+    val isVideo    = firstMedia.endsWith(".mp4", true) || firstMedia.endsWith(".webm", true)
+
+    val profileUrl = summary.usuarioFotoPerfil?.let { raw ->
+        runCatching {
+            val uri = URI(raw)
+            val path = uri.rawPath + (uri.rawQuery?.let { "?$it" } ?: "")
+            if (path.startsWith("/")) RetrofitClient.BASE_URL.trimEnd('/') + path else raw
+        }.getOrNull() ?: raw
+    }
+
     Card(
-        modifier   = Modifier
+        Modifier
             .fillMaxWidth()
-            .padding(horizontal = 16.dp)
-            .clickable {
-                val photoParam = summary.usuarioFotoPerfil
-                    ?.let { URLEncoder.encode(it, StandardCharsets.UTF_8.name()) }
-                    .orEmpty()
-                navController.navigate("recipe/${summary.id}?photo=$photoParam")
-            },
-        shape      = RoundedCornerShape(16.dp),
-        elevation  = CardDefaults.cardElevation(defaultElevation = 4.dp),
-        colors     = CardDefaults.cardColors(containerColor = Color.White)
+            .padding(horizontal = 16.dp),
+        shape     = RoundedCornerShape(16.dp),
+        elevation = CardDefaults.cardElevation(4.dp),
+        colors    = CardDefaults.cardColors(containerColor = Color.White)
     ) {
-        Row(
-            Modifier
-                .fillMaxWidth()
-                .padding(16.dp),
-            verticalAlignment = Alignment.CenterVertically
-        ) {
-            // Imagen + badge de rating
-            Box {
-                AsyncImage(
-                    model              = summary.mediaUrls?.firstOrNull().orEmpty(),
-                    contentDescription = summary.nombre,
-                    contentScale       = ContentScale.Crop,
-                    modifier           = Modifier
-                        .size(80.dp)
-                        .clip(RoundedCornerShape(12.dp))
-                )
-                Box(
-                    Modifier
-                        .align(Alignment.BottomStart)
-                        .background(
-                            color = Color(0xFFCB6E6C),
-                            shape = RoundedCornerShape(topEnd = 4.dp, bottomStart = 12.dp)
+        Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
+            Row(
+                Modifier
+                    .weight(1f)
+                    .clickable {
+                        val photoParam = profileUrl
+                            ?.let { URLEncoder.encode(it, StandardCharsets.UTF_8.name()) }
+                            .orEmpty()
+                        navController.navigate("recipe/${summary.id}?photo=$photoParam")
+                    }
+                    .padding(16.dp),
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+                Box {
+                    if (isVideo) {
+                        LoopingVideoPlayer(
+                            uri      = firstMedia.toUri(),
+                            modifier = Modifier.size(80.dp).clip(RoundedCornerShape(12.dp))
                         )
-                        .padding(horizontal = 6.dp, vertical = 2.dp)
-                ) {
-                    Text(
-                        String.format("%.1f★", summary.promedioRating ?: 0.0),
-                        style = MaterialTheme.typography.bodySmall.copy(color = Color.White)
-                    )
-                }
-            }
-
-            Spacer(Modifier.width(16.dp))
-
-            Column(Modifier.weight(1f)) {
-                Text(
-                    summary.nombre,
-                    style    = MaterialTheme.typography.titleMedium,
-                    maxLines = 1,
-                    overflow = TextOverflow.Ellipsis
-                )
-
-                Spacer(Modifier.height(6.dp))
-
-                Row(verticalAlignment = Alignment.CenterVertically) {
-                    AsyncImage(
-                        model              = summary.usuarioFotoPerfil,
-                        contentDescription = summary.usuarioCreadorAlias,
-                        modifier           = Modifier
-                            .size(20.dp)
-                            .clip(CircleShape),
-                        contentScale       = ContentScale.Crop
-                    )
-                    Spacer(Modifier.width(8.dp))
-                    Text(
-                        summary.usuarioCreadorAlias.orEmpty(),
-                        style = MaterialTheme.typography.bodySmall
-                    )
+                    } else {
+                        AsyncImage(
+                            model              = firstMedia,
+                            contentDescription = summary.nombre,
+                            contentScale       = ContentScale.Crop,
+                            modifier           = Modifier.size(80.dp).clip(RoundedCornerShape(12.dp))
+                        )
+                    }
+                    Box(
+                        Modifier
+                            .align(Alignment.BottomStart)
+                            .background(
+                                color = Color(0xFFCB6E6C),
+                                shape = RoundedCornerShape(topEnd = 4.dp, bottomStart = 12.dp)
+                            )
+                            .padding(horizontal = 6.dp, vertical = 2.dp)
+                    ) {
+                        Text(
+                            String.format("%.1f★", summary.promedioRating ?: 0.0),
+                            style = MaterialTheme.typography.bodySmall.copy(color = Color.White)
+                        )
+                    }
                 }
 
-                Spacer(Modifier.height(6.dp))
+                Spacer(Modifier.width(16.dp))
 
-                Row(verticalAlignment = Alignment.CenterVertically) {
-                    Icon(Icons.Outlined.Schedule, contentDescription = null, Modifier.size(16.dp))
-                    Spacer(Modifier.width(4.dp))
+                Column(Modifier.weight(1f)) {
                     Text(
-                        "${summary.tiempo} min",
-                        style = MaterialTheme.typography.bodySmall
+                        summary.nombre,
+                        style    = MaterialTheme.typography.titleMedium,
+                        maxLines = 1,
+                        overflow = TextOverflow.Ellipsis
                     )
+                    Spacer(Modifier.height(6.dp))
+                    Row(verticalAlignment = Alignment.CenterVertically) {
+                        if (profileUrl.isNullOrBlank()) {
+                            Icon(Icons.Outlined.Person, contentDescription = "Sin avatar", Modifier.size(20.dp))
+                        } else {
+                            AsyncImage(
+                                model              = profileUrl,
+                                contentDescription = summary.usuarioCreadorAlias,
+                                modifier           = Modifier.size(20.dp).clip(CircleShape),
+                                contentScale       = ContentScale.Crop
+                            )
+                        }
+                        Spacer(Modifier.width(8.dp))
+                        Text(summary.usuarioCreadorAlias.orEmpty(), style = MaterialTheme.typography.bodySmall)
+                    }
+                    Spacer(Modifier.height(6.dp))
+                    Row(verticalAlignment = Alignment.CenterVertically) {
+                        Icon(Icons.Outlined.Schedule, contentDescription = null, Modifier.size(16.dp))
+                        Spacer(Modifier.width(4.dp))
+                        Text("${summary.tiempo} min", style = MaterialTheme.typography.bodySmall)
+                    }
                 }
             }
 
             IconButton(onClick = onToggleSave) {
                 Icon(
                     imageVector       = if (isSaved) Icons.Default.Favorite else Icons.Default.FavoriteBorder,
-                    contentDescription= "Guardar",
-                    tint              = if (isSaved) Color(0xFFE63946) else Color.Gray
+                    tint              = if (isSaved) Color(0xFFE63946) else Color.Gray,
+                    contentDescription= "Guardar"
                 )
             }
         }

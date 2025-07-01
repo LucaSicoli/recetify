@@ -1,3 +1,4 @@
+// File: app/src/main/java/com/example/recetify/ui/search/SearchRepository.kt
 package com.example.recetify.ui.search
 
 import com.example.recetify.data.remote.ApiService
@@ -14,5 +15,7 @@ class SearchRepository(
         userAlias: String?,
         sort: String
     ): List<RecipeSummaryResponse> =
-        api.searchRecipes(name, type, ingredient, excludeIngredient, userAlias, sort)
+        runCatching {
+            api.searchRecipes(name, type, ingredient, excludeIngredient, userAlias, sort)
+        }.getOrDefault(emptyList())
 }

@@ -1,3 +1,4 @@
+// File: app/src/main/java/com/example/recetify/ui/search/SearchViewModel.kt
 package com.example.recetify.ui.search
 
 import androidx.lifecycle.ViewModel
@@ -14,82 +15,98 @@ class SearchViewModel(
     private val api: ApiService
 ) : ViewModel() {
 
-    // filtros y orden…
-    private val _name       = MutableStateFlow<String?>(null)
-    private val _type       = MutableStateFlow<String?>(null)
-    private val _ingredient = MutableStateFlow<String?>(null)
-    private val _exclude    = MutableStateFlow<String?>(null)
-    private val _userAlias  = MutableStateFlow<String?>(null)
-    private val _sort       = MutableStateFlow("name")
-    private val _rating     = MutableStateFlow<Int?>(null)
+    private val _name        = MutableStateFlow<String?>(null)
+    private val _tipoPlato   = MutableStateFlow<String?>(null)
+    private val _categoria   = MutableStateFlow<String?>(null)
+    private val _ingredient  = MutableStateFlow<String?>(null)
+    private val _exclude     = MutableStateFlow<String?>(null)
+    private val _userAlias   = MutableStateFlow<String?>(null)
+    private val _sort        = MutableStateFlow("newest")
+    private val _rating      = MutableStateFlow<Int?>(null)
 
     private val _results = MutableStateFlow<List<RecipeSummaryResponse>>(emptyList())
-    val results: StateFlow<List<RecipeSummaryResponse>> = _results.asStateFlow()
+    val results: StateFlow<List<RecipeSummaryResponse>> = _results
 
-    // Saved IDs de favoritos
     private val _savedIds = MutableStateFlow<Set<Long>>(emptySet())
-    val savedIds: StateFlow<Set<Long>> = _savedIds.asStateFlow()
+    val savedIds: StateFlow<Set<Long>> = _savedIds
 
     init {
-        // Carga favoritos al iniciar
         viewModelScope.launch {
-            try {
-                val list: List<UserSavedRecipeDTO> = api.listSavedRecipes()
-                _savedIds.value = list.map { it.recipeId }.toSet()
-            } catch (_: Exception) { /* ignore */ }
+            // Wrap in runCatching so failures don’t crash the ViewModel
+            runCatching {
+                api.listSavedRecipes()
+                    .map(UserSavedRecipeDTO::recipeId)
+                    .toSet()
+            }.onSuccess { ids ->
+                _savedIds.value = ids
+            }.onFailure {
+                // offline or unauthorized → just leave _savedIds empty
+            }
         }
     }
 
-    // Lógica de búsqueda
     fun doSearch() = viewModelScope.launch {
-        val fetched = try {
+        val fetched = runCatching {
             repo.search(
                 name              = _name.value,
-                type              = _type.value,
+                type              = _tipoPlato.value,
                 ingredient        = _ingredient.value,
                 excludeIngredient = _exclude.value,
                 userAlias         = _userAlias.value,
                 sort              = _sort.value
             )
-        } catch (_: Throwable) {
-            emptyList()
-        }
-        _results.value = _rating.value
-            ?.let { threshold ->
-                fetched.filter { it.promedioRating ?: 0.0 >= threshold }
-            }
+        }.getOrDefault(emptyList())    // on failure, fall back to an empty list
+
+        val byRating = _rating.value
+            ?.let { th -> fetched.filter { (it.promedioRating ?: 0.0) >= th } }
             ?: fetched
+
+        val byCategory = _categoria.value
+            ?.let { cat -> byRating.filter { it.categoria.equals(cat, ignoreCase = true) } }
+            ?: byRating
+
+        _results.value = byCategory
     }
 
-    // Toggle favorito
     fun toggleSave(recipeId: Long) = viewModelScope.launch {
         val currently = recipeId in _savedIds.value
-        try {
+
+        // Optimistic update
+        _savedIds.update { set ->
+            if (currently) set - recipeId else set + recipeId
+        }
+
+        runCatching {
             if (currently) api.unsaveRecipe(recipeId)
             else          api.saveRecipe(recipeId)
-            // actualiza localmente
-            _savedIds.value = if (currently) {
-                _savedIds.value - recipeId
-            } else {
-                _savedIds.value + recipeId
+        }.onFailure {
+            // Revertir en caso de error
+            _savedIds.update { set ->
+                if (currently) set + recipeId else set - recipeId
             }
-        } catch (_: Exception) { /* manejar error si quieres */ }
+        }
     }
 
-    // Actualizadores de filtros…
-    fun updateName(v: String?)        { _name.value = v }
-    fun updateType(v: String?)        { _type.value = v }
-    fun updateIngredient(v: String?)  { _ingredient.value = v }
-    fun updateExclude(v: String?)     { _exclude.value = v }
-    fun updateUserAlias(v: String?)   { _userAlias.value = v }
-    fun updateSort(v: String)         { _sort.value = v }
-    fun updateRating(v: Int?)         { _rating.value = v }
+    // ── Funciones de actualización de filtros ─────────────────
 
-    val type: StateFlow<String?>       get() = _type
-    val sortOrder: StateFlow<String>   get() = _sort
-    val ingredient: StateFlow<String?> get() = _ingredient
-    val userAlias: StateFlow<String?>  get() = _userAlias
-    val rating: StateFlow<Int?>        get() = _rating
+    fun updateName(v: String?)           { _name.value = v }
+    fun updateTipoPlato(v: String?)     { _tipoPlato.value = v }
+    fun updateCategoria(v: String?)     { _categoria.value = v }
+    fun updateIngredient(v: String?)    { _ingredient.value = v }
+    fun updateExclude(v: String?)       { _exclude.value = v }
+    fun updateUserAlias(v: String?)     { _userAlias.value = v }
+    fun updateSort(v: String)           { _sort.value = v }
+    fun updateRating(v: Int?)           { _rating.value = v }
+
+    // ── Exposición de los StateFlows ────────────────────────
+
+    val tipoPlato: StateFlow<String?>    get() = _tipoPlato
+    val categoria: StateFlow<String?>    get() = _categoria
+    val ingredient: StateFlow<String?>   get() = _ingredient
+    val exclude: StateFlow<String?>      get() = _exclude
+    val userAlias: StateFlow<String?>    get() = _userAlias
+    val sortOrder: StateFlow<String>     get() = _sort
+    val rating: StateFlow<Int?>          get() = _rating
 
     companion object {
         fun provideFactory(repo: SearchRepository, api: ApiService): ViewModelProvider.Factory =
