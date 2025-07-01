@@ -36,6 +36,8 @@ import com.example.recetify.ui.navigation.BottomNavBar
 import com.example.recetify.ui.profile.*
 import com.example.recetify.ui.theme.RecetifyTheme
 import kotlinx.coroutines.launch
+// …otros imports…
+import com.example.recetify.ui.search.SearchScreen
 
 class MainActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -140,6 +142,12 @@ fun AppNavGraph() {
                     HomeScreen(navController = navController)
                 }
             }
+
+            composable("search") {
+                SearchScreen(navController = navController)
+            }
+
+
             composable(
                 route = "recipe/{id}?photo={photo}",
                 arguments = listOf(
@@ -256,6 +264,7 @@ fun AppNavGraph() {
         if (!offline && (
                     route == "home" ||
                             route.startsWith("recipe/") ||
+                            route == "search" ||
                             route == "createRecipe" ||
                             route == "profile" ||
                             route == "drafts" ||

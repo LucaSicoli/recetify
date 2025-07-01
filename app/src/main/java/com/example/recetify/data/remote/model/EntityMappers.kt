@@ -73,6 +73,22 @@ fun RecipeWithDetails.toRecipeResponse(): RecipeResponse {
     )
 }
 
+fun RecipeSummaryResponse.toEntity(): RecipeEntity =
+    RecipeEntity(
+        id                  = this.id,
+        nombre              = this.nombre,
+        descripcion         = this.descripcion,
+        mediaUrls           = this.mediaUrls,
+        tiempo              = this.tiempo.toInt(),
+        porciones           = this.porciones,
+        tipoPlato           = this.tipoPlato,
+        categoria           = this.categoria,
+        usuarioCreadorAlias = this.usuarioCreadorAlias,
+        promedioRating      = this.promedioRating,
+        estadoAprobacion    = this.estadoAprobacion,
+        estadoPublicacion   = this.estadoPublicacion
+    )
+
 // ← Nuevo mapper para UI de ratings
 fun RatingEntity.toRatingResponse(): RatingResponse =
     RatingResponse(

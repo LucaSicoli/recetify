@@ -24,6 +24,7 @@ import retrofit2.http.POST
 import retrofit2.http.PUT
 import retrofit2.http.Part
 import retrofit2.http.Path
+import retrofit2.http.Query
 
 interface ApiService {
 
@@ -104,6 +105,17 @@ interface ApiService {
 
     @GET("ratings/count/me")
     suspend fun countMyReviews(): Int
+
+    @GET("recipes/search")
+    suspend fun searchRecipes(
+        @Query("name") name: String? = null,
+        @Query("type") type: String? = null,
+        @Query("ingredient") ingredient: String? = null,
+        @Query("excludeIngredient") excludeIngredient: String? = null,
+        @Query("userAlias") userAlias: String? = null,
+        @Query("sort") sort: String? = "name"
+    ): List<RecipeSummaryResponse>
+
 
     // —— Subida de imágenes ——
     @Multipart
