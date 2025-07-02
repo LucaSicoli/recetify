@@ -4,8 +4,10 @@ import android.net.ConnectivityManager
 import com.example.recetify.data.db.RecipeDao
 import com.example.recetify.data.db.RecipeEntity
 import com.example.recetify.data.remote.ApiService
+import com.example.recetify.data.remote.model.RecipeIngredientRequest
 import com.example.recetify.data.remote.model.RecipeRequest
 import com.example.recetify.data.remote.model.RecipeResponse
+import com.example.recetify.data.remote.model.RecipeStepRequest
 import com.example.recetify.data.remote.model.RecipeSummaryResponse
 import com.example.recetify.data.remote.model.UserSavedRecipeDTO
 import kotlinx.coroutines.Dispatchers
@@ -74,6 +76,46 @@ class RecipeRepository(
 
     fun getPublishedRecipes(): Flow<List<RecipeEntity>> =
         dao.getByEstadoPublicacion("PUBLICADO")
+
+    suspend fun updatePortionsAndIngredients(
+        recipe: RecipeResponse
+    ): RecipeResponse = withContext(Dispatchers.IO) {
+        check(connectivity.activeNetwork != null) { "Sin conexión" }
+
+        // Mapear ingredientes
+        val ingrReq = recipe.ingredients.map { ing ->
+            RecipeIngredientRequest(
+                nombre       = ing.nombre,
+                cantidad     = ing.cantidad,
+                unidadMedida = ing.unidadMedida
+            )
+        }
+
+        // Mapear pasos (ajusta los campos al tuyo)
+        val stepReq = recipe.steps.map { paso ->
+            RecipeStepRequest(
+                numeroPaso   = paso.numeroPaso,
+                titulo       = paso.titulo,
+                descripcion  = paso.descripcion.orEmpty(),
+                mediaUrls    = paso.mediaUrls.orEmpty()
+            )
+        }
+
+        // Construyo el RecipeRequest completo con todos los campos no nulos
+        val req = RecipeRequest(
+            nombre       = recipe.nombre,
+            descripcion  = recipe.descripcion.orEmpty(),
+            tiempo       = recipe.tiempo,
+            porciones    = recipe.porciones,
+            mediaUrls    = recipe.mediaUrls,
+            tipoPlato    = recipe.tipoPlato,
+            categoria    = recipe.categoria,
+            ingredients  = ingrReq,
+            steps        = stepReq
+        )
+
+        api.syncDraftFull(recipe.id, req)
+    }
 
     fun getAllRecipes(): Flow<List<RecipeEntity>> = flow {
         if (connectivity.activeNetwork != null) {

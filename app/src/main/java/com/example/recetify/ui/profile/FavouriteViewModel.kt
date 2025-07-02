@@ -7,6 +7,8 @@ import androidx.lifecycle.viewModelScope
 import com.example.recetify.data.RecipeRepository
 import com.example.recetify.data.db.DatabaseProvider
 import com.example.recetify.data.remote.RetrofitClient
+import com.example.recetify.data.remote.model.ISavedRecipe
+import com.example.recetify.data.remote.model.RecipeResponse
 import com.example.recetify.data.remote.model.UserSavedRecipeDTO
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
@@ -23,11 +25,34 @@ class FavouriteViewModel(application: Application) : AndroidViewModel(applicatio
         connectivity = connectivity
     )
 
-    private val _favourites = MutableStateFlow<List<UserSavedRecipeDTO>>(emptyList())
-    val favourites: StateFlow<List<UserSavedRecipeDTO>> = _favourites.asStateFlow()
+    private val _favourites = MutableStateFlow<List<ISavedRecipe>>(emptyList())
+    val favourites: StateFlow<List<ISavedRecipe>> = _favourites.asStateFlow()
 
     init {
         loadFavourites()
+    }
+
+    fun removeFavorite(recipeId: Long) {
+        viewModelScope.launch {
+            try {
+                // llama al endpoint DELETE /recipes/{id}/save
+                RetrofitClient.api.unsaveRecipe(recipeId)
+            } catch (_: Exception) { /* opcional: loguear error */ }
+            // recarga la lista para que la UI se actualice
+            loadFavourites()
+        }
+    }
+
+    fun saveEditedRecipe(recipe: RecipeResponse) {
+        viewModelScope.launch {
+            try {
+                // Llamamos al método que sí existe en el repo:
+                repo.updatePortionsAndIngredients(recipe)
+                loadFavourites()
+            } catch (e: Exception) {
+                // aquí podrías mostrar un mensaje de error
+            }
+        }
     }
 
     /** Carga o recarga las recetas guardadas */

@@ -16,10 +16,12 @@ import androidx.core.view.WindowCompat
 import androidx.core.view.WindowInsetsCompat
 import androidx.core.view.WindowInsetsControllerCompat
 import androidx.lifecycle.viewmodel.compose.viewModel
+import androidx.navigation.NavType
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.compose.currentBackStackEntryAsState
 import androidx.navigation.compose.rememberNavController
+import androidx.navigation.navArgument
 import com.example.recetify.data.remote.model.SessionManager
 import com.example.recetify.ui.common.NoConnectionScreen
 import com.example.recetify.ui.common.rememberIsOnline
@@ -27,6 +29,7 @@ import com.example.recetify.ui.createRecipe.CreateRecipeScreen
 import com.example.recetify.ui.createRecipe.CreateRecipeViewModel
 import com.example.recetify.ui.createRecipe.CreateRecipeViewModelFactory
 import com.example.recetify.ui.createRecipe.EditRecipeScreen
+import com.example.recetify.ui.details.LocalRecipeDetailScreen
 import com.example.recetify.ui.details.RecipeDetailScreen
 import com.example.recetify.ui.home.HomeScreen
 import com.example.recetify.ui.login.*
@@ -34,6 +37,8 @@ import com.example.recetify.ui.navigation.BottomNavBar
 import com.example.recetify.ui.profile.*
 import com.example.recetify.ui.theme.RecetifyTheme
 import kotlinx.coroutines.launch
+// …otros imports…
+import com.example.recetify.ui.search.SearchScreen
 
 class MainActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -65,6 +70,7 @@ fun AppNavGraph() {
     val draftVm: DraftViewModel           = viewModel()
     val favVm: FavouriteViewModel         = viewModel()
     val myRecipesVm: MyRecipesViewModel   = viewModel()
+    val reviewCountVm: ReviewCountViewModel = viewModel()
 
 
     // Estados de sesión y conexión
@@ -81,9 +87,10 @@ fun AppNavGraph() {
             composable("login") {
                 LoginScreen(
                     viewModel      = viewModel<LoginViewModel>(),
-                    onLoginSuccess = { token ->
+                    onLoginSuccess = { token, email ->
                         scope.launch {
-                            SessionManager.setAlumno(context, token)
+                            // ahora pasamos también el email:
+                            SessionManager.setAlumno(context, token, email)
                             navController.navigate("home") {
                                 popUpTo("login") { inclusive = true }
                             }
@@ -96,7 +103,7 @@ fun AppNavGraph() {
                             }
                         }
                     },
-                    onForgot = { navController.navigate("forgot") }
+                    onForgot  = { navController.navigate("forgot") }
                 )
             }
 
@@ -137,13 +144,31 @@ fun AppNavGraph() {
                     HomeScreen(navController = navController)
                 }
             }
-            composable("recipe/{id}") { back ->
-                back.arguments
-                    ?.getString("id")
-                    ?.toLongOrNull()
-                    ?.let { id ->
-                        RecipeDetailScreen(recipeId = id, navController = navController)
-                    }
+
+            composable("search") {
+                SearchScreen(navController = navController)
+            }
+
+
+            composable(
+                route = "recipe/{id}?photo={photo}",
+                arguments = listOf(
+                    navArgument("id")   { type = NavType.LongType },
+                    navArgument("photo"){ type = NavType.StringType; defaultValue = "" }
+                )
+            ) { back ->
+                val id    = back.arguments!!.getLong("id")
+                // decodificamos la URL si vino no vacía
+                val photo = back.arguments!!
+                    .getString("photo")
+                    ?.takeIf(String::isNotBlank)
+                    ?.let { java.net.URLDecoder.decode(it, "UTF-8") }
+
+                RecipeDetailScreen(
+                    recipeId        = id,
+                    profilePhotoUrl = photo,              // ← aquí le pasamos la foto
+                    navController   = navController
+                )
             }
 
             // 4) Create Recipe
@@ -197,13 +222,22 @@ fun AppNavGraph() {
 
             // 5) Profile flow
             composable("profile") {
-                // refresca drafts y favs
-                LaunchedEffect(Unit) {
+                // 1) observa la entrada actual del NavController:
+                val backStackEntry by navController.currentBackStackEntryAsState()
+                // 2) siempre que cambie (o sea, vuelvas aquí), recarga TODOS tus VMs:
+                LaunchedEffect(backStackEntry) {
                     draftVm.refresh()
                     favVm.loadFavourites()
                     myRecipesVm.refresh()
+                    reviewCountVm.loadCount()
                 }
-                ProfileScreen(navController = navController)
+                ProfileScreen(
+                    navController   = navController,
+                    draftVm         = draftVm,
+                    favVm           = favVm,
+                    myRecipesVm     = myRecipesVm,
+                    reviewCountVm   = reviewCountVm
+                )
             }
             // endpoints para tus pantallas de perfil
             composable("drafts") {
@@ -212,10 +246,28 @@ fun AppNavGraph() {
                 })
             }
             composable("saved") {
-                SavedRecipesScreen(onRecipeClick = { id ->
-                    navController.navigate("recipe/$id")
-                })
+                SavedRecipesScreen(
+                    onRecipeClick = { id ->
+                        navController.navigate("recipe/$id")
+                    },
+                    onLocalRecipeClick = { localId ->
+                        navController.navigate("localRecipe/$localId")
+                    }
+                )
             }
+
+            composable(
+                "localRecipe/{id}",
+                arguments = listOf(navArgument("id") { type = NavType.LongType })
+            ) { backStackEntry ->
+                val id = backStackEntry.arguments?.getLong("id") ?: return@composable
+                // Aquí faltaba el navController
+                LocalRecipeDetailScreen(
+                    localRecipeId = id,
+                    navController = navController   // ← pásalo aquí
+                )
+            }
+
             composable("myRecipes") {
                 MyRecipesScreen(onRecipeClick = { id ->
                     navController.navigate("editRecipe/$id")
@@ -232,9 +284,12 @@ fun AppNavGraph() {
         if (!offline && (
                     route == "home" ||
                             route.startsWith("recipe/") ||
+                            route == "search" ||
                             route == "createRecipe" ||
                             route == "profile" ||
-                            route == "drafts"
+                            route == "drafts" ||
+                            route == "saved" ||
+                            route == "myRecipes"
                     )
         ) {
             Box(Modifier.align(Alignment.BottomCenter)) {

@@ -1,3 +1,4 @@
+// app/src/main/java/com/example/recetify/data/remote/model/RecipeSummaryResponse.kt
 package com.example.recetify.data.remote.model
 
 import com.google.gson.annotations.SerializedName
@@ -13,7 +14,9 @@ data class RecipeSummaryResponse(
     val tipoPlato: String,
     val categoria: String,
     val usuarioCreadorAlias: String?,
+    @SerializedName("usuarioFotoPerfil")
+    val usuarioFotoPerfil: String?,  // ← Aquí
     val promedioRating: Double?,
-    val estadoAprobacion: String,            // <-- agregar en el DTO
+    val estadoAprobacion: String,
     val estadoPublicacion: String
 )

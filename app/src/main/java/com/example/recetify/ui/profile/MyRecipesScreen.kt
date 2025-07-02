@@ -114,30 +114,31 @@ private fun PublishedRecipeCard(
         Card(
             Modifier.fillMaxWidth(),
             shape     = RoundedCornerShape(8.dp),
-            elevation = CardDefaults.cardElevation(defaultElevation = 4.dp),
+            elevation = CardDefaults.cardElevation(4.dp),
             colors    = CardDefaults.cardColors(containerColor = Color.White)
         ) {
             Column {
+                val mediaModifier = Modifier
+                    .fillMaxWidth()
+                    .aspectRatio(16f / 9f)
+                    .clip(RoundedCornerShape(topStart = 8.dp, topEnd = 8.dp))
+
                 if (isVideo) {
                     LoopingVideoPlayer(
-                        uri = finalUrl.toUri(),
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .height(180.dp)
-                            .clip(RoundedCornerShape(topStart = 8.dp, topEnd = 8.dp))
+                        uri      = finalUrl.toUri(),
+                        modifier = mediaModifier
                     )
                 } else {
                     AsyncImage(
                         model              = finalUrl,
                         contentDescription = recipe.nombre,
-                        modifier           = Modifier
-                            .fillMaxWidth()
-                            .height(180.dp)
-                            .clip(RoundedCornerShape(topStart = 8.dp, topEnd = 8.dp)),
+                        modifier           = mediaModifier,
                         contentScale       = ContentScale.Crop
                     )
                 }
-                Spacer(Modifier.height(12.dp))
+
+                Spacer(Modifier.height(8.dp))
+
                 Column(Modifier.padding(horizontal = 16.dp, vertical = 12.dp)) {
                     Text(
                         text     = recipe.nombre,
@@ -156,12 +157,12 @@ private fun PublishedRecipeCard(
             }
         }
 
-        // Badge "PUBLICADA" pegado al borde superior izquierdo
+        // Badge "PUBLICADA"
         Box(
             Modifier
                 .align(Alignment.TopStart)
                 .background(
-                    color = Color(0xFF5EAE5A),
+                    color = Color(0xFF2E7D32), // SOLO verde oscuro
                     shape = RoundedCornerShape(topStart = 8.dp, bottomEnd = 8.dp)
                 )
                 .padding(horizontal = 12.dp, vertical = 6.dp)
@@ -193,12 +194,8 @@ fun PublicHeader(
             Modifier
                 .fillMaxSize()
                 .background(
-                    Brush.horizontalGradient(
-                        colors = listOf(
-                            Color(0xFF8B6A00), // goldenrod oscuro
-                            Color(0xFFFFD700)  // gold
-                        )
-                    )
+                    color = Color(0xFF2E7D32), // SOLO verde oscuro
+                    shape = RoundedCornerShape(topStart = 8.dp, bottomEnd = 8.dp)
                 )
         ) {
             Row(

@@ -19,6 +19,6 @@ interface RecipeDetailDao {
     fun insertRatings(list: List<RatingEntity>): List<Long>
 
     @Transaction
-    @Query("SELECT * FROM recipes WHERE id = :id")
-    fun getRecipeWithDetails(id: Long): Flow<RecipeWithDetails>
+    @Query("SELECT * FROM recipes WHERE id = :recipeId")
+    fun getRecipeWithDetails(recipeId: Long): Flow<RecipeWithDetails>
 }

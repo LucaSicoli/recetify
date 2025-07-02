@@ -1,4 +1,3 @@
-// app/src/main/java/com/example/recetify/data/db/AppDatabase.kt
 package com.example.recetify.data.db
 
 import androidx.room.Database
@@ -10,13 +9,15 @@ import androidx.room.TypeConverters
         RecipeEntity::class,
         IngredientEntity::class,
         StepEntity::class,
-        RatingEntity::class
+        RatingEntity::class,
+        CustomRecipeEntity::class
     ],
-    version = 4,
+    version = 11,
     exportSchema = false
 )
 @TypeConverters(Converters::class)
 abstract class AppDatabase : RoomDatabase() {
     abstract fun recipeDao(): RecipeDao
     abstract fun recipeDetailDao(): RecipeDetailDao
+    abstract fun customRecipeDao(): CustomRecipeDao
 }

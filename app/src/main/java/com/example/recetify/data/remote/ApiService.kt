@@ -17,12 +17,14 @@ import com.example.recetify.data.remote.model.UserResponse
 import com.example.recetify.data.remote.model.UserSavedRecipeDTO
 import okhttp3.MultipartBody
 import retrofit2.http.Body
+import retrofit2.http.DELETE
 import retrofit2.http.GET
 import retrofit2.http.Multipart
 import retrofit2.http.POST
 import retrofit2.http.PUT
 import retrofit2.http.Part
 import retrofit2.http.Path
+import retrofit2.http.Query
 
 interface ApiService {
 
@@ -77,6 +79,13 @@ interface ApiService {
     @GET("/recipes/saved")
     suspend fun listSavedRecipes(): List<UserSavedRecipeDTO>
 
+    @PUT("recipes/{id}/save")
+    suspend fun saveRecipe(@Path("id") recipeId: Long): Unit
+
+    /** Quitar de favoritos */
+    @DELETE("recipes/{id}/save")
+    suspend fun unsaveRecipe(@Path("id") recipeId: Long): Unit
+
     /** Publicar un borrador */
     @PUT("recipes/{id}/publish")
     suspend fun publishDraft(@Path("id") recipeId: Long): RecipeResponse
@@ -93,6 +102,19 @@ interface ApiService {
 
     @GET("/users/me")
     suspend fun getCurrentUser(): UserResponse
+
+    @GET("ratings/count/me")
+    suspend fun countMyReviews(): Int
+
+    @GET("recipes/search")
+    suspend fun searchRecipes(
+        @Query("name") name: String? = null,
+        @Query("type") type: String? = null,
+        @Query("ingredient") ingredient: String? = null,
+        @Query("excludeIngredient") excludeIngredient: String? = null,
+        @Query("userAlias") userAlias: String? = null,
+        @Query("sort") sort: String? = "name"
+    ): List<RecipeSummaryResponse>
 
 
     // —— Subida de imágenes ——

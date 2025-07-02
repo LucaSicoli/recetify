@@ -73,6 +73,22 @@ fun RecipeWithDetails.toRecipeResponse(): RecipeResponse {
     )
 }
 
+fun RecipeSummaryResponse.toEntity(): RecipeEntity =
+    RecipeEntity(
+        id                  = this.id,
+        nombre              = this.nombre,
+        descripcion         = this.descripcion,
+        mediaUrls           = this.mediaUrls,
+        tiempo              = this.tiempo.toInt(),
+        porciones           = this.porciones,
+        tipoPlato           = this.tipoPlato,
+        categoria           = this.categoria,
+        usuarioCreadorAlias = this.usuarioCreadorAlias,
+        promedioRating      = this.promedioRating,
+        estadoAprobacion    = this.estadoAprobacion,
+        estadoPublicacion   = this.estadoPublicacion
+    )
+
 // ← Nuevo mapper para UI de ratings
 fun RatingEntity.toRatingResponse(): RatingResponse =
     RatingResponse(
@@ -82,3 +98,26 @@ fun RatingEntity.toRatingResponse(): RatingResponse =
         comentario = comentario,
         fecha      = fecha
     )
+
+/** UserCustomRecipeDTO ➜ RecipeResponse (alias sin @) */
+/** UserCustomRecipeDTO ➜ RecipeResponse  (alias sin “@”) */
+fun UserCustomRecipeDTO.toRecipeResponse(currentUserEmail: String): RecipeResponse {
+    val alias = currentUserEmail.substringBefore('@').ifBlank { "Yo" }
+    return RecipeResponse(
+        id                  = recipeId,
+        nombre              = recipeNombre,
+        descripcion         = "",
+        mediaUrls           = mediaUrls,
+        tiempo              = tiempo,                     // ✅ ya existente
+        porciones           = porciones,
+        tipoPlato           = "PERSONALIZADO",
+        categoria           = "MI_GUSTO",
+        ingredients         = ingredients,
+        steps               = steps,                      // ✅ NUEVO
+        fechaCreacion       = fechaAgregado,
+        estado              = "LOCAL",
+        estadoPublicacion   = "LOCAL",
+        usuarioCreadorAlias = alias,
+        promedioRating      = null
+    )
+}
