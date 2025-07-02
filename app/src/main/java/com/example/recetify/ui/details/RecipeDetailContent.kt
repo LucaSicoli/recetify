@@ -1,6 +1,6 @@
 package com.example.recetify.ui.details
 
-
+import android.R.id.input
 import androidx.compose.animation.animateContentSize
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.background
@@ -65,9 +65,15 @@ import com.example.recetify.data.remote.model.RatingResponse
 import com.example.recetify.util.obtenerEmoji
 import java.net.URI
 import android.net.Uri
+import androidx.compose.material.icons.filled.Edit
 import androidx.compose.material.icons.filled.Favorite
+import androidx.compose.material.icons.filled.People
+import androidx.compose.material.icons.filled.Timer
 import androidx.compose.material.icons.outlined.FavoriteBorder
 import androidx.compose.material.icons.outlined.Timer
+import androidx.compose.material3.AlertDialog
+import androidx.compose.material3.OutlinedTextField
+import androidx.compose.material3.TextButton
 import com.example.recetify.ui.common.LoopingVideoPlayer
 import coil.compose.AsyncImage
 
@@ -321,7 +327,8 @@ fun RecipeDetailContent(
     profileUrl: String?,
     onSendRating: (comentario: String, puntos: Int) -> Unit,
     isFavorite: Boolean,
-    onToggleFavorite: () -> Unit
+    onToggleFavorite: () -> Unit,
+    onSaveEditedRecipe: (RecipeResponse) -> Unit
 ) {
     val primaryTextColor = Color(0xFF042628)
     val selectedButtonColor = Color(0xFF042628)
@@ -331,6 +338,10 @@ fun RecipeDetailContent(
     val ingredientIconBackground = Color(0xFFE6EBF2)
     val unitBackgroundColor = Color(0xFF995850)
     val unitTextColor = Color.White
+    var showPortionDialog by remember { mutableStateOf(false) }
+    var currentPortions by remember { mutableStateOf(receta.porciones) }
+    var adjustedIngredients by remember { mutableStateOf(receta.ingredients) }
+    var portionInput         by remember { mutableStateOf(currentPortions.toString()) }
 
     val baseUrl = RetrofitClient.BASE_URL.trimEnd('/')
     // normalizo igual que en Home
@@ -419,13 +430,24 @@ fun RecipeDetailContent(
         ) {
             Column(Modifier.padding(24.dp)) {
                 // Título y descripción de la receta
-                Text(
-                    text = receta.nombre,
-                    style = MaterialTheme.typography.headlineSmall.copy(fontWeight = FontWeight.Bold),
-                    color = primaryTextColor,
-                    fontFamily = Destacado
-
-                )
+                Row(
+                    verticalAlignment = Alignment.CenterVertically,
+                    horizontalArrangement = Arrangement.spacedBy(8.dp)
+                ) {
+                    Text(
+                        text = receta.nombre,
+                        style = MaterialTheme.typography.headlineSmall.copy(fontWeight = FontWeight.Bold),
+                        color = primaryTextColor,
+                        fontFamily = Destacado
+                    )
+                    IconButton(onClick = { showPortionDialog = true }) {
+                        Icon(
+                            imageVector = Icons.Default.Edit,
+                            contentDescription = "Editar porciones",
+                            tint = primaryTextColor
+                        )
+                    }
+                }
                 Spacer(Modifier.height(4.dp))
                 Text(
                     text = receta.descripcion ?: "",
@@ -480,8 +502,9 @@ fun RecipeDetailContent(
 
                     Spacer(Modifier.width(16.dp))
 
+                    // dentro de RecipeDetailContent, en el Row de tiempo/creador/promedio:
                     Icon(
-                        imageVector = Icons.Outlined.Timer,
+                        imageVector = Icons.Default.Timer,
                         contentDescription = "Tiempo",
                         tint = Color.Black,
                         modifier = Modifier.size(18.dp)
@@ -489,6 +512,20 @@ fun RecipeDetailContent(
                     Spacer(Modifier.width(4.dp))
                     Text(
                         text = "${receta.tiempo} min",
+                        style = MaterialTheme.typography.bodySmall
+                    )
+
+                    Spacer(Modifier.width(16.dp))
+// Añadimos icono y texto de porciones:
+                    Icon(
+                        imageVector = Icons.Default.People, // o cualquier icono que te guste
+                        contentDescription = "Porciones",
+                        tint = Color.Black,
+                        modifier = Modifier.size(18.dp)
+                    )
+                    Spacer(Modifier.width(4.dp))
+                    Text(
+                        text = "${receta.porciones} porciones",
                         style = MaterialTheme.typography.bodySmall
                     )
                 }
@@ -594,7 +631,7 @@ fun RecipeDetailContent(
                         )
                     }
                     Spacer(Modifier.height(8.dp))
-                    receta.ingredients.forEach { ing ->
+                    adjustedIngredients.forEach { ing ->
                         Card(
                             modifier = Modifier
                                 .fillMaxWidth()
@@ -817,6 +854,58 @@ fun RecipeDetailContent(
                 ReviewsAndCommentSection(
                     ratings = ratings,
                     onSend  = onSendRating
+                )
+            }
+            if (showPortionDialog) {
+                AlertDialog(
+                    onDismissRequest = { showPortionDialog = false },
+                    title = { Text("¿Cuántas porciones?") },
+                    text = {
+                        OutlinedTextField(
+                            value = portionInput,
+                            onValueChange = { portionInput = it.filter(Char::isDigit) },
+                            label = { Text("Porciones") },
+                            singleLine = true
+                        )
+                    },
+                    confirmButton = {
+                        Row {
+                            TextButton(onClick = {
+                                // recalcula y cierra
+                                val newPortions = portionInput.toIntOrNull() ?: receta.porciones
+                                val factor      = newPortions.toFloat() / receta.porciones
+                                adjustedIngredients = receta.ingredients.map { ing ->
+                                    ing.copy(cantidad = ing.cantidad * factor)
+                                }
+                                currentPortions   = newPortions
+                                showPortionDialog = false
+                            }) {
+                                Text("Aplicar")
+                            }
+                            Spacer(Modifier.width(8.dp))
+                            TextButton(onClick = {
+                                // recalcula, cierra y guarda
+                                val newPortions = portionInput.toIntOrNull() ?: receta.porciones
+                                val factor      = newPortions.toFloat() / receta.porciones
+                                val updatedIngredients = receta.ingredients.map { ing ->
+                                    ing.copy(cantidad = ing.cantidad * factor)
+                                }
+                                val edited = receta.copy(
+                                    porciones   = newPortions,
+                                    ingredients = updatedIngredients
+                                )
+                                onSaveEditedRecipe(edited)
+                                showPortionDialog = false
+                            }) {
+                                Text("Guardar")
+                            }
+                        }
+                    },
+                    dismissButton = {
+                        TextButton(onClick = { showPortionDialog = false }) {
+                            Text("Cancelar")
+                        }
+                    }
                 )
             }
         }

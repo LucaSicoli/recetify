@@ -11,11 +11,14 @@ import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Favorite
+import androidx.compose.runtime.setValue
 import androidx.compose.material3.*
+import androidx.compose.material3.TabRowDefaults.tabIndicatorOffset
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.derivedStateOf
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -45,9 +48,17 @@ import java.util.Locale
 @Composable
 fun SavedRecipesScreen(
     favVm: FavouriteViewModel = viewModel(),
+    customVm: CustomTasteViewModel = viewModel(),
     onRecipeClick: (Long) -> Unit = {}
 ) {
-    val saved by favVm.favourites.collectAsState()
+    // 0 = Favoritos, 1 = Mi gusto
+    var selectedTab by remember { mutableStateOf(0) }
+    val tabs = listOf("Favoritos", "Mi gusto")
+
+    // Ambos flujos en memoria
+    val favList by favVm.favourites.collectAsState()
+    val customList by customVm.customRecipes.collectAsState()
+
     val listState = rememberLazyListState()
 
     LazyColumn(
@@ -56,11 +67,44 @@ fun SavedRecipesScreen(
         contentPadding = PaddingValues(bottom = 80.dp),
         verticalArrangement = Arrangement.spacedBy(16.dp)
     ) {
-        item { Spacer(Modifier.height(24.dp)) }
+        item { Spacer(Modifier.height(16.dp)) }
 
-        // Sticky header con degradado fucsia y corazón
+        // Aquí van las pestañas
+        item {
+            TabRow(
+                selectedTabIndex = selectedTab,
+                modifier = Modifier
+                    .padding(horizontal = 24.dp)
+                    .fillMaxWidth(),
+                containerColor = Color.Transparent,
+                indicator = { tabPositions ->
+                    TabRowDefaults.Indicator(
+                        Modifier
+                            .tabIndicatorOffset(tabPositions[selectedTab])
+                            .height(3.dp),
+                        color = Color(0xFFCC3366)
+                    )
+                }
+            ) {
+                tabs.forEachIndexed { index, title ->
+                    Tab(
+                        selected = selectedTab == index,
+                        onClick = { selectedTab = index },
+                        text = {
+                            Text(
+                                title,
+                                style = MaterialTheme.typography.bodyMedium.copy(fontWeight = FontWeight.Medium),
+                                color = if (selectedTab == index) Color(0xFFCC3366) else Color.Gray
+                            )
+                        }
+                    )
+                }
+            }
+        }
+
+        // Sticky header (igual siempre)
         stickyHeader {
-            val stuck by remember { derivedStateOf { listState.firstVisibleItemIndex > 0 } }
+            val stuck by remember { derivedStateOf { listState.firstVisibleItemIndex > 1 } }
             Box(
                 Modifier
                     .fillMaxWidth()
@@ -72,19 +116,23 @@ fun SavedRecipesScreen(
                     modifier = Modifier
                         .fillMaxWidth()
                         .height(if (stuck) 100.dp else 90.dp),
-                    title = "MIS FAVORITAS",
+                    title = if (selectedTab == 0) "MIS FAVORITAS" else "MI GUSTO",
                     shape = if (stuck) RoundedCornerShape(0.dp) else RoundedCornerShape(8.dp)
                 )
             }
         }
 
-        // Tarjetas de guardadas
-        items(saved, key = { it.id }) { item ->
+        // Lista de tarjetas, según pestaña
+        val data = if (selectedTab == 0) favList else customList
+        items(data, key = { it.id }) { item ->
             Box(Modifier.padding(horizontal = 24.dp)) {
                 SavedRecipeCard(
                     item = item,
                     onClick = { onRecipeClick(item.recipeId) },
-                    onUnsave = { favVm.removeFavorite(item.recipeId) }
+                    onUnsave = {
+                        if (selectedTab == 0) favVm.removeFavorite(item.recipeId)
+                        else                customVm.removeCustom(item.recipeId)
+                    }
                 )
             }
         }

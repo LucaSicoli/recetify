@@ -15,6 +15,7 @@ import com.example.recetify.data.remote.model.SessionManager
 import com.example.recetify.data.remote.model.toRecipeResponse
 import com.example.recetify.data.remote.model.toRatingResponse
 import com.example.recetify.ui.navigation.BottomNavBar
+import com.example.recetify.ui.profile.CustomTasteViewModel
 import com.example.recetify.ui.profile.FavouriteViewModel
 
 @Composable
@@ -23,7 +24,9 @@ fun RecipeDetailScreen(
     navController: NavController,
     profilePhotoUrl: String?,
     viewModel: RecipeDetailViewModel = viewModel(),
-    favVm: FavouriteViewModel = viewModel()   // inyectamos el VM de favoritos
+    favVm: FavouriteViewModel = viewModel(), // inyectamos el VM de favoritos
+    customVm: CustomTasteViewModel = viewModel()
+
 ) {
     val context = LocalContext.current
     val details = viewModel.recipeWithDetails
@@ -61,22 +64,24 @@ fun RecipeDetailScreen(
 
                 Column(modifier = Modifier.padding(bottom = 0.dp)) {
                     RecipeDetailContent(
-                        receta          = details.toRecipeResponse(),
-                        ratings         = ratingResponses,
-                        padding         = PaddingValues(0.dp),
-                        showIngredients = showIngredients,
-                        currentStep     = currentStep,
-                        navController   = navController,
-                        profileUrl      = profilePhotoUrl,
-                        onSendRating    = { comentario, puntos ->
-                            viewModel.postRating(details.recipe.id, comentario, puntos)
-                        },
-                        isFavorite      = isFav,
-                        onToggleFavorite = {
-                            // ahora pasamos también isFav, y recargamos dentro de onDone
-                            viewModel.toggleFavorite(details.recipe.id, isFav) {
-                                favVm.loadFavourites()
-                            }
+                        receta            = details.toRecipeResponse(),
+                        ratings           = ratingResponses,
+                        padding           = PaddingValues(0.dp),
+                        showIngredients   = showIngredients,
+                        currentStep       = currentStep,
+                        navController     = navController,
+                        profileUrl        = profilePhotoUrl,
+                        onSendRating      = { c, p -> viewModel.postRating(details.recipe.id, c, p) },
+                        isFavorite        = isFav,
+                        onToggleFavorite  = { viewModel.toggleFavorite(details.recipe.id, isFav) { favVm.loadFavourites() } },
+                        onSaveEditedRecipe = { editedRecipe ->
+                            // guarda una copia local en "Mi gusto"
+                            customVm.addCustom(
+                                editedRecipe,
+                                onError = { msg ->
+                                    // por ejemplo, mostrar un Snackbar o Toast
+                                }
+                            )
                         }
                     )
                 }

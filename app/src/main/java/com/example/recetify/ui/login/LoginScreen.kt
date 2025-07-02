@@ -41,7 +41,7 @@ private val Sen = FontFamily(
 @Composable
 fun LoginScreen(
     viewModel: LoginViewModel = viewModel(),
-    onLoginSuccess: (token: String) -> Unit,
+    onLoginSuccess: (token: String, email: String) -> Unit,
     onForgot: () -> Unit,
     onVisitor: () -> Unit,
 ) {
@@ -81,10 +81,10 @@ fun LoginScreen(
             }
 
             // 2) Setear el token de alumno
-            SessionManager.setAlumno(context, token)
+            SessionManager.setAlumno(context, token, state.email)
 
             // 3) Navegar a Home
-            onLoginSuccess(token)
+            onLoginSuccess(token, state.email)
         }
     }
 

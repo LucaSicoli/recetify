@@ -86,9 +86,10 @@ fun AppNavGraph() {
             composable("login") {
                 LoginScreen(
                     viewModel      = viewModel<LoginViewModel>(),
-                    onLoginSuccess = { token ->
+                    onLoginSuccess = { token, email ->
                         scope.launch {
-                            SessionManager.setAlumno(context, token)
+                            // ahora pasamos también el email:
+                            SessionManager.setAlumno(context, token, email)
                             navController.navigate("home") {
                                 popUpTo("login") { inclusive = true }
                             }
@@ -101,7 +102,7 @@ fun AppNavGraph() {
                             }
                         }
                     },
-                    onForgot = { navController.navigate("forgot") }
+                    onForgot  = { navController.navigate("forgot") }
                 )
             }
 
