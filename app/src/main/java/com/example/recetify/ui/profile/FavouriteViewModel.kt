@@ -7,6 +7,7 @@ import androidx.lifecycle.viewModelScope
 import com.example.recetify.data.RecipeRepository
 import com.example.recetify.data.db.DatabaseProvider
 import com.example.recetify.data.remote.RetrofitClient
+import com.example.recetify.data.remote.model.ISavedRecipe
 import com.example.recetify.data.remote.model.RecipeResponse
 import com.example.recetify.data.remote.model.UserSavedRecipeDTO
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -24,8 +25,8 @@ class FavouriteViewModel(application: Application) : AndroidViewModel(applicatio
         connectivity = connectivity
     )
 
-    private val _favourites = MutableStateFlow<List<UserSavedRecipeDTO>>(emptyList())
-    val favourites: StateFlow<List<UserSavedRecipeDTO>> = _favourites.asStateFlow()
+    private val _favourites = MutableStateFlow<List<ISavedRecipe>>(emptyList())
+    val favourites: StateFlow<List<ISavedRecipe>> = _favourites.asStateFlow()
 
     init {
         loadFavourites()

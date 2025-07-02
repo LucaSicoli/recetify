@@ -15,11 +15,8 @@ interface CustomRecipeDao {
      * ordenadas de más reciente a más antigua.
      */
     @Query("""
-      SELECT * 
-        FROM custom_recipes 
-       WHERE ownerEmail = :ownerEmail 
-    ORDER BY fechaGuardado DESC
-    """)
+    SELECT * FROM custom_recipes WHERE ownerEmail = :ownerEmail ORDER BY fechaGuardado DESC
+""")
     fun getAllForUser(ownerEmail: String): Flow<List<CustomRecipeEntity>>
 
     /**

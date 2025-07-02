@@ -7,6 +7,8 @@ import androidx.lifecycle.viewModelScope
 import com.example.recetify.data.db.CustomRecipeDao
 import com.example.recetify.data.db.CustomRecipeEntity
 import com.example.recetify.data.db.DatabaseProvider
+import com.example.recetify.data.db.UserCustomRecipeDTO
+import com.example.recetify.data.remote.model.ISavedRecipe
 import com.example.recetify.data.remote.model.RecipeResponse
 import com.example.recetify.data.remote.model.UserSavedRecipeDTO
 import com.example.recetify.data.remote.model.SessionManager
@@ -27,22 +29,25 @@ class CustomTasteViewModel(app: Application) : AndroidViewModel(app) {
     private var ownerEmail: String = ""
 
     // back-state de tu lista “Mi gusto”
-    private val _customRecipes = MutableStateFlow<List<UserSavedRecipeDTO>>(emptyList())
-    val customRecipes: StateFlow<List<UserSavedRecipeDTO>> = _customRecipes
+    private val _customRecipes = MutableStateFlow<List<ISavedRecipe>>(emptyList())
+    val customRecipes: StateFlow<List<ISavedRecipe>> = _customRecipes
 
     init {
-        // 1) arrancamos un coroutine para leer el e-mail y luego cargar la lista
         viewModelScope.launch {
             ownerEmail = SessionManager.getCurrentUserEmail(app.applicationContext)
-            // 2) luego coleccionamos el DAO y lo mapeamos al DTO
             dao.getAllForUser(ownerEmail).collect { list ->
+                //  dentro de init { dao.getAllForUser(ownerEmail).collect { … } }
                 _customRecipes.value = list.map { e ->
-                    UserSavedRecipeDTO(
+                    UserCustomRecipeDTO(
                         id            = e.recipeId,
                         recipeId      = e.recipeId,
                         recipeNombre  = e.nombre,
                         fechaAgregado = e.fechaGuardado,
-                        mediaUrls     = e.mediaUrls.orEmpty()
+                        mediaUrls     = e.mediaUrls.orEmpty(),
+                        porciones     = e.porciones,
+                        tiempo        = e.tiempo,
+                        ingredients   = e.ingredients,
+                        steps         = e.steps                           // ✅ NUEVO
                     )
                 }
             }
@@ -54,29 +59,25 @@ class CustomTasteViewModel(app: Application) : AndroidViewModel(app) {
      */
     fun addCustom(rec: RecipeResponse, onError: (String) -> Unit) {
         viewModelScope.launch {
-            val count = withContext(Dispatchers.IO) {
-                dao.countForUser(ownerEmail)
-            }
+            val count = withContext(Dispatchers.IO) { dao.countForUser(ownerEmail) }
             if (count >= 10) {
                 onError("Ya tienes 10 recetas en “Mi gusto”. Borra alguna antes.")
                 return@launch
             }
             val now = LocalDateTime.now().format(DateTimeFormatter.ISO_DATE_TIME)
+            val uniqueId = System.currentTimeMillis() // O UUID.randomUUID().mostSignificantBits and Long.MAX_VALUE
             withContext(Dispatchers.IO) {
-                // ——————————————————————————
-                // Aquí serializas tu lista de ingredientes:
-                val gson = Gson()
-                val ingredientsJson = gson.toJson(rec.ingredients)
-                // ——————————————————————————
                 dao.insert(
                     CustomRecipeEntity(
-                        recipeId       = rec.id,
-                        ownerEmail     = ownerEmail,
-                        nombre         = rec.nombre,
-                        fechaGuardado  = now,
-                        porciones      = rec.porciones,       // tu nuevo campo
-                        ingredientsJson= ingredientsJson,     // aquí el JSON
-                        mediaUrls      = rec.mediaUrls
+                        recipeId      = uniqueId,
+                        ownerEmail    = ownerEmail,
+                        nombre        = rec.nombre,
+                        fechaGuardado = now,
+                        porciones     = rec.porciones,
+                        tiempo        = rec.tiempo,                       // ya estaba
+                        ingredients   = rec.ingredients,
+                        steps         = rec.steps,                        // ✅ NUEVO
+                        mediaUrls     = rec.mediaUrls.orEmpty()
                     )
                 )
             }

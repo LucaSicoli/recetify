@@ -36,6 +36,7 @@ import androidx.core.net.toUri
 import androidx.lifecycle.viewmodel.compose.viewModel
 import coil.compose.AsyncImage
 import com.example.recetify.data.remote.RetrofitClient
+import com.example.recetify.data.remote.model.ISavedRecipe
 import com.example.recetify.data.remote.model.UserSavedRecipeDTO
 import com.example.recetify.ui.common.LoopingVideoPlayer
 import com.example.recetify.ui.home.Destacado
@@ -49,7 +50,9 @@ import java.util.Locale
 fun SavedRecipesScreen(
     favVm: FavouriteViewModel = viewModel(),
     customVm: CustomTasteViewModel = viewModel(),
-    onRecipeClick: (Long) -> Unit = {}
+    onRecipeClick: (Long) -> Unit = {},
+    onLocalRecipeClick: (Long) -> Unit = {}
+
 ) {
     var selectedTab by remember { mutableStateOf(0) }
     val tabs      = listOf("Favoritos", "Mi gusto")
@@ -119,13 +122,19 @@ fun SavedRecipesScreen(
             }
         }
 
-        // 3) Contenido de tarjetas según pestaña
-        val data = if (selectedTab == 0) favList else customList
+        val data: List<ISavedRecipe> = if (selectedTab == 0) favList else customList
+
         items(data, key = { it.id }) { item ->
             Box(Modifier.padding(horizontal = 24.dp)) {
                 SavedRecipeCard(
                     item     = item,
-                    onClick  = { onRecipeClick(item.recipeId) },
+                    onClick  = {
+                        if (selectedTab == 0) {
+                            onRecipeClick(item.recipeId)       // ← Favoritos (backend)
+                        } else {
+                            onLocalRecipeClick(item.recipeId)  // ← "Mi gusto" (local)
+                        }
+                    },
                     onUnsave = {
                         if (selectedTab == 0) favVm.removeFavorite(item.recipeId)
                         else                customVm.removeCustom(item.recipeId)
@@ -141,7 +150,7 @@ fun SavedRecipesScreen(
 
 @Composable
 private fun SavedRecipeCard(
-    item: UserSavedRecipeDTO,
+    item: ISavedRecipe,
     onClick: () -> Unit,
     onUnsave: () -> Unit
 ) {

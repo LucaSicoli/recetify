@@ -98,3 +98,26 @@ fun RatingEntity.toRatingResponse(): RatingResponse =
         comentario = comentario,
         fecha      = fecha
     )
+
+/** UserCustomRecipeDTO ➜ RecipeResponse (alias sin @) */
+/** UserCustomRecipeDTO ➜ RecipeResponse  (alias sin “@”) */
+fun UserCustomRecipeDTO.toRecipeResponse(currentUserEmail: String): RecipeResponse {
+    val alias = currentUserEmail.substringBefore('@').ifBlank { "Yo" }
+    return RecipeResponse(
+        id                  = recipeId,
+        nombre              = recipeNombre,
+        descripcion         = "",
+        mediaUrls           = mediaUrls,
+        tiempo              = tiempo,                     // ✅ ya existente
+        porciones           = porciones,
+        tipoPlato           = "PERSONALIZADO",
+        categoria           = "MI_GUSTO",
+        ingredients         = ingredients,
+        steps               = steps,                      // ✅ NUEVO
+        fechaCreacion       = fechaAgregado,
+        estado              = "LOCAL",
+        estadoPublicacion   = "LOCAL",
+        usuarioCreadorAlias = alias,
+        promedioRating      = null
+    )
+}

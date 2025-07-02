@@ -12,7 +12,7 @@ import androidx.room.TypeConverters
         RatingEntity::class,
         CustomRecipeEntity::class
     ],
-    version = 6,
+    version = 11,
     exportSchema = false
 )
 @TypeConverters(Converters::class)

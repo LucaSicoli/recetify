@@ -29,6 +29,7 @@ import com.example.recetify.ui.createRecipe.CreateRecipeScreen
 import com.example.recetify.ui.createRecipe.CreateRecipeViewModel
 import com.example.recetify.ui.createRecipe.CreateRecipeViewModelFactory
 import com.example.recetify.ui.createRecipe.EditRecipeScreen
+import com.example.recetify.ui.details.LocalRecipeDetailScreen
 import com.example.recetify.ui.details.RecipeDetailScreen
 import com.example.recetify.ui.home.HomeScreen
 import com.example.recetify.ui.login.*
@@ -245,10 +246,28 @@ fun AppNavGraph() {
                 })
             }
             composable("saved") {
-                SavedRecipesScreen(onRecipeClick = { id ->
-                    navController.navigate("recipe/$id")
-                })
+                SavedRecipesScreen(
+                    onRecipeClick = { id ->
+                        navController.navigate("recipe/$id")
+                    },
+                    onLocalRecipeClick = { localId ->
+                        navController.navigate("localRecipe/$localId")
+                    }
+                )
             }
+
+            composable(
+                "localRecipe/{id}",
+                arguments = listOf(navArgument("id") { type = NavType.LongType })
+            ) { backStackEntry ->
+                val id = backStackEntry.arguments?.getLong("id") ?: return@composable
+                // Aquí faltaba el navController
+                LocalRecipeDetailScreen(
+                    localRecipeId = id,
+                    navController = navController   // ← pásalo aquí
+                )
+            }
+
             composable("myRecipes") {
                 MyRecipesScreen(onRecipeClick = { id ->
                     navController.navigate("editRecipe/$id")

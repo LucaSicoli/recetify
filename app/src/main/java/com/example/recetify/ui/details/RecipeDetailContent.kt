@@ -515,7 +515,7 @@ fun RecipeDetailContent(
                         style = MaterialTheme.typography.bodySmall
                     )
 
-                    Spacer(Modifier.width(16.dp))
+                    Spacer(Modifier.width(10.dp))
 // Añadimos icono y texto de porciones:
                     Icon(
                         imageVector = Icons.Default.People, // o cualquier icono que te guste
