@@ -51,14 +51,10 @@ fun SavedRecipesScreen(
     customVm: CustomTasteViewModel = viewModel(),
     onRecipeClick: (Long) -> Unit = {}
 ) {
-    // 0 = Favoritos, 1 = Mi gusto
     var selectedTab by remember { mutableStateOf(0) }
-    val tabs = listOf("Favoritos", "Mi gusto")
-
-    // Ambos flujos en memoria
-    val favList by favVm.favourites.collectAsState()
+    val tabs      = listOf("Favoritos", "Mi gusto")
+    val favList   by favVm.favourites.collectAsState()
     val customList by customVm.customRecipes.collectAsState()
-
     val listState = rememberLazyListState()
 
     LazyColumn(
@@ -67,44 +63,12 @@ fun SavedRecipesScreen(
         contentPadding = PaddingValues(bottom = 80.dp),
         verticalArrangement = Arrangement.spacedBy(16.dp)
     ) {
+        // un pequeño top padding
         item { Spacer(Modifier.height(16.dp)) }
 
-        // Aquí van las pestañas
-        item {
-            TabRow(
-                selectedTabIndex = selectedTab,
-                modifier = Modifier
-                    .padding(horizontal = 24.dp)
-                    .fillMaxWidth(),
-                containerColor = Color.Transparent,
-                indicator = { tabPositions ->
-                    TabRowDefaults.Indicator(
-                        Modifier
-                            .tabIndicatorOffset(tabPositions[selectedTab])
-                            .height(3.dp),
-                        color = Color(0xFFCC3366)
-                    )
-                }
-            ) {
-                tabs.forEachIndexed { index, title ->
-                    Tab(
-                        selected = selectedTab == index,
-                        onClick = { selectedTab = index },
-                        text = {
-                            Text(
-                                title,
-                                style = MaterialTheme.typography.bodyMedium.copy(fontWeight = FontWeight.Medium),
-                                color = if (selectedTab == index) Color(0xFFCC3366) else Color.Gray
-                            )
-                        }
-                    )
-                }
-            }
-        }
-
-        // Sticky header (igual siempre)
+        // 1) Este es el HEADER *sticky*
         stickyHeader {
-            val stuck by remember { derivedStateOf { listState.firstVisibleItemIndex > 1 } }
+            val stuck by remember { derivedStateOf { listState.firstVisibleItemIndex > 0 } }
             Box(
                 Modifier
                     .fillMaxWidth()
@@ -122,13 +86,46 @@ fun SavedRecipesScreen(
             }
         }
 
-        // Lista de tarjetas, según pestaña
+        // 2) Justo debajo, las pestañas (no sticky)
+        item {
+            TabRow(
+                selectedTabIndex = selectedTab,
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(horizontal = 24.dp),
+                containerColor = Color.Transparent,
+                indicator = { positions ->
+                    TabRowDefaults.Indicator(
+                        Modifier
+                            .tabIndicatorOffset(positions[selectedTab])
+                            .height(3.dp),
+                        color = Color(0xFFCC3366)
+                    )
+                }
+            ) {
+                tabs.forEachIndexed { i, title ->
+                    Tab(
+                        selected = selectedTab == i,
+                        onClick  = { selectedTab = i },
+                        text     = {
+                            Text(
+                                title,
+                                style = MaterialTheme.typography.bodyMedium.copy(fontWeight = FontWeight.Medium),
+                                color = if (selectedTab == i) Color(0xFFCC3366) else Color.Gray
+                            )
+                        }
+                    )
+                }
+            }
+        }
+
+        // 3) Contenido de tarjetas según pestaña
         val data = if (selectedTab == 0) favList else customList
         items(data, key = { it.id }) { item ->
             Box(Modifier.padding(horizontal = 24.dp)) {
                 SavedRecipeCard(
-                    item = item,
-                    onClick = { onRecipeClick(item.recipeId) },
+                    item     = item,
+                    onClick  = { onRecipeClick(item.recipeId) },
                     onUnsave = {
                         if (selectedTab == 0) favVm.removeFavorite(item.recipeId)
                         else                customVm.removeCustom(item.recipeId)
@@ -137,6 +134,7 @@ fun SavedRecipesScreen(
             }
         }
 
+        // un bottom padding para que no choque con la nav
         item { Spacer(Modifier.height(24.dp)) }
     }
 }
