@@ -422,12 +422,15 @@ fun EditRecipeScreen(
                                 )
                                 viewModel.syncDraftFull(recipeId, req, localMediaUri)
                             },
-                            modifier = Modifier.weight(1f).height(48.dp),
+                            modifier = Modifier
+                                .weight(1f)
+                                .height(48.dp),
                             shape    = RoundedCornerShape(24.dp),
                             border   = BorderStroke(1.dp, Color.Black),
+                            colors   = ButtonDefaults.outlinedButtonColors(contentColor = Color.Black), // ← NUEVO
                             enabled  = !uploading
                         ) {
-                            Text("GUARDAR", fontWeight = FontWeight.Bold)
+                            Text("GUARDAR", color = Color.Black, fontWeight = FontWeight.Bold)
                         }
                         Button(
                             onClick   = { viewModel.publishDraft(recipeId) },
@@ -710,7 +713,12 @@ private fun CollapsibleSection(
             ) {
                 Icon(Icons.Default.Add, contentDescription = null, tint = Color(0xFF006400))
                 Spacer(Modifier.width(8.dp))
-                Text("Agregar ${title.removeSuffix("s")}", color = Color(0xFF006400), fontFamily = Destacado)
+                val singular = when (title) {
+                    "Instrucciones" -> "paso"
+                    "Ingredientes"  -> "ingrediente"
+                    else            -> title.removeSuffix("s").lowercase()
+                }
+                Text("Agregar $singular", color = Color(0xFF006400), fontFamily = Destacado)
             }
         }
     }
@@ -945,14 +953,42 @@ private fun StepCard(
                     else AsyncImage(model = uri, contentDescription = null, modifier = Modifier.fillMaxSize(), contentScale = ContentScale.Crop)
                 }
             }
-            Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(12.dp)) {
-                OutlinedButton(onClick = onAddMedia, Modifier.weight(1f).height(40.dp), border = BorderStroke(1.dp, Accent)) {
-                    Icon(Icons.Default.CameraAlt, contentDescription = null); Spacer(Modifier.width(4.dp))
-                    Text(if (firstMedia == null) "Agregar media" else "Cambiar media", color = Accent)
+            Row(
+                Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.spacedBy(12.dp)
+            ) {
+                // 1) Agregar / Cambiar media
+                OutlinedButton(
+                    onClick        = onAddMedia,
+                    modifier       = Modifier
+                        .weight(1f)
+                        .height(40.dp),
+                    shape          = RoundedCornerShape(8.dp),
+                    border         = BorderStroke(1.dp, Accent),
+                    contentPadding = PaddingValues(horizontal = 12.dp)
+                ) {
+                    Icon(Icons.Default.CameraAlt, contentDescription = null, tint = Accent)
+                    Spacer(Modifier.width(4.dp))
+                    Text(
+                        text  = if (firstMedia == null) "Agregar" else "Cambiar",
+                        color = Accent,
+                        fontFamily = Destacado
+                    )
                 }
-                Button(onClick = onDelete, Modifier.weight(1f).height(40.dp), colors = ButtonDefaults.buttonColors(containerColor = Color.Red)) {
-                    Icon(Icons.Default.Delete, contentDescription = null); Spacer(Modifier.width(4.dp))
-                    Text("Eliminar paso")
+
+                // 2) Eliminar paso  ➜ mismo estilo
+                OutlinedButton(
+                    onClick        = onDelete,
+                    modifier       = Modifier
+                        .weight(1f)
+                        .height(40.dp),
+                    shape          = RoundedCornerShape(8.dp),
+                    border         = BorderStroke(1.dp, Accent),
+                    contentPadding = PaddingValues(horizontal = 12.dp)
+                ) {
+                    Icon(Icons.Default.Delete, contentDescription = null, tint = Accent)
+                    Spacer(Modifier.width(4.dp))
+                    Text("Eliminar", color = Accent, fontFamily = Destacado)
                 }
             }
         }

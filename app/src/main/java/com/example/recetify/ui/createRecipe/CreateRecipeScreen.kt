@@ -1077,28 +1077,29 @@ private fun StepCard(
                     Icon(Icons.Default.CameraAlt, contentDescription = null, tint = Accent)
                     Spacer(Modifier.width(4.dp))
                     Text(
-                        text       = if (firstMedia == null) "Agregar media" else "Cambiar media",
+                        text       = if (firstMedia == null) "Agregar" else "Cambiar",
                         color      = Accent,
                         fontFamily = Destacado
                     )
                 }
 
                 // 2) Botón Eliminar paso
-                Button(
+                OutlinedButton(
                     onClick        = onDelete,
                     modifier       = Modifier
                         .weight(1f)
                         .height(40.dp),
                     shape          = RoundedCornerShape(8.dp),
-                    colors         = ButtonDefaults.buttonColors(
-                        containerColor = Color.Red,
-                        contentColor   = Color.White
-                    ),
+                    border         = BorderStroke(1.dp, Accent),
                     contentPadding = PaddingValues(horizontal = 12.dp)
                 ) {
-                    Icon(Icons.Default.Remove, contentDescription = null)
+                    Icon(
+                        imageVector = Icons.Default.Remove,  // o Icons.Default.Delete si lo prefieres
+                        contentDescription = null,
+                        tint = Accent
+                    )
                     Spacer(Modifier.width(4.dp))
-                    Text("Eliminar paso", fontFamily = Destacado)
+                    Text("Eliminar", color = Accent, fontFamily = Destacado)
                 }
             }
         }
