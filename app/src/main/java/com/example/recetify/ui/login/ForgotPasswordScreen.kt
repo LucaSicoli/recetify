@@ -31,6 +31,8 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.lifecycle.viewmodel.compose.viewModel
 import com.example.recetify.R
+import android.content.Intent
+import android.net.Uri
 
 private val Sen = FontFamily(
     Font(R.font.sen_regular, weight = FontWeight.Normal),
@@ -44,6 +46,7 @@ fun ForgotPasswordScreen(
     onRegister: () -> Unit = {}
 ) {
     val state by viewModel.state.collectAsState()
+    val context = androidx.compose.ui.platform.LocalContext.current
 
     Column(modifier = Modifier.fillMaxSize()) {
         // — PARTE SUPERIOR OSCURA —
@@ -169,7 +172,11 @@ fun ForgotPasswordScreen(
                         fontSize = 14.sp,
                         fontWeight = FontWeight.Bold,
                         color = Color(0xCCBC6154),
-                        modifier = Modifier.clickable(onClick = onRegister)
+                        modifier = Modifier.clickable {
+                            val url = "https://eu.login.vorwerk.com/ciam/register?ui_locales=es-ES&requestId=582214e7-6368-4e43-b346-832c9b1b414e&view_type=register&market=es"
+                            val intent = Intent(Intent.ACTION_VIEW, Uri.parse(url))
+                            context.startActivity(intent)
+                        }
                     )
                 }
 

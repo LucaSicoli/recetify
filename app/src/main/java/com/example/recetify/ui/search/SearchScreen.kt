@@ -38,6 +38,13 @@ import com.example.recetify.ui.common.LoopingVideoPlayer
 import java.net.URI
 import java.net.URLEncoder
 import java.nio.charset.StandardCharsets
+import androidx.compose.ui.platform.LocalConfiguration
+import androidx.compose.ui.unit.sp
+import androidx.compose.material.icons.filled.ArrowDropDown
+import androidx.compose.material.icons.filled.ArrowDropUp
+import com.example.recetify.ui.theme.Ladrillo
+import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.style.TextAlign
 
 @OptIn(ExperimentalMaterial3Api::class, ExperimentalFoundationApi::class)
 @Composable
@@ -66,6 +73,21 @@ fun SearchScreen(navController: NavController) {
 
     var query       by remember { mutableStateOf("") }
     var showFilters by remember { mutableStateOf(false) }
+    // Estado para tipo y dirección de orden
+    var sortType by remember { mutableStateOf("Alfabéticamente") }
+    var sortAsc  by remember { mutableStateOf(true) }
+    val sortOptions = listOf("Alfabéticamente", "Por usuario creador")
+    var expandedSort by remember { mutableStateOf(false) }
+    var localResults by remember { mutableStateOf(results) }
+
+    // Ordenamiento local
+    LaunchedEffect(results, sortType, sortAsc) {
+        localResults = when (sortType) {
+            "Alfabéticamente" -> if (sortAsc) results.sortedBy { it.nombre.lowercase() } else results.sortedByDescending { it.nombre.lowercase() }
+            "Por usuario creador" -> if (sortAsc) results.sortedBy { it.usuarioCreadorAlias?.lowercase() ?: "" } else results.sortedByDescending { it.usuarioCreadorAlias?.lowercase() ?: "" }
+            else -> results
+        }
+    }
 
     LaunchedEffect(Unit) { vm.doSearch() }
 
@@ -183,40 +205,107 @@ fun SearchScreen(navController: NavController) {
                     verticalAlignment     = Alignment.CenterVertically
                 ) {
                     Text("Buscador", style = MaterialTheme.typography.titleLarge, fontFamily = Destacado)
-                    val isAlphaSort = (sortOrder == "name")
-                    OutlinedButton(
-                        onClick = {
-                            vm.updateSort(if (isAlphaSort) "newest" else "name")
-                            vm.doSearch()
-                        },
-                        shape   = RoundedCornerShape(16.dp),
-                        border  = BorderStroke(1.dp, if (isAlphaSort) Color.Black else Color.LightGray),
-                        colors  = ButtonDefaults.outlinedButtonColors(
-                            // cuando está seleccionado:
-                            containerColor = if (isAlphaSort) Color.Black else Color.Transparent,
-                            contentColor   = if (isAlphaSort) Color.White else Color.Black
-                        ),
-                        contentPadding = PaddingValues(horizontal = 12.dp, vertical = 4.dp)
-                    ) {
-                        Text("Ordenar alfabéticamente", fontFamily = Destacado)
-                        val arrow = if (isAlphaSort) Icons.Default.ArrowDropUp else Icons.Default.ArrowDropDown
-                        // icono hereda contentColor, así que saldrá blanco o negro según el estado
-                        Icon(arrow, contentDescription = null, Modifier.size(20.dp))
+                    // Dropdown de ordenamiento
+                    Box {
+                        OutlinedButton(
+                            onClick = { expandedSort = true },
+                            shape   = RoundedCornerShape(16.dp),
+                            border  = BorderStroke(1.dp, Color.LightGray),
+                            colors  = ButtonDefaults.outlinedButtonColors(
+                                containerColor = Color.Transparent,
+                                contentColor   = Color.Black
+                            ),
+                            contentPadding = PaddingValues(horizontal = 16.dp, vertical = 4.dp),
+                            modifier = Modifier.wrapContentWidth().height(36.dp)
+                        ) {
+                            Text("Organizar", fontFamily = Destacado, fontSize = 14.sp, maxLines = 1)
+                            Icon(
+                                if (expandedSort) Icons.Default.ArrowDropUp else Icons.Default.ArrowDropDown,
+                                contentDescription = null,
+                                Modifier.size(20.dp)
+                            )
+                        }
+                        DropdownMenu(
+                            expanded = expandedSort,
+                            onDismissRequest = { expandedSort = false },
+                            modifier = Modifier
+                                .background(Color.White, shape = RoundedCornerShape(16.dp))
+                                .width(IntrinsicSize.Min)
+                        ) {
+                            sortOptions.forEach { option ->
+                                val isSelected = sortType == option
+                                DropdownMenuItem(
+                                    text = {
+                                        Row(verticalAlignment = Alignment.CenterVertically) {
+                                            Text(
+                                                option,
+                                                color = if (isSelected) Ladrillo else Color.Black,
+                                                fontWeight = if (isSelected) FontWeight.Bold else FontWeight.Normal
+                                            )
+                                            Spacer(Modifier.width(6.dp))
+                                            if (isSelected) {
+                                                if (sortAsc) {
+                                                    Icon(Icons.Default.ArrowUpward, contentDescription = null, tint = Ladrillo, modifier = Modifier.size(16.dp))
+                                                } else {
+                                                    Icon(Icons.Default.ArrowDownward, contentDescription = null, tint = Ladrillo, modifier = Modifier.size(16.dp))
+                                                }
+                                            }
+                                        }
+                                    },
+                                    onClick = {
+                                        if (sortType == option) {
+                                            sortAsc = !sortAsc // Si ya está seleccionada, invierte el sentido
+                                        } else {
+                                            sortType = option
+                                            sortAsc = true // Por defecto ascendente al cambiar de tipo
+                                        }
+                                        expandedSort = false
+                                    },
+                                    modifier = Modifier
+                                        .fillMaxWidth()
+                                        .background(
+                                            if (isSelected) Ladrillo.copy(alpha = 0.08f) else Color.Transparent,
+                                            shape = RoundedCornerShape(12.dp)
+                                        )
+                                )
+                            }
+                        }
                     }
                 }
             }
         }
 
         // — Resultados —
-        items(results, key = { it.id }) { summary ->
-            val isSaved = summary.id in savedIds
-            SearchResultCard(
-                summary       = summary,
-                navController = navController,
-                isSaved       = isSaved,
-                onToggleSave  = { vm.toggleSave(summary.id) }
-            )
-            Spacer(Modifier.height(12.dp))
+        if (localResults.isEmpty()) {
+            item {
+                Column(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(top = 64.dp),
+                    horizontalAlignment = Alignment.CenterHorizontally
+                ) {
+                    Icon(Icons.Default.SearchOff, contentDescription = null, tint = Color.LightGray, modifier = Modifier.size(48.dp))
+                    Spacer(Modifier.height(12.dp))
+                    Text(
+                        "No hay recetas que coincidan con el filtro seleccionado",
+                        color = Color.Gray,
+                        fontFamily = Destacado,
+                        fontSize = 16.sp,
+                        textAlign = TextAlign.Center
+                    )
+                }
+            }
+        } else {
+            items(localResults, key = { it.id }) { summary ->
+                val isSaved = summary.id in savedIds
+                SearchResultCard(
+                    summary       = summary,
+                    navController = navController,
+                    isSaved       = isSaved,
+                    onToggleSave  = { vm.toggleSave(summary.id) }
+                )
+                Spacer(Modifier.height(12.dp))
+            }
         }
 
         item { Spacer(Modifier.height(80.dp)) }

@@ -65,6 +65,8 @@ import com.example.recetify.data.remote.model.RatingResponse
 import com.example.recetify.util.obtenerEmoji
 import java.net.URI
 import android.net.Uri
+import androidx.compose.foundation.border
+import androidx.compose.foundation.layout.defaultMinSize
 import androidx.compose.material.icons.filled.Edit
 import androidx.compose.material.icons.filled.Favorite
 import androidx.compose.material.icons.filled.People
@@ -76,6 +78,18 @@ import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.TextButton
 import com.example.recetify.ui.common.LoopingVideoPlayer
 import coil.compose.AsyncImage
+import androidx.compose.ui.text.style.TextAlign
+import androidx.compose.ui.platform.LocalConfiguration
+import androidx.compose.foundation.text.BasicTextField
+import androidx.compose.foundation.text.KeyboardOptions
+import androidx.compose.material3.LocalTextStyle
+
+import androidx.compose.ui.graphics.SolidColor
+
+import androidx.compose.ui.text.input.KeyboardType
+import androidx.compose.ui.text.style.TextOverflow
+import com.example.recetify.ui.theme.Ladrillo
+import kotlin.math.floor
 
 
 private val Destacado = FontFamily(
@@ -333,7 +347,7 @@ fun RecipeDetailContent(
     val primaryTextColor = Color(0xFF042628)
     val selectedButtonColor = Color(0xFF042628)
     val unselectedButtonColor = Color(0xFFE6EBF2)
-    val unselectedTextColor = Color(0xFF042628)
+    val unselectedTextColor = Color.Gray
     val ingredientCardColor = Color.White
     val ingredientIconBackground = Color(0xFFE6EBF2)
     val unitBackgroundColor = Color(0xFF995850)
@@ -360,6 +374,13 @@ fun RecipeDetailContent(
                 uri.rawPath + uri.rawQuery?.let { "?$it" }.orEmpty()
             }.getOrDefault(raw)
             if (pPath.startsWith("/")) "$baseUrl$pPath" else raw
+        }
+
+    val screenWidth = LocalConfiguration.current.screenWidthDp
+    val pasoFontSize = when {
+        screenWidth < 340 -> 11.sp
+        screenWidth < 400 -> 12.sp
+        else -> 14.sp
         }
 
     Column(
@@ -430,17 +451,22 @@ fun RecipeDetailContent(
         ) {
             Column(Modifier.padding(24.dp)) {
                 // Título y descripción de la receta
-                Row(
-                    verticalAlignment = Alignment.CenterVertically,
-                    horizontalArrangement = Arrangement.spacedBy(8.dp)
-                ) {
+                Box(modifier = Modifier.fillMaxWidth()) {
                     Text(
                         text = receta.nombre,
                         style = MaterialTheme.typography.headlineSmall.copy(fontWeight = FontWeight.Bold),
                         color = primaryTextColor,
-                        fontFamily = Destacado
+                        fontFamily = Destacado,
+                        maxLines = 3,
+                        overflow = TextOverflow.Clip,
+                        modifier = Modifier
+                            .align(Alignment.TopStart)
+                            .padding(end = 48.dp) // deja espacio para el lápiz
                     )
-                    IconButton(onClick = { showPortionDialog = true }) {
+                    IconButton(
+                        onClick = { showPortionDialog = true },
+                        modifier = Modifier.align(Alignment.TopEnd)
+                    ) {
                         Icon(
                             imageVector = Icons.Default.Edit,
                             contentDescription = "Editar porciones",
@@ -525,7 +551,7 @@ fun RecipeDetailContent(
                     )
                     Spacer(Modifier.width(4.dp))
                     Text(
-                        text = "${receta.porciones} porciones",
+                        text = "$currentPortions porciones",
                         style = MaterialTheme.typography.bodySmall
                     )
                 }
@@ -695,6 +721,9 @@ fun RecipeDetailContent(
                     val pasos = receta.steps.sortedBy { it.numeroPaso }
                     val lastIndex = pasos.lastIndex
 
+                    // Solo mostrar navegación si hay más de un paso
+                    val mostrarNavegacion = pasos.size > 1
+
                     if (currentStep.value in pasos.indices) {
                         val paso = pasos[currentStep.value]
 
@@ -764,15 +793,16 @@ fun RecipeDetailContent(
 
                                 Spacer(Modifier.height(12.dp))
 
-                                // Navegación entre pasos
+                                // Navegación entre pasos solo si hay más de uno
+                                if (mostrarNavegacion) {
                                 when {
                                     // Primer paso: solo “Siguiente”
                                     currentStep.value == 0 -> {
                                         Button(
                                             onClick = { currentStep.value++ },
                                             modifier = Modifier
-                                                .fillMaxWidth()
-                                                .height(40.dp),
+                                                    .height(40.dp)
+                                                    .defaultMinSize(minWidth = 120.dp),
                                             shape = RoundedCornerShape(8.dp),
                                             colors = ButtonDefaults.buttonColors(
                                                 containerColor = Color(0xFF042628),
@@ -782,7 +812,10 @@ fun RecipeDetailContent(
                                             Text(
                                                 text = "Paso Siguiente",
                                                 style = MaterialTheme.typography.bodyMedium.copy(fontWeight = FontWeight.Medium),
-                                                fontFamily = Destacado
+                                                    fontFamily = Destacado,
+                                                    maxLines = 1,
+                                                    textAlign = TextAlign.Center,
+                                                    fontSize = pasoFontSize
                                             )
                                         }
                                     }
@@ -791,8 +824,8 @@ fun RecipeDetailContent(
                                         Button(
                                             onClick = { currentStep.value-- },
                                             modifier = Modifier
-                                                .fillMaxWidth()
-                                                .height(40.dp),
+                                                    .height(40.dp)
+                                                    .defaultMinSize(minWidth = 120.dp),
                                             shape = RoundedCornerShape(8.dp),
                                             colors = ButtonDefaults.buttonColors(
                                                 containerColor = Color(0xFF042628),
@@ -802,19 +835,27 @@ fun RecipeDetailContent(
                                             Text(
                                                 text = "Paso Anterior",
                                                 style = MaterialTheme.typography.bodyMedium.copy(fontWeight = FontWeight.Medium),
-                                                fontFamily = Destacado
+                                                    maxLines = 1,
+                                                    textAlign = TextAlign.Center,
+                                                    fontSize = pasoFontSize
                                             )
                                         }
                                     }
                                     // Pasos intermedios: ambos botones
                                     else -> {
-                                        Row(modifier = Modifier.fillMaxWidth()) {
+                                            Row(
+                                                modifier = Modifier
+                                                    .fillMaxWidth()
+                                                    .padding(horizontal = 0.dp),
+                                                horizontalArrangement = Arrangement.SpaceBetween
+                                            ) {
                                             Button(
                                                 onClick = { currentStep.value-- },
                                                 modifier = Modifier
-                                                    .weight(1f)
-                                                    .height(40.dp),
+                                                        .height(40.dp)
+                                                        .defaultMinSize(minWidth = 80.dp),
                                                 shape = RoundedCornerShape(8.dp),
+                                                    contentPadding = PaddingValues(horizontal = 4.dp),
                                                 colors = ButtonDefaults.buttonColors(
                                                     containerColor = Color(0xFF042628),
                                                     contentColor = Color.White
@@ -822,16 +863,20 @@ fun RecipeDetailContent(
                                             ) {
                                                 Text(
                                                     text = "Paso Anterior",
-                                                    style = MaterialTheme.typography.bodyMedium.copy(fontWeight = FontWeight.Medium)
+                                                        style = MaterialTheme.typography.bodyMedium.copy(fontWeight = FontWeight.Medium),
+                                                        maxLines = 2,
+                                                        textAlign = TextAlign.Center,
+                                                        fontSize = pasoFontSize
                                                 )
                                             }
                                             Spacer(modifier = Modifier.width(8.dp))
                                             Button(
                                                 onClick = { currentStep.value++ },
                                                 modifier = Modifier
-                                                    .weight(1f)
-                                                    .height(40.dp),
+                                                        .height(40.dp)
+                                                        .defaultMinSize(minWidth = 80.dp),
                                                 shape = RoundedCornerShape(8.dp),
+                                                    contentPadding = PaddingValues(horizontal = 4.dp),
                                                 colors = ButtonDefaults.buttonColors(
                                                     containerColor = Color(0xFF042628),
                                                     contentColor = Color.White
@@ -840,7 +885,11 @@ fun RecipeDetailContent(
                                                 Text(
                                                     text = "Paso Siguiente",
                                                     style = MaterialTheme.typography.bodyMedium.copy(fontWeight = FontWeight.Medium),
+                                                        maxLines = 2,
+                                                        textAlign = TextAlign.Center,
+                                                        fontSize = pasoFontSize
                                                 )
+                                                }
                                             }
                                         }
                                     }
@@ -857,53 +906,238 @@ fun RecipeDetailContent(
                 )
             }
             if (showPortionDialog) {
+                var selectedTab by remember { mutableStateOf(0) }
+                var tempPortionInput by remember { mutableStateOf(portionInput) }
+                var tempIngredients by remember { mutableStateOf(adjustedIngredients) }
+                
                 AlertDialog(
                     onDismissRequest = { showPortionDialog = false },
-                    title = { Text("¿Cuántas porciones?") },
-                    text = {
-                        OutlinedTextField(
-                            value = portionInput,
-                            onValueChange = { portionInput = it.filter(Char::isDigit) },
-                            label = { Text("Porciones") },
-                            singleLine = true
+                    shape = RoundedCornerShape(20.dp),
+                    containerColor = Color.White,
+                    tonalElevation = 4.dp,
+                    title = {
+                        Text(
+                            "Ajustar receta",
+                            color = Color.Black,
+                            fontWeight = FontWeight.Bold,
+                            fontSize = 20.sp
                         )
+                    },
+                    text = {
+                        Column(Modifier.padding(top = 8.dp)) {
+                            // Pestañas
+                            Row(
+                                modifier = Modifier
+                                    .fillMaxWidth()
+                                    .padding(bottom = 12.dp),
+                                horizontalArrangement = Arrangement.spacedBy(8.dp)
+                            ) {
+                                TextButton(
+                                    onClick = { selectedTab = 0 },
+                                    modifier = Modifier.weight(1f),
+                                    colors = ButtonDefaults.textButtonColors(
+                                        containerColor = if (selectedTab == 0) Ladrillo else Color.Transparent,
+                                        contentColor = if (selectedTab == 0) Color.White else Ladrillo
+                                    )
+                                ) {
+                                    Text("Porciones", fontWeight = FontWeight.Medium)
+                                }
+                                TextButton(
+                                    onClick = { selectedTab = 1 },
+                                    modifier = Modifier.weight(1f),
+                                    colors = ButtonDefaults.textButtonColors(
+                                        containerColor = if (selectedTab == 1) Ladrillo else Color.Transparent,
+                                        contentColor = if (selectedTab == 1) Color.White else Ladrillo
+                                    )
+                                ) {
+                                    Text("Ingredientes", fontWeight = FontWeight.Medium)
+                                }
+                            }
+                            
+                            when (selectedTab) {
+                                0 -> {
+                                    // Pestaña Porciones
+                        OutlinedTextField(
+                                        value = tempPortionInput,
+                                        onValueChange = { tempPortionInput = it.filter(Char::isDigit) },
+                                        label = { Text("Porciones", color = Color.Black) },
+                                        singleLine = true,
+                                        modifier = Modifier.fillMaxWidth(),
+                                        shape = RoundedCornerShape(12.dp),
+                                        textStyle = LocalTextStyle.current.copy(color = Color.Black)
+                                    )
+                                }
+                                1 -> {
+                                    // Pestaña Ingredientes
+                                    Column(
+                                        modifier = Modifier
+                                            .fillMaxWidth()
+                                            .height(300.dp)
+                                            .verticalScroll(rememberScrollState())
+                                    ) {
+                                        tempIngredients.forEachIndexed { index, ingredient ->
+                                            Card(
+                                                modifier = Modifier
+                                                    .fillMaxWidth()
+                                                    .padding(vertical = 4.dp),
+                                                shape = RoundedCornerShape(12.dp),
+                                                border = BorderStroke(1.dp, Color(0xFFF0E0DC)),
+                                                colors = CardDefaults.cardColors(containerColor = Color.White)
+                                            ) {
+                                                Row(
+                                                    modifier = Modifier
+                                                        .fillMaxWidth()
+                                                        .padding(12.dp),
+                                                    verticalAlignment = Alignment.CenterVertically
+                                                ) {
+                                                    // Emoji del ingrediente
+                                                    Text(
+                                                        obtenerEmoji(ingredient.nombre),
+                                                        fontSize = 20.sp
+                                                    )
+                                                    Spacer(Modifier.width(8.dp))
+                                                    
+                                                    // Nombre del ingrediente
+                                                    Text(
+                                                        ingredient.nombre,
+                                                        modifier = Modifier.weight(1f),
+                                                        fontWeight = FontWeight.Medium,
+                                                        color = Color.Black
+                                                    )
+                                                    
+                                                    // Campo de cantidad editable
+                                                    Box(
+                                                        modifier = Modifier
+                                                            .width(80.dp)
+                                                            .height(36.dp)
+                                                            .background(Color(0xFFF8F8F8), RoundedCornerShape(8.dp))
+                                                            .border(1.dp, Ladrillo, RoundedCornerShape(8.dp)),
+                                                        contentAlignment = Alignment.Center
+                                                    ) {
+                                                        BasicTextField(
+                                                            value = ingredient.cantidad.toString(),
+                                                            onValueChange = { newValue ->
+                                                                val originalCantidad = receta.ingredients[index].cantidad
+                                                                val newCantidad = newValue.toDoubleOrNull() ?: ingredient.cantidad
+                                                                val factor = if (originalCantidad > 0) newCantidad / originalCantidad else 1.0
+                                                                tempIngredients = tempIngredients.mapIndexed { i, ing ->
+                                                                    val base = receta.ingredients[i].cantidad
+                                                                    ing.copy(cantidad = (base * factor))
+                                                                }
+                                                                currentPortions = floor(receta.porciones * factor).toInt().coerceAtLeast(1)
+                                                                tempPortionInput = currentPortions.toString()
+                                                            },
+                                                            singleLine = true,
+                                                            keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Decimal),
+                                                            textStyle = LocalTextStyle.current.copy(
+                                                                color = Color.Black,
+                                                                fontSize = 14.sp,
+                                                                fontWeight = FontWeight.Medium,
+                                                                textAlign = TextAlign.Center
+                                                            ),
+                                                            cursorBrush = SolidColor(Ladrillo),
+                                                            decorationBox = { inner ->
+                                                                Box(Modifier.fillMaxSize(), contentAlignment = Alignment.Center) { inner() }
+                                                            }
+                                                        )
+                                                    }
+                                                    
+                                                    Spacer(Modifier.width(8.dp))
+                                                    
+                                                    // Unidad de medida
+                                                    Text(
+                                                        ingredient.unidadMedida,
+                                                        fontSize = 14.sp,
+                                                        color = Ladrillo
+                                                    )
+                                                }
+                                            }
+                                        }
+                                    }
+                                }
+                            }
+                        }
                     },
                     confirmButton = {
                         Row {
-                            TextButton(onClick = {
-                                // recalcula y cierra
-                                val newPortions = portionInput.toIntOrNull() ?: receta.porciones
-                                val factor      = newPortions.toFloat() / receta.porciones
+                            TextButton(
+                                onClick = {
+                                    // Aplicar cambios sin guardar
+                                    when (selectedTab) {
+                                        0 -> {
+                                            val newPortions = tempPortionInput.toIntOrNull() ?: receta.porciones
+                                            val factor = newPortions.toFloat() / receta.porciones
                                 adjustedIngredients = receta.ingredients.map { ing ->
                                     ing.copy(cantidad = ing.cantidad * factor)
                                 }
-                                currentPortions   = newPortions
+                                            currentPortions = newPortions
+                                            portionInput = tempPortionInput
+                                        }
+                                        1 -> {
+                                            adjustedIngredients = tempIngredients
+                                            // Recalcular porciones basado en el ingrediente modificado (usando el primer ingrediente como referencia)
+                                            val factor = if (receta.ingredients.isNotEmpty() && tempIngredients.isNotEmpty()) {
+                                                tempIngredients[0].cantidad / receta.ingredients[0].cantidad
+                                            } else 1.0
+                                            currentPortions = floor(receta.porciones * factor).toInt().coerceAtLeast(1)
+                                            portionInput = currentPortions.toString()
+                                        }
+                                    }
                                 showPortionDialog = false
-                            }) {
-                                Text("Aplicar")
+                                },
+                                shape = RoundedCornerShape(12.dp),
+                                colors = ButtonDefaults.buttonColors(containerColor = Ladrillo, contentColor = Color.White)
+                            ) {
+                                Text("Aplicar", fontWeight = FontWeight.Bold)
                             }
                             Spacer(Modifier.width(8.dp))
-                            TextButton(onClick = {
-                                // recalcula, cierra y guarda
-                                val newPortions = portionInput.toIntOrNull() ?: receta.porciones
-                                val factor      = newPortions.toFloat() / receta.porciones
+                            TextButton(
+                                onClick = {
+                                    // Guardar cambios
+                                    when (selectedTab) {
+                                        0 -> {
+                                            val newPortions = tempPortionInput.toIntOrNull() ?: receta.porciones
+                                            val factor = newPortions.toFloat() / receta.porciones
                                 val updatedIngredients = receta.ingredients.map { ing ->
                                     ing.copy(cantidad = ing.cantidad * factor)
                                 }
                                 val edited = receta.copy(
-                                    porciones   = newPortions,
+                                                porciones = newPortions,
                                     ingredients = updatedIngredients
                                 )
                                 onSaveEditedRecipe(edited)
+                                        }
+                                        1 -> {
+                                            val factor = if (receta.ingredients.isNotEmpty() && tempIngredients.isNotEmpty()) {
+                                                tempIngredients[0].cantidad / receta.ingredients[0].cantidad
+                                            } else 1.0
+                                            val newPortions = floor(receta.porciones * factor).toInt().coerceAtLeast(1)
+                                            val edited = receta.copy(
+                                                porciones = newPortions,
+                                                ingredients = tempIngredients
+                                            )
+                                            onSaveEditedRecipe(edited)
+                                            adjustedIngredients = tempIngredients
+                                            currentPortions = newPortions
+                                            portionInput = newPortions.toString()
+                                        }
+                                    }
                                 showPortionDialog = false
-                            }) {
-                                Text("Guardar")
+                                },
+                                shape = RoundedCornerShape(12.dp),
+                                colors = ButtonDefaults.buttonColors(containerColor = Ladrillo, contentColor = Color.White)
+                            ) {
+                                Text("Guardar", fontWeight = FontWeight.Bold)
                             }
                         }
                     },
                     dismissButton = {
-                        TextButton(onClick = { showPortionDialog = false }) {
-                            Text("Cancelar")
+                        TextButton(
+                            onClick = { showPortionDialog = false },
+                            shape = RoundedCornerShape(12.dp),
+                            colors = ButtonDefaults.buttonColors(containerColor = Color.White, contentColor = Ladrillo)
+                        ) {
+                            Text("Cancelar", fontWeight = FontWeight.Bold)
                         }
                     }
                 )

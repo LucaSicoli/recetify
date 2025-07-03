@@ -351,9 +351,11 @@ fun EditRecipeScreen(
                         onAdd = { showIngredientDialog = true }
                     ) {
                         ingredients.forEachIndexed { idx, ing ->
-                            IngredientRow(idx, ing) { new ->
+                            IngredientRow(idx, ing, onUpdate = { new ->
                                 ingredients[idx] = new
-                            }
+                            }, onDelete = {
+                                ingredients.removeAt(idx)
+                            })
                         }
                     }
 
@@ -728,7 +730,8 @@ private fun CollapsibleSection(
 private fun IngredientRow(
     index: Int,
     ingredient: RecipeIngredientRequest,
-    onUpdate: (RecipeIngredientRequest) -> Unit
+    onUpdate: (RecipeIngredientRequest) -> Unit,
+    onDelete: () -> Unit
 ) {
     var cantidadText by remember { mutableStateOf(ingredient.cantidad.toInt().toString()) }
     var unidad      by remember { mutableStateOf(ingredient.unidadMedida) }
@@ -861,6 +864,13 @@ private fun IngredientRow(
                 modifier = Modifier.size(28.dp)
             ) {
                 Icon(Icons.Default.Add, contentDescription = null, tint = Color(0xFF00C853))
+            }
+            // --- Tacho de basura ---
+            IconButton(
+                onClick = onDelete,
+                modifier = Modifier.size(28.dp)
+            ) {
+                Icon(Icons.Default.Delete, contentDescription = "Eliminar ingrediente", tint = Color(0xFFD32F2F))
             }
         }
 

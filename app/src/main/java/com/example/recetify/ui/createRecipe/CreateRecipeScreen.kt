@@ -56,6 +56,7 @@ import com.example.recetify.util.listaIngredientesConEmoji
 import android.content.Intent
 import android.widget.Toast
 import androidx.activity.result.contract.ActivityResultContracts.StartActivityForResult
+import androidx.compose.material.icons.filled.Delete
 import androidx.compose.ui.viewinterop.AndroidView
 import com.example.recetify.data.remote.model.RecipeRequest
 import com.google.android.exoplayer2.MediaItem
@@ -112,6 +113,14 @@ fun CreateRecipeScreen(
     val photoUrl   by viewModel.photoUrl.collectAsState(initial = null)
     val uploading  by viewModel.uploading.collectAsState(initial = false)
     val error      by viewModel.error.collectAsState(initial = null)
+
+    var showFormError by remember { mutableStateOf(false) }
+    var nombreError by remember { mutableStateOf(false) }
+    var descripcionError by remember { mutableStateOf(false) }
+    var categoriaError by remember { mutableStateOf(false) }
+    var tipoError by remember { mutableStateOf(false) }
+    var ingredientesError by remember { mutableStateOf(false) }
+    var pasosError by remember { mutableStateOf(false) }
 
 
     // Image picker
@@ -265,17 +274,26 @@ fun CreateRecipeScreen(
                     // Nombre
                     OutlinedTextField(
                         value = nombre,
-                        onValueChange = { nombre = it },
+                        onValueChange = {
+                            nombre = it
+                            if (showFormError) nombreError = it.isBlank()
+                        },
                         label = { Text("Nombre de la Receta", color = Gray, fontFamily = Destacado) },
                         textStyle = LocalTextStyle.current.copy(color = Black),
                         modifier = Modifier.fillMaxWidth(),
                         shape = RoundedCornerShape(12.dp),
-
+                        isError = nombreError
                     )
+                    if (nombreError) {
+                        Text("Campo obligatorio", color = Color.Red, fontSize = 12.sp)
+                    }
                     // Descripción
                     OutlinedTextField(
                         value = descripcion,
-                        onValueChange = { descripcion = it },
+                        onValueChange = {
+                            descripcion = it
+                            if (showFormError) descripcionError = it.isBlank()
+                        },
                         label = { Text("Breve descripción…", color = Gray, fontFamily = Destacado) },
                         placeholder = { Text("") },
                         textStyle = LocalTextStyle.current.copy(color = Black),
@@ -284,7 +302,11 @@ fun CreateRecipeScreen(
                             .height(120.dp),
                         maxLines = 4,
                         shape = RoundedCornerShape(12.dp),
+                        isError = descripcionError
                     )
+                    if (descripcionError) {
+                        Text("Campo obligatorio", color = Color.Red, fontSize = 12.sp)
+                    }
 
                     Divider(
                         color = Color(0xFFE0E0E0),
@@ -513,6 +535,9 @@ fun CreateRecipeScreen(
                                 }
                             }
                         }
+                        if (categoriaError) {
+                            Text("Selecciona una categoría", color = Color.Red, fontSize = 12.sp)
+                        }
 
                         // 4. Tipo de Plato
                         Card(
@@ -560,6 +585,9 @@ fun CreateRecipeScreen(
                                 }
                             }
                         }
+                        if (tipoError) {
+                            Text("Selecciona un tipo de plato", color = Color.Red, fontSize = 12.sp)
+                        }
                     }
 // ── Divider justo después de todos los steppers ─────────────────────
                     Divider(
@@ -593,7 +621,12 @@ fun CreateRecipeScreen(
                     ingredients.forEachIndexed { idx, ing ->
                         IngredientRow(idx, ing, onUpdate = { newIng ->
                             ingredients[idx] = newIng
+                        }, onDelete = {
+                            ingredients.removeAt(idx)
                         })
+                    }
+                    if (ingredientesError) {
+                        Text("Agrega al menos un ingrediente", color = Color.Red, fontSize = 12.sp)
                     }
                     // Agregar ingrediente
                     Card(
@@ -672,6 +705,9 @@ fun CreateRecipeScreen(
                         )
                         Spacer(Modifier.height(8.dp))
                     }
+                    if (pasosError) {
+                        Text("Agrega al menos un paso", color = Color.Red, fontSize = 12.sp)
+                    }
 
 // ——————————
 // Editor inline para nuevo paso con contador y visor de fotos
@@ -729,6 +765,17 @@ fun CreateRecipeScreen(
                         Text(it, color = MaterialTheme.colorScheme.error)
                     }
 
+                    // Mensaje de error general
+                    if (showFormError && (nombreError || descripcionError || categoriaError || tipoError || ingredientesError || pasosError)) {
+                        Text(
+                            "Por favor, completá todos los campos obligatorios",
+                            color = Color.Red,
+                            fontWeight = FontWeight.Bold,
+                            fontSize = 15.sp,
+                            modifier = Modifier.padding(vertical = 8.dp)
+                        )
+                    }
+
                     Row(
                         Modifier
                             .fillMaxWidth()
@@ -738,14 +785,14 @@ fun CreateRecipeScreen(
                         OutlinedButton(
                             onClick = {
                                 // 1️⃣ Validar campos (puedes extraerlo a función si quieres)
-                                if (nombre.isBlank() || descripcion.isBlank()
-                                    || selectedCategory == null || selectedTipo == null
-                                    || ingredients.isEmpty() || steps.isEmpty()
-                                ) {
-                                    // aquí podrías mostrar un Toast o Snackbar de “faltan campos”
-                                    return@OutlinedButton
-                                }
-
+                                nombreError = nombre.isBlank()
+                                descripcionError = descripcion.isBlank()
+                                categoriaError = selectedCategory == null
+                                tipoError = selectedTipo == null
+                                ingredientesError = ingredients.isEmpty()
+                                pasosError = steps.isEmpty()
+                                showFormError = nombreError || descripcionError || categoriaError || tipoError || ingredientesError || pasosError
+                                if (showFormError) return@OutlinedButton
                                 // 2️⃣ Construir el RecipeRequest igual que en createRecipe
                                 val request = RecipeRequest(
                                     nombre      = nombre,
@@ -775,14 +822,14 @@ fun CreateRecipeScreen(
                         // PUBLICAR (esto es lo que dispara la petición REST)
                         Button(
                             onClick = {
-                                // valida que todos los campos obligatorios estén llenos
-                                if (nombre.isBlank() || descripcion.isBlank()
-                                    || selectedCategory == null || selectedTipo == null
-                                    || ingredients.isEmpty() || steps.isEmpty()
-                                ) {
-                                    // muestra algún error al usuario…
-                                    return@Button
-                                }
+                                nombreError = nombre.isBlank()
+                                descripcionError = descripcion.isBlank()
+                                categoriaError = selectedCategory == null
+                                tipoError = selectedTipo == null
+                                ingredientesError = ingredients.isEmpty()
+                                pasosError = steps.isEmpty()
+                                showFormError = nombreError || descripcionError || categoriaError || tipoError || ingredientesError || pasosError
+                                if (showFormError) return@Button
                                 viewModel.createRecipe(
                                     nombre      = nombre,
                                     descripcion = descripcion,
@@ -1165,7 +1212,8 @@ fun VideoPlayer(uri: Uri) {
 private fun IngredientRow(
     index: Int,
     ingredient: RecipeIngredientRequest,
-    onUpdate: (RecipeIngredientRequest) -> Unit
+    onUpdate: (RecipeIngredientRequest) -> Unit,
+    onDelete: () -> Unit // <--- nuevo parámetro
 ) {
     var cantidadText by remember { mutableStateOf(ingredient.cantidad.toInt().toString()) }
     var unidad      by remember { mutableStateOf(ingredient.unidadMedida) }
@@ -1298,6 +1346,13 @@ private fun IngredientRow(
                 modifier = Modifier.size(28.dp)
             ) {
                 Icon(Icons.Default.Add, contentDescription = null, tint = Color(0xFF00C853))
+            }
+            // --- Tacho de basura ---
+            IconButton(
+                onClick = onDelete,
+                modifier = Modifier.size(28.dp)
+            ) {
+                Icon(Icons.Default.Delete, contentDescription = "Eliminar ingrediente", tint = Color(0xFFD32F2F))
             }
         }
 

@@ -21,6 +21,7 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.viewmodel.compose.viewModel
@@ -131,22 +132,15 @@ fun ProfileScreen(
             // ─── STATS (4) ───────────────────────────
             Row(
                 modifier              = Modifier.fillMaxWidth(),
-                horizontalArrangement = Arrangement.Center,
                 verticalAlignment     = Alignment.CenterVertically
             ) {
-                StatItem(published.size, "Publicadas")
-                Spacer(Modifier.width(12.dp))
-                StatSeparator(height = 40.dp)
-                Spacer(Modifier.width(12.dp))
-                StatItem(drafts.size,    "Borradores")
-                Spacer(Modifier.width(12.dp))
-                StatSeparator(height = 40.dp)
-                Spacer(Modifier.width(12.dp))
-                StatItem(favs.size,      "Favoritas")
-                Spacer(Modifier.width(12.dp))
-                StatSeparator(height = 40.dp)
-                Spacer(Modifier.width(12.dp))
-                StatItem(reviewCount,             "Reseñas")
+                StatItem(published.size, "Publicadas", Modifier.weight(1f))
+                StatSeparator(height = 40.dp, modifier = Modifier.weight(0.05f))
+                StatItem(drafts.size,    "Borradores", Modifier.weight(1f))
+                StatSeparator(height = 40.dp, modifier = Modifier.weight(0.05f))
+                StatItem(favs.size,      "Favoritas", Modifier.weight(1f))
+                StatSeparator(height = 40.dp, modifier = Modifier.weight(0.05f))
+                StatItem(reviewCount,    "Reseñas", Modifier.weight(1f))
             }
 
             Spacer(Modifier.height(32.dp))
@@ -225,15 +219,20 @@ fun ProfileScreen(
 }
 
 @Composable
-private fun StatItem(count: Int, label: String) {
-    Column(horizontalAlignment = Alignment.CenterHorizontally) {
+private fun StatItem(count: Int, label: String, modifier: Modifier = Modifier) {
+    Column(
+        modifier = modifier,
+        horizontalAlignment = Alignment.CenterHorizontally
+    ) {
         Text(
             text  = count.toString(),
             style = MaterialTheme.typography.titleLarge.copy(fontWeight = FontWeight.Bold)
         )
         Text(
-            text  = label,
-            style = MaterialTheme.typography.bodyMedium
+            text      = label,
+            style     = MaterialTheme.typography.bodySmall,
+            maxLines  = 2,
+            textAlign = TextAlign.Center
         )
     }
 }
@@ -241,10 +240,11 @@ private fun StatItem(count: Int, label: String) {
 @Composable
 private fun StatSeparator(
     width: Dp = 1.dp,
-    height: Dp = 36.dp
+    height: Dp = 36.dp,
+    modifier: Modifier = Modifier
 ) {
     Box(
-        Modifier
+        modifier
             .width(width)
             .height(height)
             .background(Color.LightGray)
