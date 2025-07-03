@@ -82,7 +82,8 @@ fun RecipeDetailScreen(
                                     // por ejemplo, mostrar un Snackbar o Toast
                                 }
                             )
-                        }
+                        },
+                        isAlumno = isAlumno // <--- pasar el valor
                     )
                 }
             }

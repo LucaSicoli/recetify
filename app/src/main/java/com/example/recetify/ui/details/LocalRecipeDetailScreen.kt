@@ -8,6 +8,7 @@ import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.navigation.NavController
@@ -25,7 +26,7 @@ fun LocalRecipeDetailScreen(
     navController: NavController,
     customVm: CustomTasteViewModel = viewModel()
 ) {
-    val context     = androidx.compose.ui.platform.LocalContext.current
+    val context     = LocalContext.current
 
     /* 1 ─ Escuchamos la lista “Mi gusto” */
     val customList by customVm.customRecipes.collectAsState()
@@ -64,17 +65,18 @@ fun LocalRecipeDetailScreen(
 
                 /* 6 ─ Reutilizamos la UI remota 1:1 */
                 RecipeDetailContent(
-                    receta             = receta,
-                    ratings            = emptyList(),
-                    padding            = PaddingValues(0.dp),
-                    showIngredients    = remember { mutableStateOf(true) },
-                    currentStep        = remember { mutableStateOf(0) },
-                    navController      = navController,
-                    profileUrl         = null,
-                    onSendRating       = { _, _ -> },
-                    isFavorite         = true,
-                    onToggleFavorite   = { /* sin favoritos locales */ },
-                    onSaveEditedRecipe = { /* opcional */ }
+                    receta = receta,
+                    ratings = emptyList(),
+                    padding = PaddingValues(0.dp),
+                    showIngredients = remember { mutableStateOf(true) },
+                    currentStep = remember { mutableStateOf(0) },
+                    navController = navController,
+                    profileUrl = null,
+                    onSendRating = { _, _ -> },
+                    isFavorite = true,
+                    onToggleFavorite = { /* sin favoritos locales */ },
+                    onSaveEditedRecipe = { /* opcional */ },
+                    isAlumno = TODO()
                 )
             }
         }

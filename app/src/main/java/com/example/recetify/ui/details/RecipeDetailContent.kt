@@ -67,6 +67,7 @@ import java.net.URI
 import android.net.Uri
 import androidx.compose.foundation.border
 import androidx.compose.foundation.layout.defaultMinSize
+import androidx.compose.foundation.layout.widthIn
 import androidx.compose.material.icons.filled.Edit
 import androidx.compose.material.icons.filled.Favorite
 import androidx.compose.material.icons.filled.People
@@ -132,7 +133,8 @@ fun StarRatingSelector(
 @Composable
 fun ReviewsAndCommentSection(
     ratings: List<RatingResponse>,
-    onSend: (comentario: String, puntos: Int) -> Unit
+    onSend: (comentario: String, puntos: Int) -> Unit,
+    isAlumno: Boolean
 ) {
     // Estado para expandir/colapsar la lista de reseñas
     var expanded by remember { mutableStateOf(false) }
@@ -231,6 +233,22 @@ fun ReviewsAndCommentSection(
         Spacer(modifier = Modifier.height(12.dp))
 
         // ── Card: “Dejá tu comentario” ────────────────────────────────────────
+        val screenWidth = LocalConfiguration.current.screenWidthDp
+        val starSize = when {
+            screenWidth < 340 -> 16.dp
+            screenWidth < 400 -> 20.dp
+            else -> 28.dp
+        }
+        val commentFontSize = when {
+            screenWidth < 340 -> 13.sp
+            screenWidth < 400 -> 14.sp
+            else -> 16.sp
+        }
+        val cardPadding = when {
+            screenWidth < 340 -> 8.dp
+            screenWidth < 400 -> 12.dp
+            else -> 16.dp
+        }
         Card(
             modifier = Modifier
                 .fillMaxWidth()
@@ -239,7 +257,7 @@ fun ReviewsAndCommentSection(
             colors = CardDefaults.cardColors(containerColor = Color.White),
             elevation = CardDefaults.cardElevation(defaultElevation = 3.dp)
         ) {
-            Column(modifier = Modifier.padding(16.dp)) {
+            Column(modifier = Modifier.padding(cardPadding)) {
                 // Encabezado con “Dejá tu comentario” + estrellas
                 Row(
                     modifier = Modifier.fillMaxWidth(),
@@ -249,27 +267,26 @@ fun ReviewsAndCommentSection(
                         text = "Dejá tu comentario",
                         style = MaterialTheme.typography.titleMedium.copy(fontWeight = FontWeight.Bold),
                         color = Color.Black,
-                        fontFamily = Destacado
+                        fontFamily = Destacado,
+                        fontSize = commentFontSize,
+                        maxLines = 1,
+                        overflow = TextOverflow.Ellipsis
                     )
                     Spacer(Modifier.weight(1f))
-                    for (i in 1..5) {
-                        IconButton(
-                            onClick = { commentStars = i },
-                            modifier = Modifier.size(28.dp)
-                        ) {
-                            if (i <= commentStars) {
+                    Row(
+                        modifier = Modifier.widthIn(min = starSize * 5 + 8.dp * 4).fillMaxWidth(0.55f),
+                        horizontalArrangement = Arrangement.SpaceEvenly
+                    ) {
+                        for (i in 1..5) {
+                            IconButton(
+                                onClick = { commentStars = i },
+                                modifier = Modifier.size(starSize)
+                            ) {
                                 Icon(
-                                    imageVector = Icons.Default.Star,
-                                    contentDescription = "Estrella llena",
-                                    tint = Color(0xFFFFD700),
-                                    modifier = Modifier.size(20.dp)
-                                )
-                            } else {
-                                Icon(
-                                    imageVector = Icons.Outlined.StarBorder,
-                                    contentDescription = "Estrella vacía",
-                                    tint = Color.Gray,
-                                    modifier = Modifier.size(20.dp)
+                                    imageVector = if (i <= commentStars) Icons.Default.Star else Icons.Outlined.StarBorder,
+                                    contentDescription = if (i <= commentStars) "Estrella llena" else "Estrella vacía",
+                                    tint = if (i <= commentStars) Color(0xFFFFD700) else Color.Gray,
+                                    modifier = Modifier.size(starSize)
                                 )
                             }
                         }
@@ -315,7 +332,7 @@ fun ReviewsAndCommentSection(
                             textComment = TextFieldValue("")
                             commentStars = 0
                         },
-                        enabled = textComment.text.isNotBlank() && commentStars > 0
+                        enabled = textComment.text.isNotBlank() && commentStars > 0 && isAlumno
                     ) {
                         Text("Enviar")
                     }
@@ -342,7 +359,8 @@ fun RecipeDetailContent(
     onSendRating: (comentario: String, puntos: Int) -> Unit,
     isFavorite: Boolean,
     onToggleFavorite: () -> Unit,
-    onSaveEditedRecipe: (RecipeResponse) -> Unit
+    onSaveEditedRecipe: (RecipeResponse) -> Unit,
+    isAlumno: Boolean // <--- nuevo parámetro
 ) {
     val primaryTextColor = Color(0xFF042628)
     val selectedButtonColor = Color(0xFF042628)
@@ -902,7 +920,8 @@ fun RecipeDetailContent(
                 // ── Sección de reseñas + comentarios ─────────────────────────────
                 ReviewsAndCommentSection(
                     ratings = ratings,
-                    onSend  = onSendRating
+                    onSend  = onSendRating,
+                    isAlumno = isAlumno
                 )
             }
             if (showPortionDialog) {
