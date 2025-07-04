@@ -76,7 +76,7 @@ fun LocalRecipeDetailScreen(
                     isFavorite = true,
                     onToggleFavorite = { /* sin favoritos locales */ },
                     onSaveEditedRecipe = { /* opcional */ },
-                    isAlumno = TODO()
+                    isAlumno = isAlumno
                 )
             }
         }
