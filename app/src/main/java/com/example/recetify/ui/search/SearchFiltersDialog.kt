@@ -16,6 +16,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.sp
 import androidx.compose.ui.window.Dialog
 import com.example.recetify.ui.theme.Ladrillo
 
@@ -129,11 +130,19 @@ fun SearchFiltersDialog(
                     modifier = Modifier
                         .align(Alignment.CenterHorizontally)
                         .width(180.dp)
-                        .height(44.dp),
+                        .height(40.dp),
                     shape = RoundedCornerShape(12.dp),
-                    colors = ButtonDefaults.buttonColors(containerColor = Ladrillo)
+                    colors = ButtonDefaults.buttonColors(
+                        containerColor = Color.White,
+                        contentColor = Ladrillo
+                    ),
+                    elevation = ButtonDefaults.buttonElevation(0.dp)
                 ) {
-                    Text("RESET", color = Color.White, style = MaterialTheme.typography.titleMedium.copy(fontWeight = FontWeight.Bold))
+                    Text(
+                        "RESET",
+                        color = Ladrillo,
+                        style = MaterialTheme.typography.bodyMedium.copy(fontWeight = FontWeight.Bold, fontSize = 15.sp)
+                    )
                 }
             }
         }
