@@ -83,6 +83,7 @@ import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.platform.LocalConfiguration
 import androidx.compose.foundation.text.BasicTextField
 import androidx.compose.foundation.text.KeyboardOptions
+import androidx.compose.material.icons.filled.AutoFixHigh
 import androidx.compose.material3.LocalTextStyle
 
 import androidx.compose.ui.graphics.SolidColor
@@ -486,8 +487,8 @@ fun RecipeDetailContent(
                         modifier = Modifier.align(Alignment.TopEnd)
                     ) {
                         Icon(
-                            imageVector = Icons.Default.Edit,
-                            contentDescription = "Editar porciones",
+                            imageVector = Icons.Default.AutoFixHigh,
+                            contentDescription = "Ajustar porciones/ingredientes",
                             tint = primaryTextColor
                         )
                     }
@@ -813,67 +814,21 @@ fun RecipeDetailContent(
 
                                 // Navegación entre pasos solo si hay más de uno
                                 if (mostrarNavegacion) {
-                                when {
-                                    // Primer paso: solo “Siguiente”
-                                    currentStep.value == 0 -> {
-                                        Button(
-                                            onClick = { currentStep.value++ },
-                                            modifier = Modifier
-                                                    .height(40.dp)
-                                                    .defaultMinSize(minWidth = 120.dp),
-                                            shape = RoundedCornerShape(8.dp),
-                                            colors = ButtonDefaults.buttonColors(
-                                                containerColor = Color(0xFF042628),
-                                                contentColor = Color.White
-                                            )
-                                        ) {
-                                            Text(
-                                                text = "Paso Siguiente",
-                                                style = MaterialTheme.typography.bodyMedium.copy(fontWeight = FontWeight.Medium),
-                                                    fontFamily = Destacado,
-                                                    maxLines = 1,
-                                                    textAlign = TextAlign.Center,
-                                                    fontSize = pasoFontSize
-                                            )
-                                        }
-                                    }
-                                    // Último paso: solo “Anterior”
-                                    currentStep.value == lastIndex -> {
-                                        Button(
-                                            onClick = { currentStep.value-- },
-                                            modifier = Modifier
-                                                    .height(40.dp)
-                                                    .defaultMinSize(minWidth = 120.dp),
-                                            shape = RoundedCornerShape(8.dp),
-                                            colors = ButtonDefaults.buttonColors(
-                                                containerColor = Color(0xFF042628),
-                                                contentColor = Color.White
-                                            )
-                                        ) {
-                                            Text(
-                                                text = "Paso Anterior",
-                                                style = MaterialTheme.typography.bodyMedium.copy(fontWeight = FontWeight.Medium),
-                                                    maxLines = 1,
-                                                    textAlign = TextAlign.Center,
-                                                    fontSize = pasoFontSize
-                                            )
-                                        }
-                                    }
-                                    // Pasos intermedios: ambos botones
-                                    else -> {
-                                            Row(
-                                                modifier = Modifier
-                                                    .fillMaxWidth()
-                                                    .padding(horizontal = 0.dp),
-                                                horizontalArrangement = Arrangement.SpaceBetween
-                                            ) {
+                                    Row(
+                                        modifier = Modifier
+                                            .fillMaxWidth()
+                                            .padding(top = 12.dp, bottom = 4.dp),
+                                        horizontalArrangement = Arrangement.Center,
+                                        verticalAlignment = Alignment.CenterVertically
+                                    ) {
+                                        if (currentStep.value > 0) {
                                             Button(
                                                 onClick = { currentStep.value-- },
                                                 modifier = Modifier
-                                                        .height(40.dp)
-                                                        .defaultMinSize(minWidth = 80.dp),
+                                                    .height(40.dp)
+                                                    .defaultMinSize(minWidth = 150.dp),
                                                 shape = RoundedCornerShape(8.dp),
-                                                    contentPadding = PaddingValues(horizontal = 4.dp),
+                                                contentPadding = PaddingValues(horizontal = 4.dp),
                                                 colors = ButtonDefaults.buttonColors(
                                                     containerColor = Color(0xFF042628),
                                                     contentColor = Color.White
@@ -881,20 +836,24 @@ fun RecipeDetailContent(
                                             ) {
                                                 Text(
                                                     text = "Paso Anterior",
-                                                        style = MaterialTheme.typography.bodyMedium.copy(fontWeight = FontWeight.Medium),
-                                                        maxLines = 2,
-                                                        textAlign = TextAlign.Center,
-                                                        fontSize = pasoFontSize
+                                                    style = MaterialTheme.typography.bodyMedium.copy(fontWeight = FontWeight.Medium),
+                                                    maxLines = 2,
+                                                    textAlign = TextAlign.Center,
+                                                    fontSize = pasoFontSize
                                                 )
                                             }
-                                            Spacer(modifier = Modifier.width(8.dp))
+                                        }
+                                        if (currentStep.value > 0 && currentStep.value < lastIndex) {
+                                            Spacer(modifier = Modifier.width(12.dp))
+                                        }
+                                        if (currentStep.value < lastIndex) {
                                             Button(
                                                 onClick = { currentStep.value++ },
                                                 modifier = Modifier
-                                                        .height(40.dp)
-                                                        .defaultMinSize(minWidth = 80.dp),
+                                                    .height(40.dp)
+                                                    .defaultMinSize(minWidth = 150.dp),
                                                 shape = RoundedCornerShape(8.dp),
-                                                    contentPadding = PaddingValues(horizontal = 4.dp),
+                                                contentPadding = PaddingValues(horizontal = 4.dp),
                                                 colors = ButtonDefaults.buttonColors(
                                                     containerColor = Color(0xFF042628),
                                                     contentColor = Color.White
@@ -903,11 +862,10 @@ fun RecipeDetailContent(
                                                 Text(
                                                     text = "Paso Siguiente",
                                                     style = MaterialTheme.typography.bodyMedium.copy(fontWeight = FontWeight.Medium),
-                                                        maxLines = 2,
-                                                        textAlign = TextAlign.Center,
-                                                        fontSize = pasoFontSize
+                                                    maxLines = 2,
+                                                    textAlign = TextAlign.Center,
+                                                    fontSize = pasoFontSize
                                                 )
-                                                }
                                             }
                                         }
                                     }

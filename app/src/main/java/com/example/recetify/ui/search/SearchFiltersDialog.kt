@@ -118,6 +118,23 @@ fun SearchFiltersDialog(
                 ) {
                     Text("APLICAR", color = Color.White, style = MaterialTheme.typography.titleMedium.copy(fontWeight = FontWeight.Bold))
                 }
+                Spacer(Modifier.height(10.dp))
+                Button(
+                    onClick = {
+                        onIngredientChange("")
+                        onExcludeChange("")
+                        onUserChange("")
+                        onRatingSelect(null)
+                    },
+                    modifier = Modifier
+                        .align(Alignment.CenterHorizontally)
+                        .width(180.dp)
+                        .height(44.dp),
+                    shape = RoundedCornerShape(12.dp),
+                    colors = ButtonDefaults.buttonColors(containerColor = Ladrillo)
+                ) {
+                    Text("RESET", color = Color.White, style = MaterialTheme.typography.titleMedium.copy(fontWeight = FontWeight.Bold))
+                }
             }
         }
     }
