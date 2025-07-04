@@ -1,4 +1,3 @@
-// File: SearchRepository.kt
 package com.example.recetify.ui.search
 
 import android.net.ConnectivityManager
@@ -17,29 +16,45 @@ class SearchRepository(
     suspend fun search(
         name: String?,
         type: String?,
-        ingredient: String?,        // de momento no usado en offline
-        excludeIngredient: String?, // idem
-        userAlias: String?,         // idem
+        ingredient: String?,        // include‐filter
+        excludeIngredient: String?, // exclude‐filter
+        userAlias: String?,
         sort: String
     ): List<RecipeSummaryResponse> = withContext(Dispatchers.IO) {
         if (connectivity.activeNetwork != null) {
-            // Online: fetch + cache
-            val remote = runCatching {
-                api.searchRecipes(name, type, ingredient, excludeIngredient, userAlias, sort)
+            // 1) Traemos con include
+            val includeList = runCatching {
+                api.searchRecipes(name, type, ingredient, null, userAlias, sort)
             }.getOrDefault(emptyList())
-            val entities = remote.map { it.toEntity() }
+
+            // 2) Si hay excludeIngredient, pedimos los que SÍ lo contienen
+            val excludedIds = excludeIngredient
+                .takeIf { !it.isNullOrBlank() }
+                ?.let { excl ->
+                    runCatching {
+                        api.searchRecipes(name, type, excl, null, userAlias, sort)
+                            .map { it.id }
+                            .toSet()
+                    }.getOrDefault(emptySet())
+                } ?: emptySet()
+
+            // 3) Restamos ambos conjuntos
+            val finalList = includeList.filter { it.id !in excludedIds }
+
+            // 4) Cacheamos sólo el resultado final
             dao.clearAll()
-            dao.insertAll(entities)
-            remote
+            dao.insertAll(finalList.map { it.toEntity() })
+
+            finalList
         } else {
-            // Offline: solo filtros de nombre, tipo, categoría y orden
+            // Offline: sólo filtros locales (sin excludeIngredient)
             dao.searchLocal(name, type, /* categoría = */ null, sort)
                 .map { it.toSummaryResponse() }
         }
     }
 }
 
-/** convert DTO → Entidad Room */
+/** convierte DTO → Entidad Room */
 private fun RecipeSummaryResponse.toEntity() = RecipeEntity(
     id                  = id,
     nombre              = nombre,
@@ -55,7 +70,7 @@ private fun RecipeSummaryResponse.toEntity() = RecipeEntity(
     estadoPublicacion   = ""
 )
 
-/** convert Entidad Room → DTO */
+/** convierte Entidad Room → DTO */
 private fun RecipeEntity.toSummaryResponse() = RecipeSummaryResponse(
     id                  = id,
     nombre              = nombre,
@@ -69,5 +84,5 @@ private fun RecipeEntity.toSummaryResponse() = RecipeSummaryResponse(
     usuarioFotoPerfil   = null,
     promedioRating      = promedioRating,
     estadoAprobacion    = estadoAprobacion,
-    estadoPublicacion   = estadoPublicacion ?: ""
+    estadoPublicacion   = estadoPublicacion.orEmpty()
 )
