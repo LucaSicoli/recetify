@@ -182,9 +182,11 @@ fun HomeScreen(
                 TextButton(onClick = {
                     showLogoutDialog = false
                     scope.launch {
+                        // marcamos como visitante
                         SessionManager.setVisitante(context)
+                        // navegamos a "login" y borramos TODO el stack
                         navController.navigate("login") {
-                            popUpTo(navController.graph.startDestinationId) {
+                            popUpTo(navController.graph.id) { // <-- acá borramos todo
                                 inclusive = true
                             }
                             launchSingleTop = true
