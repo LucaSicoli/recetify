@@ -205,11 +205,14 @@ fun ProfileScreen(
                     scope.launch {
                         SessionManager.clearSession(ctx)
                         navController.navigate("login") {
-                            popUpTo(navController.graph.startDestinationId) { inclusive = true }
+                            // eliminamos TODO el back-stack (incluyendo “home”, “recipe”, etc.)
+                            popUpTo(navController.graph.id) { inclusive = true }
                             launchSingleTop = true
                         }
                     }
-                }) { Text("Sí") }
+                }) {
+                    Text("Sí")
+                }
             },
             dismissButton    = {
                 TextButton(onClick = { showLogoutDialog = false }) { Text("No") }
