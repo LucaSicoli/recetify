@@ -19,8 +19,20 @@ class PasswordResetViewModel : ViewModel() {
 
     fun onEmailChange(e: String)        = _state.update { it.copy(email = e) }
     fun onCodeChange(c: String)         = _state.update { it.copy(code = c) }
-    fun onNewPassChange(p: String)      = _state.update { it.copy(newPassword = p) }
+    //fun onNewPassChange(p: String)      = _state.update { it.copy(newPassword = p) }
     fun onConfirmPassChange(p: String)  = _state.update { it.copy(confirmPassword = p) }
+    fun onNewPassChange(p: String) {
+        _state.update {
+            it.copy(
+                newPassword = p,
+                isLengthValid = p.length >= 8,
+                hasUppercase = p.any { it.isUpperCase() },
+                hasNumberOrSymbol = p.any { it.isDigit() || !it.isLetterOrDigit() },
+                error = null
+            )
+        }
+    }
+
 
     fun requestReset(onSuccess: ()->Unit) {
         viewModelScope.launch {

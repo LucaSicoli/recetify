@@ -35,6 +35,10 @@ import androidx.lifecycle.viewmodel.compose.viewModel
 import com.example.recetify.R
 import android.content.Intent
 import android.net.Uri
+import androidx.compose.foundation.shape.CircleShape
+import androidx.compose.material.icons.automirrored.filled.ArrowBack
+import androidx.compose.material.icons.filled.ArrowBack
+import androidx.compose.material3.IconButton
 import androidx.navigation.NavController
 
 private val Sen = FontFamily(

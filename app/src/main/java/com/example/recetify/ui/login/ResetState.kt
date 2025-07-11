@@ -7,5 +7,10 @@ data class ResetState(
     val newPassword: String = "",
     val confirmPassword: String = "",
     val isLoading: Boolean = false,
-    val error: String? = null
+    val error: String? = null,
+
+    // Validaciones de contraseña
+    val isLengthValid: Boolean = false,
+    val hasUppercase: Boolean = false,
+    val hasNumberOrSymbol: Boolean = false
 )
