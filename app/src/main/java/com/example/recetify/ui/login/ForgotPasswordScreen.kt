@@ -33,6 +33,11 @@ import androidx.lifecycle.viewmodel.compose.viewModel
 import com.example.recetify.R
 import android.content.Intent
 import android.net.Uri
+import androidx.compose.foundation.shape.CircleShape
+import androidx.compose.material.icons.automirrored.filled.ArrowBack
+import androidx.compose.material.icons.filled.ArrowBack
+import androidx.compose.material3.IconButton
+import androidx.navigation.NavController
 
 private val Sen = FontFamily(
     Font(R.font.sen_regular, weight = FontWeight.Normal),
@@ -41,6 +46,7 @@ private val Sen = FontFamily(
 
 @Composable
 fun ForgotPasswordScreen(
+    navController: NavController,
     viewModel: PasswordResetViewModel = viewModel(),
     onNext: () -> Unit,
     onRegister: () -> Unit = {}
@@ -57,6 +63,21 @@ fun ForgotPasswordScreen(
                 .background(Color(0xFF0D0B1F)),
             contentAlignment = Alignment.Center
         ) {
+            IconButton(
+                onClick = { navController.popBackStack() },
+                modifier = Modifier
+                    .padding(16.dp)
+                    .size(40.dp)
+                    .background(Color.Black.copy(alpha = 0.4f), shape = CircleShape)
+                    .align(Alignment.TopStart)
+            ) {
+                Icon(
+                    imageVector = Icons.Default.ArrowBack,
+                    contentDescription = "Volver",
+                    tint = Color.White
+                )
+            }
+
             Column(
                 horizontalAlignment = Alignment.CenterHorizontally,
                 verticalArrangement = Arrangement.Center

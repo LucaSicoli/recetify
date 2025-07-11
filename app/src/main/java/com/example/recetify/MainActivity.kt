@@ -110,6 +110,7 @@ fun AppNavGraph() {
             // 2) Password reset flow
             composable("forgot") {
                 ForgotPasswordScreen(
+                    navController = navController,
                     viewModel = passwordVm,
                     onNext    = { navController.navigate("verify") }
                 )
