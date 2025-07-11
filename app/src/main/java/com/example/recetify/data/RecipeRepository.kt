@@ -74,6 +74,11 @@ class RecipeRepository(
         api.createRecipe(req)
     }
 
+    suspend fun deleteDraft(id: Long) = withContext(Dispatchers.IO) {
+        check(connectivity.activeNetwork != null) { "Sin conexión" }
+        api.deleteDraft(id)
+    }
+
     fun getPublishedRecipes(): Flow<List<RecipeEntity>> =
         dao.getByEstadoPublicacion("PUBLICADO")
 

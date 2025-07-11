@@ -31,6 +31,10 @@ import com.example.recetify.ui.home.Sen
 import java.net.URI
 import androidx.core.net.toUri
 import androidx.compose.material.icons.filled.Book
+import androidx.compose.material.icons.filled.Delete
+import android.widget.Toast
+import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.text.style.TextAlign
 
 @OptIn(ExperimentalFoundationApi::class)
 @Composable
@@ -38,45 +42,67 @@ fun DraftsScreen(
     draftVm: DraftViewModel = viewModel(),
     onDraftClick: (Long) -> Unit = {}
 ) {
+    // Refresca la lista cada vez que se entra a la pantalla
+    LaunchedEffect(Unit) {
+        draftVm.refresh()
+    }
     val drafts by draftVm.drafts.collectAsState(initial = emptyList())
     val listState = rememberLazyListState()
 
-    LazyColumn(
-        state = listState,
-        modifier = Modifier.fillMaxSize(),
-        contentPadding = PaddingValues(bottom = 80.dp),
-        verticalArrangement = Arrangement.spacedBy(16.dp)
-    ) {
-        // Espacio superior
-        item { Spacer(Modifier.height(24.dp)) }
-
-        // Sticky header
-        stickyHeader {
-            val stuck by remember { derivedStateOf { listState.firstVisibleItemIndex > 0 } }
+    Column(Modifier.fillMaxSize()) {
+        // Encabezado siempre visible
+        DraftsHeader(
+            modifier = Modifier
+                .fillMaxWidth()
+                .height(90.dp),
+            title = "MIS BORRADORES",
+            shape = RoundedCornerShape(8.dp)
+        )
+        if (drafts.isEmpty()) {
             Box(
-                Modifier
-                    .fillMaxWidth()
-                    .offset(y = if (!stuck) (-24).dp else 0.dp)
-                    .padding(horizontal = if (stuck) 0.dp else 24.dp)
-                    .background(Color.White)
-                    .zIndex(10f)
+                Modifier.fillMaxSize(),
+                contentAlignment = Alignment.TopCenter
             ) {
-                DraftsHeader(
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .height(if (stuck) 100.dp else 90.dp),
-                    title = "MIS BORRADORES",
-                    shape = if (stuck) RoundedCornerShape(0.dp) else RoundedCornerShape(8.dp)
-                )
+                Column(
+                    horizontalAlignment = Alignment.CenterHorizontally,
+                    modifier = Modifier.padding(top = 80.dp)
+                ) {
+                    Icon(
+                        imageVector = Icons.Default.Book,
+                        contentDescription = null,
+                        tint = Color(0xFF5A6F8A),
+                        modifier = Modifier.size(48.dp)
+                    )
+                    Spacer(Modifier.height(12.dp))
+                    Text(
+                        "No hay borradores que mostrar",
+                        style = MaterialTheme.typography.bodyMedium,
+                        color = Color.Gray,
+                        textAlign = TextAlign.Center
+                    )
+                }
             }
-        }
-
-        // Cards de borrador
-        items(drafts, key = { it.id }) { draft ->
-            Box(Modifier.padding(horizontal = 24.dp)) {
-                DraftRecipeCard(draft = draft, onClick = onDraftClick)
+        } else {
+            LazyColumn(
+                state = listState,
+                modifier = Modifier.fillMaxSize(),
+                contentPadding = PaddingValues(bottom = 80.dp),
+                verticalArrangement = Arrangement.spacedBy(16.dp)
+            ) {
+                // Espacio superior
+                item { Spacer(Modifier.height(24.dp)) }
+                // Cards de borrador
+                items(drafts, key = { it.id }) { draft ->
+                    Box(Modifier.padding(horizontal = 24.dp)) {
+                        DraftRecipeCard(
+                            draft = draft,
+                            onClick = onDraftClick,
+                            onDelete = { draftVm.deleteDraft(it) }
+                        )
+                    }
+                    Spacer(Modifier.height(28.dp))
+                }
             }
-            Spacer(Modifier.height(28.dp))
         }
     }
 }
@@ -84,8 +110,10 @@ fun DraftsScreen(
 @Composable
 private fun DraftRecipeCard(
     draft: RecipeSummaryResponse,
-    onClick: (Long) -> Unit
+    onClick: (Long) -> Unit,
+    onDelete: (Long) -> Unit
 ) {
+    val context = LocalContext.current
     val base     = RetrofitClient.BASE_URL.trimEnd('/')
     val original = draft.mediaUrls?.firstOrNull().orEmpty()
     val pathOnly = runCatching {
@@ -130,13 +158,29 @@ private fun DraftRecipeCard(
                 Spacer(Modifier.height(8.dp))
 
                 Column(Modifier.padding(horizontal = 16.dp, vertical = 12.dp)) {
-                    Text(
-                        text     = draft.nombre,
-                        style    = MaterialTheme.typography.titleLarge,
-                        maxLines = 1,
-                        overflow = TextOverflow.Ellipsis,
-                        color    = Color.Black
-                    )
+                    Row(verticalAlignment = Alignment.CenterVertically) {
+                        Text(
+                            text     = draft.nombre,
+                            style    = MaterialTheme.typography.titleLarge,
+                            maxLines = 1,
+                            overflow = TextOverflow.Ellipsis,
+                            color    = Color.Black,
+                            modifier = Modifier.weight(1f)
+                        )
+                        IconButton(
+                            onClick = {
+                                onDelete(draft.id)
+                                Toast.makeText(context, "Borrador eliminado", Toast.LENGTH_SHORT).show()
+                            },
+                            modifier = Modifier.size(24.dp)
+                        ) {
+                            Icon(
+                                imageVector = Icons.Default.Delete,
+                                contentDescription = "Eliminar borrador",
+                                tint = Color(0xFF5A6F8A) // Azul igual que el header
+                            )
+                        }
+                    }
                     Spacer(Modifier.height(4.dp))
                     Text(
                         text     = draft.descripcion.orEmpty(),

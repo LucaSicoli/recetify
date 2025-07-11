@@ -11,6 +11,7 @@ import com.example.recetify.data.remote.model.RecipeSummaryResponse
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.delay
 
 /**
  * ViewModel para gestionar los borradores del usuario autenticado.
@@ -47,6 +48,20 @@ class DraftViewModel(application: Application) : AndroidViewModel(application) {
                 repo.listDrafts()
             } catch (e: Exception) {
                 emptyList()
+            }
+        }
+    }
+
+    fun deleteDraft(id: Long) {
+        viewModelScope.launch {
+            try {
+                // Elimina localmente primero
+                _drafts.value = _drafts.value.filter { it.id != id }
+                repo.deleteDraft(id)
+                delay(300)
+                refresh()
+            } catch (e: Exception) {
+                // Manejo de error opcional
             }
         }
     }

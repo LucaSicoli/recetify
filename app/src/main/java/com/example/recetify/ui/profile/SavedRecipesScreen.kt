@@ -44,6 +44,9 @@ import java.net.URI
 import java.time.LocalDateTime
 import java.time.format.DateTimeFormatter
 import java.util.Locale
+import androidx.compose.ui.text.style.TextAlign
+import androidx.compose.material.icons.filled.Book
+import androidx.compose.material.icons.filled.AutoFixHigh
 
 @OptIn(ExperimentalFoundationApi::class)
 @Composable
@@ -69,7 +72,7 @@ fun SavedRecipesScreen(
         // un pequeño top padding
         item { Spacer(Modifier.height(16.dp)) }
 
-        // 1) Este es el HEADER *sticky*
+        // HEADER *sticky* siempre visible
         stickyHeader {
             val stuck by remember { derivedStateOf { listState.firstVisibleItemIndex > 0 } }
             Box(
@@ -84,12 +87,13 @@ fun SavedRecipesScreen(
                         .fillMaxWidth()
                         .height(if (stuck) 100.dp else 90.dp),
                     title = if (selectedTab == 0) "MIS FAVORITAS" else "MI GUSTO",
-                    shape = if (stuck) RoundedCornerShape(0.dp) else RoundedCornerShape(8.dp)
+                    shape = if (stuck) RoundedCornerShape(0.dp) else RoundedCornerShape(8.dp),
+                    selectedTab = selectedTab
                 )
             }
         }
 
-        // 2) Justo debajo, las pestañas (no sticky)
+        // Pestañas siempre visibles
         item {
             TabRow(
                 selectedTabIndex = selectedTab,
@@ -124,25 +128,55 @@ fun SavedRecipesScreen(
 
         val data: List<ISavedRecipe> = if (selectedTab == 0) favList else customList
 
-        items(data, key = { it.id }) { item ->
-            Box(Modifier.padding(horizontal = 24.dp)) {
-                SavedRecipeCard(
-                    item     = item,
-                    onClick  = {
-                        if (selectedTab == 0) {
-                            onRecipeClick(item.recipeId)       // ← Favoritos (backend)
-                        } else {
-                            onLocalRecipeClick(item.recipeId)  // ← "Mi gusto" (local)
-                        }
-                    },
-                    onUnsave = {
-                        if (selectedTab == 0) favVm.removeFavorite(item.recipeId)
-                        else                customVm.removeCustom(item.recipeId)
+        if (data.isEmpty()) {
+            item {
+                Box(
+                    Modifier.fillParentMaxSize().padding(top = 48.dp),
+                    contentAlignment = Alignment.TopCenter
+                ) {
+                    Column(horizontalAlignment = Alignment.CenterHorizontally) {
+                        Icon(
+                            imageVector = when {
+                                selectedTab == 0 -> Icons.Filled.Favorite
+                                else -> Icons.Filled.AutoFixHigh
+                            },
+                            contentDescription = null,
+                            tint = when {
+                                selectedTab == 0 -> Color(0xFFCC3366)
+                                else -> Color(0xFFCC3366)
+                            },
+                            modifier = Modifier.size(48.dp)
+                        )
+                        Spacer(Modifier.height(12.dp))
+                        Text(
+                            text = if (selectedTab == 0) "No hay recetas favoritas que mostrar" else "No hay recetas personalizadas que mostrar",
+                            style = MaterialTheme.typography.bodyMedium,
+                            color = Color.Gray,
+                            textAlign = TextAlign.Center
+                        )
                     }
-                )
+                }
+            }
+        } else {
+            items(data, key = { it.id }) { item ->
+                Box(Modifier.padding(horizontal = 24.dp)) {
+                    SavedRecipeCard(
+                        item     = item,
+                        onClick  = {
+                            if (selectedTab == 0) {
+                                onRecipeClick(item.recipeId)       // ← Favoritos (backend)
+                            } else {
+                                onLocalRecipeClick(item.recipeId)  // ← "Mi gusto" (local)
+                            }
+                        },
+                        onUnsave = {
+                            if (selectedTab == 0) favVm.removeFavorite(item.recipeId)
+                            else                customVm.removeCustom(item.recipeId)
+                        }
+                    )
+                }
             }
         }
-
         // un bottom padding para que no choque con la nav
         item { Spacer(Modifier.height(24.dp)) }
     }
@@ -267,7 +301,8 @@ private fun SavedRecipeCard(
 fun SavedHeader(
     modifier: Modifier = Modifier,
     title: String,
-    shape: Shape
+    shape: Shape,
+    selectedTab: Int = 0 // nuevo parámetro opcional
 ) {
     Surface(
         modifier = modifier,
@@ -294,7 +329,10 @@ fun SavedHeader(
                 verticalAlignment = Alignment.CenterVertically
             ) {
                 Icon(
-                    imageVector = Icons.Filled.Favorite,
+                    imageVector = when (title) {
+                        "MI GUSTO" -> Icons.Filled.AutoFixHigh
+                        else -> Icons.Filled.Favorite
+                    },
                     contentDescription = null,
                     tint = Color.White,
                     modifier = Modifier.size(28.dp)

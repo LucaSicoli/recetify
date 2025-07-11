@@ -47,6 +47,7 @@ fun LoginScreen(
     onLoginSuccess: (token: String, email: String) -> Unit,
     onForgot: () -> Unit,
     onVisitor: () -> Unit,
+    passwordChanged: Boolean = false,
 ) {
     val context = LocalContext.current
     val prefs   = remember { UserPreferences(context) }
@@ -55,6 +56,7 @@ fun LoginScreen(
     val state by viewModel.state.collectAsState()
     var showError by remember { mutableStateOf(false) }
     val errorMsg = "Los datos ingresados no son correctos"
+    var showPasswordChanged by remember { mutableStateOf(passwordChanged) }
 
     // Mostrar el error solo si hay error en el state
     LaunchedEffect(state.error) {
@@ -62,6 +64,15 @@ fun LoginScreen(
             showError = true
             delay(3000)
             showError = false
+        }
+    }
+
+    // Mostrar mensaje de contraseña cambiada exitosamente
+    LaunchedEffect(passwordChanged) {
+        if (passwordChanged) {
+            showPasswordChanged = true
+            delay(2000)
+            showPasswordChanged = false
         }
     }
 
@@ -136,6 +147,38 @@ fun LoginScreen(
                     color = Color.White,
                     fontFamily = Sen
                 )
+            }
+        }
+
+        // Mensaje de éxito de cambio de contraseña
+        if (showPasswordChanged) {
+            Box(Modifier.fillMaxWidth(), contentAlignment = Alignment.Center) {
+                Surface(
+                    color = Color(0xFF4CAF50).copy(alpha = 0.1f),
+                    shape = RoundedCornerShape(24.dp),
+                    shadowElevation = 2.dp,
+                    modifier = Modifier.padding(top = 12.dp, bottom = 4.dp)
+                ) {
+                    Row(
+                        verticalAlignment = Alignment.CenterVertically,
+                        modifier = Modifier.padding(horizontal = 16.dp, vertical = 8.dp)
+                    ) {
+                        Icon(
+                            painter = painterResource(id = R.drawable.logo_chef),
+                            contentDescription = null,
+                            tint = Color(0xFF4CAF50),
+                            modifier = Modifier.size(20.dp)
+                        )
+                        Spacer(Modifier.width(8.dp))
+                        Text(
+                            text = "Contraseña cambiada exitosamente",
+                            color = Color(0xFF4CAF50),
+                            fontFamily = Sen,
+                            fontWeight = FontWeight.SemiBold,
+                            fontSize = 15.sp
+                        )
+                    }
+                }
             }
         }
 
@@ -292,6 +335,42 @@ fun LoginScreen(
                                     context.startActivity(intent)
                                 }
                             )
+                        }
+                    }
+                }
+                // Mensaje de éxito de cambio de contraseña (abajo de todo)
+                if (showPasswordChanged) {
+                    Box(
+                        Modifier
+                            .fillMaxWidth()
+                            .align(Alignment.BottomCenter)
+                            .padding(bottom = 24.dp),
+                        contentAlignment = Alignment.Center
+                    ) {
+                        Surface(
+                            color = Color.White,
+                            shape = RoundedCornerShape(24.dp),
+                            shadowElevation = 2.dp
+                        ) {
+                            Row(
+                                verticalAlignment = Alignment.CenterVertically,
+                                modifier = Modifier.padding(horizontal = 16.dp, vertical = 8.dp)
+                            ) {
+                                Icon(
+                                    painter = painterResource(id = R.drawable.logo_chef),
+                                    contentDescription = null,
+                                    tint = Color(0xFF4CAF50),
+                                    modifier = Modifier.size(20.dp)
+                                )
+                                Spacer(Modifier.width(8.dp))
+                                Text(
+                                    text = "Contraseña cambiada exitosamente",
+                                    color = Color(0xFF4CAF50),
+                                    fontFamily = Sen,
+                                    fontWeight = FontWeight.SemiBold,
+                                    fontSize = 15.sp
+                                )
+                            }
                         }
                     }
                 }

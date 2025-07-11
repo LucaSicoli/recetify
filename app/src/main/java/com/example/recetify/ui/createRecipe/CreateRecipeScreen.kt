@@ -146,7 +146,8 @@ fun CreateRecipeScreen(
     LaunchedEffect(draftResult) {
         draftResult?.onSuccess { recipe ->
             draftId = recipe.id
-            Toast.makeText(context, "Borrador #${recipe.id} guardado", Toast.LENGTH_SHORT).show()
+            Toast.makeText(context, "Receta guardada exitosamente", Toast.LENGTH_SHORT).show()
+            onSaved() // Redirige a borradores
         }?.onFailure {
             Toast.makeText(context, "Error guardando borrador: ${it.message}", Toast.LENGTH_SHORT).show()
         }
@@ -154,7 +155,7 @@ fun CreateRecipeScreen(
 
     LaunchedEffect(publishResult) {
         publishResult?.onSuccess {
-            Toast.makeText(context, "¡Borrador publicado!", Toast.LENGTH_SHORT).show()
+            Toast.makeText(context, "Receta publicada exitosamente", Toast.LENGTH_SHORT).show()
             onPublished()
         }?.onFailure {
             Toast.makeText(context, "Error publicando: ${it.message}", Toast.LENGTH_SHORT).show()

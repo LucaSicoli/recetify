@@ -32,6 +32,15 @@ import androidx.lifecycle.viewmodel.compose.viewModel
 import com.example.recetify.R
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
+import androidx.compose.animation.core.Animatable
+import androidx.compose.animation.core.LinearEasing
+import androidx.compose.animation.core.RepeatMode
+import androidx.compose.animation.core.repeatable
+import androidx.compose.animation.core.tween
+import androidx.compose.ui.unit.IntOffset
+import androidx.compose.ui.draw.drawWithContent
+import androidx.compose.ui.graphics.graphicsLayer
+import kotlin.math.roundToInt
 
 private val Sen = FontFamily(
     Font(R.font.sen_regular, weight = FontWeight.Normal),
@@ -54,6 +63,36 @@ fun VerifyCodeScreen(
     val keyboard = LocalSoftwareKeyboardController.current
     val lifecycleOwner = LocalLifecycleOwner.current
     val scope = rememberCoroutineScope()
+
+    // Animación de shake
+    val shakeOffset = remember { Animatable(0f) }
+    var showRedBoxes by remember { mutableStateOf(false) }
+    var showErrorMessage by remember { mutableStateOf(false) }
+    var showSuccessMessage by remember { mutableStateOf(false) }
+    var showResendMessage by remember { mutableStateOf(false) }
+    LaunchedEffect(validationState) {
+        if (validationState == Validation.Invalid) {
+            showRedBoxes = true
+            showErrorMessage = true
+            shakeOffset.snapTo(0f)
+            shakeOffset.animateTo(
+                targetValue = 1f,
+                animationSpec = repeatable(
+                    iterations = 3,
+                    animation = tween(50, easing = LinearEasing),
+                    repeatMode = RepeatMode.Reverse
+                )
+            )
+            shakeOffset.snapTo(0f)
+            kotlinx.coroutines.delay(2000)
+            showRedBoxes = false
+            otp = ""
+        } else if (validationState == Validation.Valid) {
+            showSuccessMessage = true
+            kotlinx.coroutines.delay(1500)
+            showSuccessMessage = false
+        }
+    }
 
     // 1) Al entrar limpiamos cualquier error o state previo
     LaunchedEffect(Unit) {
@@ -148,6 +187,7 @@ fun VerifyCodeScreen(
                             validationState = null
                             otp = ""
                             viewModel.requestReset { /* no navega */ }
+                            showResendMessage = true
                         }
                     )
                 }
@@ -193,16 +233,20 @@ fun VerifyCodeScreen(
 
                 // Cajitas de visualización
                 Row(
-                    Modifier.fillMaxWidth(),
+                    Modifier
+                        .fillMaxWidth()
+                        .graphicsLayer {
+                            translationX = if (showRedBoxes) shakeOffset.value * 16 else 0f
+                        },
                     horizontalArrangement = Arrangement.spacedBy(8.dp),
                     verticalAlignment = Alignment.CenterVertically
                 ) {
                     repeat(6) { i ->
                         val char = otp.getOrNull(i)?.toString() ?: ""
-                        val bg = when (validationState) {
-                            Validation.Valid   -> Color(0xFF4CAF50)
-                            Validation.Invalid -> Color(0xFFF44336)
-                            else               -> Color(0xFFF2F4F7)
+                        val bg = when {
+                            showRedBoxes -> Color(0xFFF44336)
+                            validationState == Validation.Valid -> Color(0xFF4CAF50)
+                            else -> Color(0xFFF2F4F7)
                         }
                         Box(
                             contentAlignment = Alignment.Center,
@@ -236,14 +280,46 @@ fun VerifyCodeScreen(
 
                 Spacer(Modifier.height(24.dp))
 
-                // Mostrar error si existe
-                state.error?.let { err ->
+                // Mostrar mensaje de éxito si el código es correcto
+                if (showSuccessMessage) {
                     Text(
-                        text = err,
-                        color = MaterialTheme.colorScheme.error,
-                        fontSize = 12.sp,
-                        modifier = Modifier.align(Alignment.CenterHorizontally),
-                        fontFamily = Sen
+                        text = "Código correcto",
+                        color = Color(0xFF4CAF50),
+                        fontSize = 14.sp,
+                        fontFamily = Sen,
+                        modifier = Modifier.align(Alignment.CenterHorizontally)
+                    )
+                } else if (showErrorMessage) {
+                    Text(
+                        text = "Código incorrecto",
+                        color = Color.Red,
+                        fontSize = 14.sp,
+                        fontFamily = Sen,
+                        modifier = Modifier.align(Alignment.CenterHorizontally)
+                    )
+                } else {
+                    state.error?.let { err ->
+                        Text(
+                            text = err,
+                            color = MaterialTheme.colorScheme.error,
+                            fontSize = 12.sp,
+                            modifier = Modifier.align(Alignment.CenterHorizontally),
+                            fontFamily = Sen
+                        )
+                    }
+                }
+                // Mostrar mensaje de código reenviado
+                if (showResendMessage) {
+                    LaunchedEffect(showResendMessage) {
+                        kotlinx.coroutines.delay(2000)
+                        showResendMessage = false
+                    }
+                    Text(
+                        text = "Código reenviado exitosamente",
+                        color = Color(0xFF4CAF50),
+                        fontSize = 14.sp,
+                        fontFamily = Sen,
+                        modifier = Modifier.align(Alignment.CenterHorizontally)
                     )
                 }
             }

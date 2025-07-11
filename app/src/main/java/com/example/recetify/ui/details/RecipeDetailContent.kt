@@ -92,6 +92,7 @@ import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.text.style.TextOverflow
 import com.example.recetify.ui.theme.Ladrillo
 import kotlin.math.floor
+import androidx.compose.foundation.layout.FlowRow
 
 
 private val Destacado = FontFamily(

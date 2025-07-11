@@ -76,6 +76,9 @@ interface ApiService {
         @Body req: RecipeRequest
     ): RecipeResponse
 
+    @DELETE("recipes/{id}")
+    suspend fun deleteDraft(@Path("id") id: Long): Unit
+
     @GET("/recipes/saved")
     suspend fun listSavedRecipes(): List<UserSavedRecipeDTO>
 

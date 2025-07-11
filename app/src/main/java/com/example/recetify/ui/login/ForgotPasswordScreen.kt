@@ -125,6 +125,17 @@ fun ForgotPasswordScreen(
                     )
                 )
 
+                // Mostrar mensaje de error personalizado si hay error
+                if (state.error != null) {
+                    Text(
+                        text = "El mail ingresado está mal escrito o no existe",
+                        color = Color.Red,
+                        fontFamily = Sen,
+                        fontSize = 14.sp,
+                        modifier = Modifier.align(Alignment.Start).padding(top = 4.dp)
+                    )
+                }
+
                 // empujamos el botón hacia abajo
                 Spacer(modifier = Modifier.weight(0.6f))
 

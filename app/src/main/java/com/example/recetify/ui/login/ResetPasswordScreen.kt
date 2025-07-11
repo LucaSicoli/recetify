@@ -24,6 +24,7 @@ import androidx.compose.ui.unit.sp
 import androidx.lifecycle.viewmodel.compose.viewModel
 import com.example.recetify.R
 import androidx.compose.material3.TextFieldDefaults
+import androidx.compose.material3.OutlinedTextFieldDefaults
 
 private val Sen = FontFamily(
     Font(R.font.sen_regular, weight = FontWeight.Normal),
@@ -36,6 +37,22 @@ fun ResetPasswordScreen(
     onFinish: () -> Unit
 ) {
     val state by viewModel.state.collectAsState()
+    var showSuccessMessage by remember { mutableStateOf(false) }
+    val errorIsMismatch = state.error == "Las contraseñas no coinciden"
+    val borderColor = if (errorIsMismatch) Color.Red else Color(0xFFBC6154)
+    val borderWidth = if (errorIsMismatch) 2.dp else 1.dp
+    val focusColor = if (errorIsMismatch) Color.Red else Color(0xFFBC6154)
+    val unfocusColor = if (errorIsMismatch) Color.Red else Color(0xFFBC6154)
+    val successColor = Color(0xFF4CAF50)
+
+    LaunchedEffect(state.error) {
+        if (state.error == null && !state.isLoading && state.newPassword.isNotEmpty() && state.confirmPassword.isNotEmpty()) {
+            showSuccessMessage = true
+            kotlinx.coroutines.delay(1500)
+            showSuccessMessage = false
+            onFinish()
+        }
+    }
 
     Column(modifier = Modifier.fillMaxSize()) {
         Box(
@@ -88,7 +105,7 @@ fun ResetPasswordScreen(
                         Icon(
                             imageVector = Icons.Default.Lock,
                             contentDescription = null,
-                            tint = Color.DarkGray       // ← aquí pones el color que quieras
+                            tint = Color.DarkGray
                         )
                     },
                     modifier = Modifier.fillMaxWidth(),
@@ -100,6 +117,12 @@ fun ResetPasswordScreen(
                         fontSize   = 16.sp,
                         color      = Color.Black
                     ),
+                    colors = OutlinedTextFieldDefaults.colors(
+                        focusedBorderColor = focusColor,
+                        unfocusedBorderColor = unfocusColor,
+                        errorBorderColor = Color.Red
+                    ),
+                    isError = errorIsMismatch
                 )
 
                 OutlinedTextField(
@@ -110,7 +133,7 @@ fun ResetPasswordScreen(
                         Icon(
                             imageVector = Icons.Default.Lock,
                             contentDescription = null,
-                            tint = Color.DarkGray   // ← aquí el color
+                            tint = Color.DarkGray
                         )
                     },
                     modifier = Modifier.fillMaxWidth(),
@@ -121,7 +144,13 @@ fun ResetPasswordScreen(
                         fontFamily = Sen,
                         fontSize   = 16.sp,
                         color      = Color.Black
-                    )
+                    ),
+                    colors = OutlinedTextFieldDefaults.colors(
+                        focusedBorderColor = focusColor,
+                        unfocusedBorderColor = unfocusColor,
+                        errorBorderColor = Color.Red
+                    ),
+                    isError = errorIsMismatch
                 )
 
                 Button(
@@ -140,6 +169,16 @@ fun ResetPasswordScreen(
                         )
                     else
                         Text("CAMBIAR", color = Color.White, fontFamily = Sen)
+                }
+
+                if (showSuccessMessage) {
+                    Text(
+                        text = "Contraseña cambiada exitosamente",
+                        color = successColor,
+                        fontSize = 14.sp,
+                        fontFamily = Sen,
+                        modifier = Modifier.align(Alignment.CenterHorizontally)
+                    )
                 }
 
                 state.error?.let {

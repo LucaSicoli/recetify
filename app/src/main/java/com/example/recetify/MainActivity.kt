@@ -124,7 +124,7 @@ fun AppNavGraph() {
                 ResetPasswordScreen(
                     viewModel = passwordVm,
                     onFinish  = {
-                        navController.navigate("login") {
+                        navController.navigate("login?passwordChanged=1") {
                             popUpTo("forgot") { inclusive = true }
                         }
                     }
@@ -181,8 +181,8 @@ fun AppNavGraph() {
                 CreateRecipeScreen(
                     viewModel   = vm,
                     onClose     = { navController.popBackStack() },
-                    onSaved     = { navController.popBackStack() },
-                    onPublished = { navController.popBackStack() }
+                    onSaved     = { navController.navigate("drafts") },
+                    onPublished = { navController.navigate("myRecipes") }
                 )
             }
             composable("editRecipe/{recipeId}") { backStack ->
@@ -241,9 +241,12 @@ fun AppNavGraph() {
             }
             // endpoints para tus pantallas de perfil
             composable("drafts") {
-                DraftsScreen(onDraftClick = { id ->
-                    navController.navigate("editRecipe/$id")
-                })
+                DraftsScreen(
+                    draftVm = draftVm,
+                    onDraftClick = { id ->
+                        navController.navigate("editRecipe/$id")
+                    }
+                )
             }
             composable("saved") {
                 SavedRecipesScreen(
@@ -275,6 +278,32 @@ fun AppNavGraph() {
             }
             composable("profileInfo") {
                 ProfileInfoScreen(navController = navController)
+            }
+
+            composable("login?passwordChanged={passwordChanged}", arguments = listOf(
+                navArgument("passwordChanged") { type = NavType.StringType; defaultValue = "0" }
+            )) { backStackEntry ->
+                val passwordChanged = backStackEntry.arguments?.getString("passwordChanged") == "1"
+                LoginScreen(
+                    viewModel      = viewModel<LoginViewModel>(),
+                    onLoginSuccess = { token, email ->
+                        scope.launch {
+                            SessionManager.setAlumno(context, token, email)
+                            navController.navigate("home") {
+                                popUpTo("login") { inclusive = true }
+                            }
+                        }
+                    },
+                    onVisitor = {
+                        scope.launch {
+                            navController.navigate("home") {
+                                popUpTo("login") { inclusive = true }
+                            }
+                        }
+                    },
+                    onForgot  = { navController.navigate("forgot") },
+                    passwordChanged = passwordChanged
+                )
             }
         }
 
