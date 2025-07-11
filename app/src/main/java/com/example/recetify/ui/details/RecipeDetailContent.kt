@@ -63,6 +63,7 @@ import com.example.recetify.data.remote.RetrofitClient
 import com.example.recetify.data.remote.model.RecipeResponse
 import com.example.recetify.data.remote.model.RatingResponse
 import com.example.recetify.util.obtenerEmoji
+import com.example.recetify.util.TheMealDBImages
 import java.net.URI
 import android.net.Uri
 import androidx.compose.foundation.border
@@ -704,7 +705,19 @@ fun RecipeDetailContent(
                                             .background(ingredientIconBackground),
                                         contentAlignment = Alignment.Center
                                     ) {
-                                        Text(obtenerEmoji(ing.nombre), fontSize = 20.sp)
+                                        // Reemplazamos el emoji con la imagen de TheMealDB
+                                        val imageUrl = TheMealDBImages.getIngredientImageUrlSmart(ing.nombre)
+                                        if (imageUrl != null) {
+                                            AsyncImage(
+                                                model = imageUrl,
+                                                contentDescription = ing.nombre,
+                                                modifier = Modifier.fillMaxSize(),
+                                                contentScale = ContentScale.Crop
+                                            )
+                                        } else {
+                                            // Fallback al emoji si no hay imagen disponible
+                                            Text(obtenerEmoji(ing.nombre), fontSize = 20.sp)
+                                        }
                                     }
                                     Spacer(Modifier.width(12.dp))
                                     Text(
@@ -969,12 +982,12 @@ fun RecipeDetailContent(
                                                     verticalAlignment = Alignment.CenterVertically
                                                 ) {
                                                     // Emoji del ingrediente
-                                                    Text(
-                                                        obtenerEmoji(ingredient.nombre),
-                                                        fontSize = 20.sp
-                                                    )
-                                                    Spacer(Modifier.width(8.dp))
-                                                    
+                                                    //Text(
+                                                    //    obtenerEmoji(ingredient.nombre),
+                                                    //    fontSize = 20.sp
+                                                    //)
+                                                    //Spacer(Modifier.width(8.dp))
+
                                                     // Nombre del ingrediente
                                                     Text(
                                                         ingredient.nombre,
@@ -1123,4 +1136,3 @@ fun RecipeDetailContent(
         }
     }
 }
-

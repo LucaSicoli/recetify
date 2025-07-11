@@ -25,6 +25,9 @@ import androidx.lifecycle.viewmodel.compose.viewModel
 import com.example.recetify.R
 import androidx.compose.material3.TextFieldDefaults
 import androidx.compose.material3.OutlinedTextFieldDefaults
+import androidx.compose.material3.IconButton
+import androidx.compose.material.icons.filled.ArrowBack
+import androidx.navigation.NavController
 
 private val Sen = FontFamily(
     Font(R.font.sen_regular, weight = FontWeight.Normal),
@@ -34,7 +37,8 @@ private val Sen = FontFamily(
 @Composable
 fun ResetPasswordScreen(
     viewModel: PasswordResetViewModel = viewModel(),
-    onFinish: () -> Unit
+    onFinish: () -> Unit,
+    navController: NavController? = null // <-- Permitir pasar NavController
 ) {
     val state by viewModel.state.collectAsState()
     var showSuccessMessage by remember { mutableStateOf(false) }
@@ -62,6 +66,26 @@ fun ResetPasswordScreen(
                 .background(Color(0xFF0D0B1F)),
             contentAlignment = Alignment.Center
         ) {
+            // FLECHA DE RETROCESO
+            IconButton(
+                onClick = {
+                    navController?.navigate("forgot") {
+                        popUpTo("forgot") { inclusive = true }
+                    }
+                },
+                modifier = Modifier
+                    .padding(16.dp)
+                    .size(40.dp)
+                    .background(Color(0x66000000), shape = androidx.compose.foundation.shape.CircleShape)
+                    .align(Alignment.TopStart)
+            ) {
+                Icon(
+                    imageVector = Icons.Default.ArrowBack,
+                    contentDescription = "Volver",
+                    tint = Color.White
+                )
+            }
+            // CONTENIDO CENTRAL
             Column(horizontalAlignment = Alignment.CenterHorizontally) {
                 Image(
                     painter = painterResource(id = R.drawable.logo_chef),

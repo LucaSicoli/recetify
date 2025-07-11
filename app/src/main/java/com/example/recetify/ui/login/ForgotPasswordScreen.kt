@@ -12,6 +12,8 @@ import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.Icon
+import androidx.compose.material3.IconButton
+import androidx.compose.material.icons.filled.ArrowBack
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
@@ -33,6 +35,7 @@ import androidx.lifecycle.viewmodel.compose.viewModel
 import com.example.recetify.R
 import android.content.Intent
 import android.net.Uri
+import androidx.navigation.NavController
 
 private val Sen = FontFamily(
     Font(R.font.sen_regular, weight = FontWeight.Normal),
@@ -43,7 +46,8 @@ private val Sen = FontFamily(
 fun ForgotPasswordScreen(
     viewModel: PasswordResetViewModel = viewModel(),
     onNext: () -> Unit,
-    onRegister: () -> Unit = {}
+    onRegister: () -> Unit = {},
+    navController: NavController? = null // <-- Permitir pasar NavController
 ) {
     val state by viewModel.state.collectAsState()
     val context = androidx.compose.ui.platform.LocalContext.current
@@ -57,6 +61,26 @@ fun ForgotPasswordScreen(
                 .background(Color(0xFF0D0B1F)),
             contentAlignment = Alignment.Center
         ) {
+            // FLECHA DE RETROCESO
+            IconButton(
+                onClick = {
+                    navController?.navigate("login") {
+                        popUpTo("login") { inclusive = true }
+                    }
+                },
+                modifier = Modifier
+                    .padding(16.dp)
+                    .size(40.dp)
+                    .background(Color(0x66000000), shape = androidx.compose.foundation.shape.CircleShape)
+                    .align(Alignment.TopStart)
+            ) {
+                Icon(
+                    imageVector = Icons.Default.ArrowBack,
+                    contentDescription = "Volver",
+                    tint = Color.White
+                )
+            }
+            // CONTENIDO CENTRAL
             Column(
                 horizontalAlignment = Alignment.CenterHorizontally,
                 verticalArrangement = Arrangement.Center

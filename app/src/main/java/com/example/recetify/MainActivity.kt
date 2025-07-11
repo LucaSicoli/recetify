@@ -111,13 +111,15 @@ fun AppNavGraph() {
             composable("forgot") {
                 ForgotPasswordScreen(
                     viewModel = passwordVm,
-                    onNext    = { navController.navigate("verify") }
+                    onNext    = { navController.navigate("verify") },
+                    navController = navController
                 )
             }
             composable("verify") {
                 VerifyCodeScreen(
                     viewModel = passwordVm,
-                    onNext    = { navController.navigate("reset") }
+                    onNext    = { navController.navigate("reset") },
+                    navController = navController
                 )
             }
             composable("reset") {
@@ -127,7 +129,8 @@ fun AppNavGraph() {
                         navController.navigate("login?passwordChanged=1") {
                             popUpTo("forgot") { inclusive = true }
                         }
-                    }
+                    },
+                    navController = navController
                 )
             }
 

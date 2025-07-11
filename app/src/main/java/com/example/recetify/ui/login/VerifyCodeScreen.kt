@@ -9,6 +9,10 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.BasicTextField
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material3.*
+import androidx.compose.material3.IconButton
+import androidx.compose.material.icons.filled.ArrowBack
+import androidx.compose.material3.Icon
+import androidx.compose.material.icons.Icons
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -41,6 +45,7 @@ import androidx.compose.ui.unit.IntOffset
 import androidx.compose.ui.draw.drawWithContent
 import androidx.compose.ui.graphics.graphicsLayer
 import kotlin.math.roundToInt
+import androidx.navigation.NavController
 
 private val Sen = FontFamily(
     Font(R.font.sen_regular, weight = FontWeight.Normal),
@@ -52,7 +57,8 @@ private enum class Validation { Valid, Invalid }
 @Composable
 fun VerifyCodeScreen(
     viewModel: PasswordResetViewModel = viewModel(),
-    onNext: () -> Unit
+    onNext: () -> Unit,
+    navController: NavController? = null // <-- Permitir pasar NavController
 ) {
     val state by viewModel.state.collectAsState()
     var otp by remember { mutableStateOf("") }
@@ -129,6 +135,26 @@ fun VerifyCodeScreen(
                 .background(Color(0xFF0D0B1F)),
             contentAlignment = Alignment.Center
         ) {
+            // FLECHA DE RETROCESO
+            IconButton(
+                onClick = {
+                    navController?.navigate("forgot") {
+                        popUpTo("forgot") { inclusive = true }
+                    }
+                },
+                modifier = Modifier
+                    .padding(16.dp)
+                    .size(40.dp)
+                    .background(Color(0x66000000), shape = androidx.compose.foundation.shape.CircleShape)
+                    .align(Alignment.TopStart)
+            ) {
+                Icon(
+                    imageVector = Icons.Default.ArrowBack,
+                    contentDescription = "Volver",
+                    tint = Color.White
+                )
+            }
+            // CONTENIDO CENTRAL
             Column(horizontalAlignment = Alignment.CenterHorizontally) {
                 Image(
                     painter = painterResource(R.drawable.logo_chef),

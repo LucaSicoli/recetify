@@ -32,19 +32,16 @@ import androidx.compose.ui.text.font.Font
 import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.KeyboardType
+import androidx.compose.ui.text.input.TextFieldValue
 import androidx.compose.ui.text.style.TextAlign
-import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.compose.ui.viewinterop.AndroidView
 import coil.compose.AsyncImage
 import com.example.recetify.R
-import com.example.recetify.data.remote.model.RecipeIngredientRequest
-import com.example.recetify.data.remote.model.RecipeRequest
-import com.example.recetify.data.remote.model.RecipeStepRequest
-import com.example.recetify.util.FileUtil
-import com.example.recetify.util.listaIngredientesConEmoji
-import com.example.recetify.util.obtenerEmoji
+import com.example.recetify.data.remote.model.*
+import com.example.recetify.util.*
+import com.example.recetify.util.TheMealDBImages
 import com.google.android.exoplayer2.MediaItem
 import com.google.android.exoplayer2.SimpleExoPlayer
 import com.google.android.exoplayer2.ui.PlayerView
@@ -507,7 +504,27 @@ fun EditRecipeScreen(
                                     .padding(vertical = 12.dp, horizontal = 8.dp),
                                 verticalAlignment = Alignment.CenterVertically
                             ) {
-                                Text(obtenerEmoji(ing), fontSize = 20.sp)
+                                // Reemplazamos el emoji con la imagen de TheMealDB
+                                val imageUrl = TheMealDBImages.getIngredientImageUrlSmart(ing)
+                                if (imageUrl != null) {
+                                    Box(
+                                        modifier = Modifier
+                                            .size(32.dp)
+                                            .clip(CircleShape)
+                                            .background(Color(0xFFE6EBF2)),
+                                        contentAlignment = Alignment.Center
+                                    ) {
+                                        AsyncImage(
+                                            model = imageUrl,
+                                            contentDescription = ing,
+                                            modifier = Modifier.fillMaxSize(),
+                                            contentScale = ContentScale.Crop
+                                        )
+                                    }
+                                } else {
+                                    // Fallback al emoji si no hay imagen disponible
+                                    Text(obtenerEmoji(ing), fontSize = 20.sp)
+                                }
                                 Spacer(Modifier.width(12.dp))
                                 Text(
                                     ing,
@@ -751,12 +768,31 @@ private fun IngredientRow(
             verticalAlignment = Alignment.CenterVertically
         ) {
             // Emoji
-            Text(
-                text       = obtenerEmoji(ingredient.nombre.orEmpty()),
-                fontSize   = 24.sp,
-                color      = Color.Black,
-                fontFamily = Destacado
-            )
+            val imageUrl = TheMealDBImages.getIngredientImageUrlSmart(ingredient.nombre.orEmpty())
+            if (imageUrl != null) {
+                Box(
+                    modifier = Modifier
+                        .size(32.dp)
+                        .clip(CircleShape)
+                        .background(Color(0xFFE6EBF2)),
+                    contentAlignment = Alignment.Center
+                ) {
+                    AsyncImage(
+                        model = imageUrl,
+                        contentDescription = ingredient.nombre.orEmpty(),
+                        modifier = Modifier.fillMaxSize(),
+                        contentScale = ContentScale.Crop
+                    )
+                }
+            } else {
+                // Fallback al emoji si no hay imagen disponible
+                Text(
+                    text       = obtenerEmoji(ingredient.nombre.orEmpty()),
+                    fontSize   = 24.sp,
+                    color      = Color.Black,
+                    fontFamily = Destacado
+                )
+            }
             Spacer(Modifier.width(8.dp))
 
             // Nombre
