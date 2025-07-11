@@ -35,6 +35,12 @@ import kotlinx.coroutines.launch
 import kotlinx.coroutines.delay
 import android.content.Intent
 import android.net.Uri
+import androidx.compose.foundation.text.KeyboardActions
+import androidx.compose.ui.platform.LocalFocusManager
+import androidx.compose.ui.focus.FocusRequester
+import androidx.compose.ui.focus.focusRequester
+import androidx.compose.ui.text.input.ImeAction
+
 
 private val Sen = FontFamily(
     Font(R.font.sen_regular, weight = FontWeight.Normal),
@@ -112,6 +118,10 @@ fun LoginScreen(
             onLoginSuccess(token, state.email)
         }
     }
+    // Focus Requesters
+    val focusManager = LocalFocusManager.current
+    val emailFocusRequester = remember { FocusRequester() }
+    val passwordFocusRequester = remember { FocusRequester() }
 
     Column(modifier = Modifier.fillMaxSize()) {
         // ── PARTE SUPERIOR OSCURA ───────────────────────────────────────────────
@@ -201,10 +211,17 @@ fun LoginScreen(
                         onValueChange = viewModel::onAliasChanged,
                         label = { Text("Alias") },
                         placeholder = { Text("Tu alias") },
-                        modifier = Modifier.fillMaxWidth(),
+                        modifier = Modifier
+                            .fillMaxWidth(),
                         shape = RoundedCornerShape(12.dp),
                         textStyle = TextStyle(color = Color.Black, fontSize = 16.sp),
-                        singleLine = true
+                        singleLine = true,
+                        keyboardOptions = KeyboardOptions.Default.copy(
+                            imeAction = ImeAction.Next
+                        ),
+                        keyboardActions = KeyboardActions(
+                            onNext = { emailFocusRequester.requestFocus() }
+                        )
                     )
 
                     // Email
@@ -213,11 +230,19 @@ fun LoginScreen(
                         onValueChange = viewModel::onEmailChanged,
                         label = { Text("Email") },
                         placeholder = { Text("example@gmail.com") },
-                        modifier = Modifier.fillMaxWidth(),
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .focusRequester(emailFocusRequester),
                         shape = RoundedCornerShape(12.dp),
-                        keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Email),
                         textStyle = TextStyle(color = Color.Black, fontSize = 16.sp),
-                        singleLine = true
+                        singleLine = true,
+                        keyboardOptions = KeyboardOptions.Default.copy(
+                            keyboardType = KeyboardType.Email,
+                            imeAction = ImeAction.Next
+                        ),
+                        keyboardActions = KeyboardActions(
+                            onNext = { passwordFocusRequester.requestFocus() }
+                        )
                     )
 
                     // Contraseña
@@ -226,7 +251,9 @@ fun LoginScreen(
                         onValueChange = viewModel::onPasswordChanged,
                         label = { Text("Contraseña") },
                         placeholder = { Text("••••••••") },
-                        modifier = Modifier.fillMaxWidth(),
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .focusRequester(passwordFocusRequester),
                         shape = RoundedCornerShape(12.dp),
                         textStyle = TextStyle(color = Color.Black, fontSize = 16.sp),
                         visualTransformation = if (state.isPasswordVisible)
@@ -244,7 +271,17 @@ fun LoginScreen(
                                 )
                             }
                         },
-                        singleLine = true
+                        singleLine = true,
+                        keyboardOptions = KeyboardOptions.Default.copy(
+                            keyboardType = KeyboardType.Password,
+                            imeAction = ImeAction.Done
+                        ),
+                        keyboardActions = KeyboardActions(
+                            onDone = {
+                                focusManager.clearFocus()
+                                viewModel.onLoginClicked()
+                            }
+                        )
                     )
 
                     // Recordarme

@@ -4,6 +4,7 @@ import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.foundation.text.KeyboardActions
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Check
@@ -29,6 +30,11 @@ import androidx.compose.material3.TextFieldDefaults
 import androidx.compose.material3.OutlinedTextFieldDefaults
 import androidx.compose.material3.IconButton
 import androidx.compose.material.icons.filled.ArrowBack
+import androidx.compose.ui.focus.FocusRequester
+import androidx.compose.ui.focus.focusRequester
+import androidx.compose.ui.platform.LocalFocusManager
+import androidx.compose.ui.platform.LocalSoftwareKeyboardController
+import androidx.compose.ui.text.input.ImeAction
 import androidx.navigation.NavController
 import kotlinx.coroutines.delay
 
@@ -53,6 +59,11 @@ fun ResetPasswordScreen(
     val successColor = Color(0xFF4CAF50)
     val passwordsMatch = state.newPassword == state.confirmPassword && state.confirmPassword.isNotEmpty()
     val allValid = state.isLengthValid && state.hasUppercase && state.hasNumberOrSymbol && passwordsMatch
+    val focusManager = LocalFocusManager.current
+    val keyboardController = LocalSoftwareKeyboardController.current
+    val newPassFocusRequester = remember { FocusRequester() }
+    val confirmPassFocusRequester = remember { FocusRequester() }
+
 
 
 
@@ -139,10 +150,18 @@ fun ResetPasswordScreen(
                             tint = Color.DarkGray
                         )
                     },
-                    modifier = Modifier.fillMaxWidth(),
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .focusRequester(newPassFocusRequester),
                     shape = RoundedCornerShape(12.dp),
                     visualTransformation = PasswordVisualTransformation(),
-                    keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Password),
+                    keyboardOptions = KeyboardOptions(
+                        keyboardType = KeyboardType.Password,
+                        imeAction = ImeAction.Next
+                    ),
+                    keyboardActions = KeyboardActions(
+                        onNext = { confirmPassFocusRequester.requestFocus() }
+                    ),
                     textStyle = TextStyle(
                         fontFamily = Sen,
                         fontSize   = 16.sp,
@@ -153,7 +172,9 @@ fun ResetPasswordScreen(
                         unfocusedBorderColor = unfocusColor,
                         errorBorderColor = Color.Red
                     ),
-                    isError = errorIsMismatch
+                    isError = errorIsMismatch,
+                    singleLine = true
+
                 )
 
                 OutlinedTextField(
@@ -167,10 +188,22 @@ fun ResetPasswordScreen(
                             tint = Color.DarkGray
                         )
                     },
-                    modifier = Modifier.fillMaxWidth(),
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .focusRequester(confirmPassFocusRequester),
                     shape = RoundedCornerShape(12.dp),
                     visualTransformation = PasswordVisualTransformation(),
-                    keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Password),
+                    keyboardOptions = KeyboardOptions(
+                        keyboardType = KeyboardType.Password,
+                        imeAction = ImeAction.Done
+                    ),
+                    keyboardActions = KeyboardActions(
+                        onDone = {
+                            keyboardController?.hide()
+                            focusManager.clearFocus()
+                            if (allValid) viewModel.resetPassword(onFinish)
+                        }
+                    ),
                     textStyle = TextStyle(
                         fontFamily = Sen,
                         fontSize   = 16.sp,
@@ -181,7 +214,9 @@ fun ResetPasswordScreen(
                         unfocusedBorderColor = unfocusColor,
                         errorBorderColor = Color.Red
                     ),
-                    isError = errorIsMismatch
+                    isError = errorIsMismatch,
+                    singleLine = true
+
                 )
 
                 Column(verticalArrangement = Arrangement.spacedBy(4.dp)) {

@@ -113,7 +113,6 @@ fun AppNavGraph() {
                     navController = navController,
                     viewModel = passwordVm,
                     onNext    = { navController.navigate("verify") },
-                    navController = navController
                 )
             }
             composable("verify") {
