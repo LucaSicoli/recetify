@@ -35,7 +35,15 @@ import androidx.lifecycle.viewmodel.compose.viewModel
 import com.example.recetify.R
 import android.content.Intent
 import android.net.Uri
+import androidx.compose.foundation.shape.CircleShape
+import androidx.compose.foundation.text.KeyboardActions
+import androidx.compose.material.icons.automirrored.filled.ArrowBack
+import androidx.compose.material.icons.filled.ArrowBack
+import androidx.compose.material3.IconButton
 import androidx.navigation.NavController
+import androidx.compose.ui.text.input.ImeAction
+import androidx.compose.ui.platform.LocalFocusManager
+
 
 private val Sen = FontFamily(
     Font(R.font.sen_regular, weight = FontWeight.Normal),
@@ -51,6 +59,8 @@ fun ForgotPasswordScreen(
 ) {
     val state by viewModel.state.collectAsState()
     val context = androidx.compose.ui.platform.LocalContext.current
+    val focusManager = LocalFocusManager.current
+
 
     Column(modifier = Modifier.fillMaxSize()) {
         // — PARTE SUPERIOR OSCURA —
@@ -141,7 +151,16 @@ fun ForgotPasswordScreen(
                     },
                     modifier = Modifier.fillMaxWidth(),
                     shape = RoundedCornerShape(12.dp),
-                    keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Email),
+                    keyboardOptions = KeyboardOptions(
+                        keyboardType = KeyboardType.Email,
+                        imeAction = ImeAction.Done
+                    ),
+                    keyboardActions = KeyboardActions(
+                        onDone = {
+                            focusManager.clearFocus()
+                            viewModel.requestReset(onNext)
+                        }
+                    ),
                     textStyle = TextStyle(
                         color = Color.Black,
                         fontFamily = Sen,

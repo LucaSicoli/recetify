@@ -4,8 +4,11 @@ import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.foundation.text.KeyboardActions
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.Check
+import androidx.compose.material.icons.filled.Close
 import androidx.compose.material.icons.filled.Lock
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
@@ -27,7 +30,13 @@ import androidx.compose.material3.TextFieldDefaults
 import androidx.compose.material3.OutlinedTextFieldDefaults
 import androidx.compose.material3.IconButton
 import androidx.compose.material.icons.filled.ArrowBack
+import androidx.compose.ui.focus.FocusRequester
+import androidx.compose.ui.focus.focusRequester
+import androidx.compose.ui.platform.LocalFocusManager
+import androidx.compose.ui.platform.LocalSoftwareKeyboardController
+import androidx.compose.ui.text.input.ImeAction
 import androidx.navigation.NavController
+import kotlinx.coroutines.delay
 
 private val Sen = FontFamily(
     Font(R.font.sen_regular, weight = FontWeight.Normal),
@@ -48,6 +57,15 @@ fun ResetPasswordScreen(
     val focusColor = if (errorIsMismatch) Color.Red else Color(0xFFBC6154)
     val unfocusColor = if (errorIsMismatch) Color.Red else Color(0xFFBC6154)
     val successColor = Color(0xFF4CAF50)
+    val passwordsMatch = state.newPassword == state.confirmPassword && state.confirmPassword.isNotEmpty()
+    val allValid = state.isLengthValid && state.hasUppercase && state.hasNumberOrSymbol && passwordsMatch
+    val focusManager = LocalFocusManager.current
+    val keyboardController = LocalSoftwareKeyboardController.current
+    val newPassFocusRequester = remember { FocusRequester() }
+    val confirmPassFocusRequester = remember { FocusRequester() }
+
+
+
 
     LaunchedEffect(state.error) {
         if (state.error == null && !state.isLoading && state.newPassword.isNotEmpty() && state.confirmPassword.isNotEmpty()) {
@@ -132,10 +150,18 @@ fun ResetPasswordScreen(
                             tint = Color.DarkGray
                         )
                     },
-                    modifier = Modifier.fillMaxWidth(),
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .focusRequester(newPassFocusRequester),
                     shape = RoundedCornerShape(12.dp),
                     visualTransformation = PasswordVisualTransformation(),
-                    keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Password),
+                    keyboardOptions = KeyboardOptions(
+                        keyboardType = KeyboardType.Password,
+                        imeAction = ImeAction.Next
+                    ),
+                    keyboardActions = KeyboardActions(
+                        onNext = { confirmPassFocusRequester.requestFocus() }
+                    ),
                     textStyle = TextStyle(
                         fontFamily = Sen,
                         fontSize   = 16.sp,
@@ -146,7 +172,9 @@ fun ResetPasswordScreen(
                         unfocusedBorderColor = unfocusColor,
                         errorBorderColor = Color.Red
                     ),
-                    isError = errorIsMismatch
+                    isError = errorIsMismatch,
+                    singleLine = true
+
                 )
 
                 OutlinedTextField(
@@ -160,10 +188,22 @@ fun ResetPasswordScreen(
                             tint = Color.DarkGray
                         )
                     },
-                    modifier = Modifier.fillMaxWidth(),
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .focusRequester(confirmPassFocusRequester),
                     shape = RoundedCornerShape(12.dp),
                     visualTransformation = PasswordVisualTransformation(),
-                    keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Password),
+                    keyboardOptions = KeyboardOptions(
+                        keyboardType = KeyboardType.Password,
+                        imeAction = ImeAction.Done
+                    ),
+                    keyboardActions = KeyboardActions(
+                        onDone = {
+                            keyboardController?.hide()
+                            focusManager.clearFocus()
+                            if (allValid) viewModel.resetPassword(onFinish)
+                        }
+                    ),
                     textStyle = TextStyle(
                         fontFamily = Sen,
                         fontSize   = 16.sp,
@@ -174,11 +214,23 @@ fun ResetPasswordScreen(
                         unfocusedBorderColor = unfocusColor,
                         errorBorderColor = Color.Red
                     ),
-                    isError = errorIsMismatch
+                    isError = errorIsMismatch,
+                    singleLine = true
+
                 )
+
+                Column(verticalArrangement = Arrangement.spacedBy(4.dp)) {
+                    ValidationRow("Mínimo 8 caracteres", state.isLengthValid)
+                    ValidationRow("Al menos una mayúscula", state.hasUppercase)
+                    ValidationRow("Número o símbolo", state.hasNumberOrSymbol)
+                    ValidationRow("Las contraseñas coinciden", passwordsMatch)
+
+                }
+
 
                 Button(
                     onClick = { viewModel.resetPassword(onFinish) },
+                    enabled = allValid,
                     modifier = Modifier
                         .fillMaxWidth()
                         .height(48.dp),
@@ -218,3 +270,27 @@ fun ResetPasswordScreen(
         }
     }
 }
+
+
+@Composable
+fun ValidationRow(text: String, isValid: Boolean) {
+    val icon = if (isValid) Icons.Default.Check else Icons.Default.Close
+    val color = if (isValid) Color(0xFF4CAF50) else Color.Red
+
+    Row(verticalAlignment = Alignment.CenterVertically) {
+        Icon(
+            imageVector = icon,
+            contentDescription = null,
+            tint = color,
+            modifier = Modifier.size(16.dp)
+        )
+        Spacer(modifier = Modifier.width(8.dp))
+        Text(
+            text = text,
+            color = color,
+            fontSize = 12.sp,
+            fontFamily = Sen
+        )
+    }
+}
+
