@@ -31,6 +31,14 @@ class RecipeDetailViewModel(app: Application) : AndroidViewModel(app) {
     var loading by mutableStateOf(true)
         private set
 
+    /** Publicar un rating y recargar detalle */
+    fun postRating(recipeId: Long, comentario: String, puntos: Int) {
+        viewModelScope.launch {
+            RetrofitClient.api.addRating(CreateRatingRequest(recipeId, comentario, puntos))
+            fetchRecipe(recipeId)
+        }
+    }
+
     /** Carga la receta (y sus ratings) desde Repo (red ↔ caché) */
     fun fetchRecipe(recipeId: Long) {
         loading = true
@@ -40,14 +48,6 @@ class RecipeDetailViewModel(app: Application) : AndroidViewModel(app) {
                     recipeWithDetails = details
                     loading = false
                 }
-        }
-    }
-
-    /** Publicar un rating y recargar detalle */
-    fun postRating(recipeId: Long, comentario: String, puntos: Int) {
-        viewModelScope.launch {
-            RetrofitClient.api.addRating(CreateRatingRequest(recipeId, comentario, puntos))
-            fetchRecipe(recipeId)
         }
     }
 

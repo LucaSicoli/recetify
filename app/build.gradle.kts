@@ -66,6 +66,8 @@ dependencies {
     implementation(libs.androidx.material3)
     implementation(libs.firebase.appdistribution.gradle)
     implementation(libs.androidx.room.common.jvm)
+    implementation(libs.androidx.media3.ui)
+    implementation(libs.androidx.compiler)
 
     // Testing
     testImplementation(libs.junit)

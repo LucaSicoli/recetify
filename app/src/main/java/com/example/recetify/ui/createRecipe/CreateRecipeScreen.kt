@@ -1,6 +1,7 @@
 // app/src/main/java/com/example/recetify/ui/createRecipe/CreateRecipeScreen.kt
 package com.example.recetify.ui.createRecipe
 
+import android.content.Context
 import android.net.Uri
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts.GetContent
@@ -55,6 +56,10 @@ import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.text.input.KeyboardType
 import com.example.recetify.util.listaIngredientesConEmoji
 import android.content.Intent
+import android.media.browse.MediaBrowser
+import android.net.ConnectivityManager
+import android.net.NetworkCapabilities
+import android.util.Log
 import android.widget.Toast
 import androidx.activity.result.contract.ActivityResultContracts.StartActivityForResult
 import androidx.compose.foundation.horizontalScroll
@@ -81,6 +86,7 @@ import androidx.compose.foundation.gestures.detectHorizontalDragGestures
 import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.unit.IntOffset
+//import androidx.databinding.tool.Context
 import kotlinx.coroutines.launch
 
 
@@ -195,6 +201,13 @@ fun CreateRecipeScreen(
     var pasosError by remember { mutableStateOf(false) }
 
 
+    var showMobileDataDialog by remember { mutableStateOf(false) }
+    var pendingAction by remember { mutableStateOf<(() -> Unit)?>(null) }
+
+
+    val submitting = viewModel.submitting.collectAsState().value
+
+
     // Image picker
     val context  = LocalContext.current
     val anyLauncher = rememberLauncherForActivityResult(StartActivityForResult()) { result ->
@@ -251,6 +264,35 @@ fun CreateRecipeScreen(
         }
         anyLauncher.launch(intent)
     }
+    fun isUsingMobileData(context: Context): Boolean {
+        val connectivityManager = context.getSystemService(Context.CONNECTIVITY_SERVICE) as ConnectivityManager
+        val network = connectivityManager.activeNetwork ?: return false
+        val capabilities = connectivityManager.getNetworkCapabilities(network) ?: return false
+        return capabilities.hasTransport(NetworkCapabilities.TRANSPORT_CELLULAR)
+    }
+
+    @Composable
+    fun MobileDataWarningDialog(
+        onConfirm: () -> Unit,
+        onDismiss: () -> Unit
+    ) {
+        AlertDialog(
+            onDismissRequest = onDismiss,
+            title = { Text("Conexión con datos móviles") },
+            text = { Text("Estás usando datos móviles. ¿Deseas continuar?") },
+            confirmButton = {
+                TextButton(onClick = onConfirm) {
+                    Text("Sí")
+                }
+            },
+            dismissButton = {
+                TextButton(onClick = onDismiss) {
+                    Text("No")
+                }
+            }
+        )
+    }
+
 
 
     Scaffold{ innerPadding ->
@@ -875,9 +917,10 @@ fun CreateRecipeScreen(
                             .padding(horizontal = 24.dp, vertical = 16.dp),
                         horizontalArrangement = Arrangement.spacedBy(12.dp)
                     ) {
+                        val coroutineScope = rememberCoroutineScope()
+                        // GUARDAR
                         OutlinedButton(
                             onClick = {
-                                // 1️⃣ Validar campos (puedes extraerlo a función si quieres)
                                 nombreError = nombre.isBlank()
                                 descripcionError = descripcion.isBlank()
                                 categoriaError = selectedCategory == null
@@ -886,33 +929,45 @@ fun CreateRecipeScreen(
                                 pasosError = steps.isEmpty()
                                 showFormError = nombreError || descripcionError || categoriaError || tipoError || ingredientesError || pasosError
                                 if (showFormError) return@OutlinedButton
-                                // 2️⃣ Construir el RecipeRequest igual que en createRecipe
+
                                 val request = RecipeRequest(
-                                    nombre      = nombre,
+                                    nombre = nombre,
                                     descripcion = descripcion,
-                                    tiempo      = tiempo,
-                                    porciones   = porciones,
-                                    mediaUrls   = photoUrl?.let { listOf(it) } ?: emptyList(),
-                                    tipoPlato   = selectedTipo!!,
-                                    categoria   = selectedCategory!!,
+                                    tiempo = tiempo,
+                                    porciones = porciones,
+                                    mediaUrls = photoUrl?.let { listOf(it) } ?: emptyList(),
+                                    tipoPlato = selectedTipo!!,
+                                    categoria = selectedCategory!!,
                                     ingredients = ingredients.toList(),
-                                    steps       = steps.toList()
+                                    steps = steps.toList()
                                 )
 
-                                // 3️⃣ Llamar al ViewModel para guardar borrador
-                                viewModel.saveDraftWithMedia(request, localMediaUri)
+
+                                val continuar = {
+                                    coroutineScope.launch {
+                                        viewModel.saveDraftWithMedia(request, localMediaUri)
+                                    }
+                                    Unit // <<< asegura que sea () -> Unit
+                                }
+
+                                if (isUsingMobileData(context)) {
+                                    pendingAction = continuar
+                                    showMobileDataDialog = true
+                                } else {
+                                    continuar()
+                                }
                             },
-                            enabled   = !viewModel.submitting.collectAsState().value,
-                            modifier  = Modifier
+                            enabled = !submitting,
+                            modifier = Modifier
                                 .weight(1f)
                                 .height(48.dp),
-                            shape     = RoundedCornerShape(24.dp),
-                            border    = BorderStroke(1.dp, Black)
+                            shape = RoundedCornerShape(24.dp),
+                            border = BorderStroke(1.dp, Black)
                         ) {
                             Text("GUARDAR", color = Black, fontWeight = FontWeight.Bold)
                         }
 
-                        // PUBLICAR (esto es lo que dispara la petición REST)
+                        // PUBLICAR
                         Button(
                             onClick = {
                                 nombreError = nombre.isBlank()
@@ -923,28 +978,43 @@ fun CreateRecipeScreen(
                                 pasosError = steps.isEmpty()
                                 showFormError = nombreError || descripcionError || categoriaError || tipoError || ingredientesError || pasosError
                                 if (showFormError) return@Button
-                                viewModel.createRecipe(
-                                    nombre      = nombre,
-                                    descripcion = descripcion,
-                                    tiempo      = tiempo,
-                                    porciones   = porciones,
-                                    tipoPlato   = selectedTipo!!,
-                                    categoria   = selectedCategory!!,
-                                    ingredients = ingredients.toList(),
-                                    steps       = steps.toList(),
-                                    onSuccess   = onPublished
-                                )
+
+                                val continuar = {
+                                    coroutineScope.launch {
+                                        viewModel.createRecipe(
+                                            nombre = nombre,
+                                            descripcion = descripcion,
+                                            tiempo = tiempo,
+                                            porciones = porciones,
+                                            tipoPlato = selectedTipo!!,
+                                            categoria = selectedCategory!!,
+                                            ingredients = ingredients.toList(),
+                                            steps = steps.toList(),
+                                            onSuccess = onPublished
+                                        )
+                                    }
+                                    Unit // <- asegura que la lambda sea () -> Unit
+                                }
+
+                                Log.d("NetworkCheck", "¿Datos móviles?: ${isUsingMobileData(context)}")
+                                if (isUsingMobileData(context)) {
+                                    pendingAction = continuar
+                                    showMobileDataDialog = true
+                                } else {
+                                    continuar()
+                                }
                             },
-                            enabled   = !viewModel.submitting.collectAsState().value,
-                            modifier  = Modifier.weight(1f).height(48.dp),
-                            shape     = RoundedCornerShape(24.dp),
-                            colors    = ButtonDefaults.buttonColors(containerColor = Black)
+                            enabled = !submitting,
+                            modifier = Modifier
+                                .weight(1f)
+                                .height(48.dp),
+                            shape = RoundedCornerShape(24.dp),
+                            colors = ButtonDefaults.buttonColors(containerColor = Black)
                         ) {
-                            val submitting = viewModel.submitting.collectAsState().value
                             if (submitting) {
                                 CircularProgressIndicator(
-                                    modifier   = Modifier.size(20.dp),
-                                    color      = Color.White,
+                                    modifier = Modifier.size(20.dp),
+                                    color = Color.White,
                                     strokeWidth = 2.dp
                                 )
                             } else {
@@ -1302,7 +1372,7 @@ fun VideoPlayer(uri: Uri) {
             // se llama sólo la primera vez
             PlayerView(ctx).apply {
                 player = SimpleExoPlayer.Builder(ctx).build().also { exo ->
-                    exo.setMediaItem(MediaItem.fromUri(uri))
+                    //exo.setMediaItem(MediaBrowser.MediaItem.fromUri(uri))
                     exo.prepare()
                     exo.playWhenReady = false
                 }
