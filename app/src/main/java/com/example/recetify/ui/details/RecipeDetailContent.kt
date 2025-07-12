@@ -110,7 +110,11 @@ import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.animation.core.*
 
 import androidx.compose.foundation.layout.BoxScope
+import androidx.compose.material.icons.filled.ArrowForward
 import androidx.compose.runtime.LaunchedEffect
+import com.google.accompanist.pager.HorizontalPager
+import com.google.accompanist.pager.rememberPagerState
+import com.google.accompanist.pager.HorizontalPagerIndicator
 
 
 private val Destacado = FontFamily(
@@ -473,57 +477,118 @@ fun RecipeDetailContent(
                 .padding(padding)
                 .verticalScroll(rememberScrollState())
         ) {
-            // ── Imagen de portada y botón Volver ───────────────────────────────
-            Box(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .height(260.dp)
-            ) {
-                if (fullUrl.endsWith(".mp4", ignoreCase = true) ||
-                    fullUrl.endsWith(".webm", ignoreCase = true)
+            // ── Carrusel de portada y botón Volver ───────────────────────────────
+            val mediaList = receta.mediaUrls.orEmpty().map { url ->
+                val path = runCatching {
+                    val uri = URI(url)
+                    uri.rawPath + uri.rawQuery?.let { "?${it}" }.orEmpty()
+                }.getOrNull() ?: url
+                if (path.startsWith("/")) "$baseUrl$path" else path
+            }
+            val pagerState = rememberPagerState()
+            if (mediaList.isNotEmpty()) {
+                Box(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .height(260.dp)
                 ) {
-                    // Vídeo en loop, silencio y sin controles
-                    LoopingVideoPlayer(
-                        uri = Uri.parse(fullUrl),
+                    HorizontalPager(
+                        count = mediaList.size,
+                        state = pagerState,
                         modifier = Modifier.fillMaxSize()
+                    ) { page ->
+                        val url = mediaList[page]
+                        if (url.endsWith(".mp4", ignoreCase = true) || url.endsWith(".webm", ignoreCase = true)) {
+                            LoopingVideoPlayer(
+                                uri = Uri.parse(url),
+                                modifier = Modifier.fillMaxSize()
+                            )
+                        } else {
+                            AsyncImage(
+                                model = url,
+                                contentDescription = receta.nombre,
+                                modifier = Modifier.fillMaxSize(),
+                                contentScale = ContentScale.Crop
+                            )
+                        }
+                    }
+                    // Indicador de páginas
+                    HorizontalPagerIndicator(
+                        pagerState = pagerState,
+                        modifier = Modifier
+                            .align(Alignment.BottomCenter)
+                            .padding(12.dp),
+                        activeColor = Color.White,
+                        inactiveColor = Color.LightGray
                     )
-                } else {
-                    // Imagen estática
-                    AsyncImage(
-                        model = fullUrl,
-                        contentDescription = receta.nombre,
-                        modifier = Modifier.fillMaxSize(),
-                        contentScale = ContentScale.Crop
-                    )
+                    // Botón volver
+                    IconButton(
+                        onClick = { navController.popBackStack() },
+                        modifier = Modifier
+                            .padding(16.dp)
+                            .size(40.dp)
+                            .background(Color.Black.copy(alpha = 0.4f), shape = CircleShape)
+                            .align(Alignment.TopStart)
+                    ) {
+                        Icon(
+                            imageVector = Icons.Default.ArrowBack,
+                            contentDescription = "Volver",
+                            tint = Color.White
+                        )
+                    }
+                    // Botón favorito
+                    IconButton(
+                        onClick = { onToggleFavorite() },
+                        modifier = Modifier
+                            .padding(16.dp)
+                            .size(40.dp)
+                            .background(Color.Black.copy(alpha = 0.4f), shape = CircleShape)
+                            .align(Alignment.TopEnd)
+                    ) {
+                        Icon(
+                            imageVector = if (isFavorite) Icons.Filled.Favorite else Icons.Outlined.FavoriteBorder,
+                            contentDescription = if (isFavorite) "Quitar favorito" else "Agregar favorito",
+                            tint = if (isFavorite) Color.Red else Color.White
+                        )
+                    }
                 }
-                IconButton(
-                    onClick = { navController.popBackStack() },
-                    modifier = Modifier
-                        .padding(16.dp)
-                        .size(40.dp)
-                        .background(Color.Black.copy(alpha = 0.4f), shape = CircleShape)
-                        .align(Alignment.TopStart)
-                ) {
-                    Icon(
-                        imageVector = Icons.Default.ArrowBack,
-                        contentDescription = "Volver",
-                        tint = Color.White
-                    )
+                // Autoplay: avanzar cada 3 segundos
+                LaunchedEffect(pagerState.currentPage, mediaList.size) {
+                    if (mediaList.size > 1) {
+                        delay(3000)
+                        val nextPage = (pagerState.currentPage + 1) % mediaList.size
+                        pagerState.animateScrollToPage(nextPage)
+                    }
                 }
-
-                IconButton(
-                    onClick = { onToggleFavorite() },
+            } else {
+                // Fallback si no hay media
+                Box(
                     modifier = Modifier
-                        .padding(16.dp)
-                        .size(40.dp)
-                        .background(Color.Black.copy(alpha = 0.4f), shape = CircleShape)
-                        .align(Alignment.TopEnd)
+                        .fillMaxWidth()
+                        .height(260.dp)
+                        .background(Color.LightGray),
+                    contentAlignment = Alignment.Center
                 ) {
-                    Icon(
-                        imageVector = if (isFavorite) Icons.Filled.Favorite else Icons.Outlined.FavoriteBorder,
-                        contentDescription = if (isFavorite) "Quitar favorito" else "Agregar favorito",
-                        tint = if (isFavorite) Color.Red else Color.White
+                    Text(
+                        text = "Receta sin foto principal",
+                        color = Color.DarkGray,
+                        style = MaterialTheme.typography.bodyMedium,
+                        fontWeight = FontWeight.Bold
                     )
+                    IconButton(
+                        onClick = { navController.popBackStack() },
+                        modifier = Modifier
+                            .padding(16.dp)
+                            .size(40.dp)
+                            .background(Color.Black.copy(alpha = 0.4f), shape = CircleShape)
+                            .align(Alignment.TopStart)
+                    ) {
+                        Icon(
+                            imageVector = Icons.Default.ArrowBack,
+                            contentDescription = "Volver",
+                            tint = Color.White
+                        )
+                    }
                 }
             }
 
@@ -863,38 +928,103 @@ fun RecipeDetailContent(
                                     if (!paso.mediaUrls.isNullOrEmpty()) {
                                         Spacer(Modifier.height(8.dp))
 
-                                        // Cogemos la primera URL (o la que tú quieras)
-                                        val originalStep = paso.mediaUrls!!.first()
+                                        val mediaList = paso.mediaUrls!!.map { url ->
+                                            val path = runCatching {
+                                                val uri = URI(url)
+                                                uri.rawPath + uri.rawQuery?.let { "?$it" }.orEmpty()
+                                            }.getOrNull() ?: url
+                                            if (path.startsWith("/")) "$baseUrl$path" else path
+                                        }
 
-                                        // Normalizamos la URL igual que antes
-                                        val pathStep = runCatching {
-                                            val uri = URI(originalStep)
-                                            uri.rawPath + uri.rawQuery?.let { "?$it" }.orEmpty()
-                                        }.getOrNull() ?: originalStep
-                                        val stepUrl = if (pathStep.startsWith("/")) "$baseUrl$pathStep" else pathStep
-
-                                        if (stepUrl.endsWith(".mp4", ignoreCase = true) ||
-                                            stepUrl.endsWith(".webm", ignoreCase = true)
-                                        ) {
-                                            // Vídeo: loop, sin sonido y sin controles
-                                            LoopingVideoPlayer(
-                                                uri = Uri.parse(stepUrl),
-                                                modifier = Modifier
-                                                    .fillMaxWidth()
-                                                    .height(180.dp)
-                                                    .clip(RoundedCornerShape(8.dp))
-                                            )
+                                        if (mediaList.size == 1) {
+                                            val stepUrl = mediaList.first()
+                                            if (stepUrl.endsWith(".mp4", ignoreCase = true) ||
+                                                stepUrl.endsWith(".webm", ignoreCase = true)
+                                            ) {
+                                                // Vídeo: loop, sin sonido y sin controles
+                                                LoopingVideoPlayer(
+                                                    uri = Uri.parse(stepUrl),
+                                                    modifier = Modifier
+                                                        .fillMaxWidth()
+                                                        .height(180.dp)
+                                                        .clip(RoundedCornerShape(8.dp))
+                                                )
+                                            } else {
+                                                // Imagen estática
+                                                AsyncImage(
+                                                    model = stepUrl,
+                                                    contentDescription = null,
+                                                    modifier = Modifier
+                                                        .fillMaxWidth()
+                                                        .height(180.dp)
+                                                        .clip(RoundedCornerShape(8.dp)),
+                                                    contentScale = ContentScale.Crop
+                                                )
+                                            }
                                         } else {
-                                            // Imagen estática
-                                            AsyncImage(
-                                                model = stepUrl,
-                                                contentDescription = null,
+                                            // Carrusel si hay más de una imagen/video
+                                            val pagerState = rememberPagerState()
+                                            val coroutineScope = rememberCoroutineScope()
+                                            Box(
                                                 modifier = Modifier
                                                     .fillMaxWidth()
                                                     .height(180.dp)
-                                                    .clip(RoundedCornerShape(8.dp)),
-                                                contentScale = ContentScale.Crop
-                                            )
+                                            ) {
+                                                HorizontalPager(
+                                                    count = mediaList.size,
+                                                    state = pagerState,
+                                                    modifier = Modifier.fillMaxSize()
+                                                ) { page ->
+                                                    val url = mediaList[page]
+                                                    if (url.endsWith(".mp4", ignoreCase = true) || url.endsWith(".webm", ignoreCase = true)) {
+                                                        LoopingVideoPlayer(
+                                                            uri = Uri.parse(url),
+                                                            modifier = Modifier.fillMaxSize().clip(RoundedCornerShape(8.dp))
+                                                        )
+                                                    } else {
+                                                        AsyncImage(
+                                                            model = url,
+                                                            contentDescription = null,
+                                                            modifier = Modifier.fillMaxSize().clip(RoundedCornerShape(8.dp)),
+                                                            contentScale = ContentScale.Crop
+                                                        )
+                                                    }
+                                                }
+                                                // Indicador de páginas
+                                                HorizontalPagerIndicator(
+                                                    pagerState = pagerState,
+                                                    modifier = Modifier
+                                                        .align(Alignment.BottomCenter)
+                                                        .padding(8.dp),
+                                                    activeColor = Color(0xFF042628),
+                                                    inactiveColor = Color.LightGray
+                                                )
+                                                // Flechas manuales
+                                                if (mediaList.size > 1) {
+                                                    IconButton(
+                                                        onClick = {
+                                                            val prev = if (pagerState.currentPage == 0) mediaList.lastIndex else pagerState.currentPage - 1
+                                                            coroutineScope.launch {
+                                                                pagerState.animateScrollToPage(prev)
+                                                            }
+                                                        },
+                                                        modifier = Modifier.align(Alignment.CenterStart)
+                                                    ) {
+                                                        Icon(Icons.Default.ArrowBack, contentDescription = "Anterior", tint = Color.Black)
+                                                    }
+                                                    IconButton(
+                                                        onClick = {
+                                                            val next = (pagerState.currentPage + 1) % mediaList.size
+                                                            coroutineScope.launch {
+                                                                pagerState.animateScrollToPage(next)
+                                                            }
+                                                        },
+                                                        modifier = Modifier.align(Alignment.CenterEnd)
+                                                    ) {
+                                                        Icon(Icons.Default.ArrowForward, contentDescription = "Siguiente", tint = Color.Black)
+                                                    }
+                                                }
+                                            }
                                         }
                                     }
 

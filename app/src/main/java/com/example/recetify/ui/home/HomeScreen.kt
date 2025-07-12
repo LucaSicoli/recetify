@@ -322,6 +322,19 @@ private fun RecipeCard(
                     uri = finalUrl.toUri(),
                     modifier = mediaModifier
                 )
+            } else if (finalUrl.isBlank()) {
+                // Si no hay foto principal, mostrar texto centrado
+                Box(
+                    modifier = mediaModifier.background(Color(0xFFE0E0E0)),
+                    contentAlignment = Alignment.Center
+                ) {
+                    Text(
+                        text = "Receta sin foto principal",
+                        color = Color.DarkGray,
+                        style = MaterialTheme.typography.bodyMedium,
+                        fontWeight = FontWeight.Bold
+                    )
+                }
             } else {
                 AsyncImage(
                     model = finalUrl,

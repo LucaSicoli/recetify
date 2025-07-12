@@ -376,6 +376,20 @@ private fun SearchResultCard(
                             uri      = firstMedia.toUri(),
                             modifier = Modifier.size(80.dp).clip(RoundedCornerShape(12.dp))
                         )
+                    } else if (firstMedia.isBlank()) {
+                        // Si no hay foto principal, mostrar texto centrado
+                        Box(
+                            modifier = Modifier.size(80.dp).clip(RoundedCornerShape(12.dp)).background(Color(0xFFE0E0E0)),
+                            contentAlignment = Alignment.Center
+                        ) {
+                            Text(
+                                text = "Receta sin foto principal",
+                                color = Color.DarkGray,
+                                style = MaterialTheme.typography.bodySmall,
+                                fontWeight = FontWeight.Bold,
+                                textAlign = TextAlign.Center
+                            )
+                        }
                     } else {
                         AsyncImage(
                             model              = firstMedia,

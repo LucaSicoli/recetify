@@ -27,7 +27,7 @@ fun BottomNavBar(
     val items = if (isAlumno) {
         listOf(NavItem.Home, NavItem.Search, NavItem.Chef, NavItem.Favorites, NavItem.Profile)
     } else {
-        listOf(NavItem.Home, NavItem.Search)
+        listOf(NavItem.Home, NavItem.Search, NavItem.Logout)
     }
 
     Box(
@@ -68,7 +68,12 @@ fun BottomNavBar(
                         },
                         selected = currentRoute == item.route,
                         onClick  = {
-                            if (currentRoute != item.route) {
+                            if (item == NavItem.Logout) {
+                                navController.navigate(NavItem.Logout.route) {
+                                    popUpTo(navController.graph.startDestinationId) { inclusive = true }
+                                    launchSingleTop = true
+                                }
+                            } else if (currentRoute != item.route) {
                                 navController.navigate(item.route) {
                                     popUpTo(navController.graph.startDestinationId)
                                     launchSingleTop = true

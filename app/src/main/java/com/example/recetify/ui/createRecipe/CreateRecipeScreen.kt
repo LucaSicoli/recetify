@@ -78,10 +78,13 @@ import androidx.compose.ui.unit.TextUnitType
 import androidx.compose.animation.core.Animatable
 import androidx.compose.animation.core.tween
 import androidx.compose.foundation.gestures.detectHorizontalDragGestures
+import androidx.compose.foundation.lazy.LazyRow
 import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.unit.IntOffset
 import kotlinx.coroutines.launch
+import android.net.ConnectivityManager
+import android.net.NetworkCapabilities
 
 
 private val Accent = Color(0xFFBC6154)
@@ -194,6 +197,9 @@ fun CreateRecipeScreen(
     var ingredientesError by remember { mutableStateOf(false) }
     var pasosError by remember { mutableStateOf(false) }
 
+    var showMobileDataDialog by remember { mutableStateOf(false) }
+    var pendingPublish by remember { mutableStateOf(false) }
+
 
     // Image picker
     val context  = LocalContext.current
@@ -235,12 +241,23 @@ fun CreateRecipeScreen(
     }
 
 
+    // 1. Cambiar el launcher para aceptar selección múltiple y acumular archivos en mediaUrls
     val stepMediaLauncher = rememberLauncherForActivityResult(StartActivityForResult()) { result ->
-        val uri = result.data?.data ?: return@rememberLauncherForActivityResult
-        // aquí necesitarás saber qué paso estás editando;
-        // puedes guardar el índice en un estado temporal:
+        val clipData = result.data?.clipData
+        val uri = result.data?.data
         selectedStepIndex?.let { idx ->
-            steps[idx] = steps[idx].copy(mediaUrls = listOf(uri.toString()))
+            val currentList = steps[idx].mediaUrls?.toMutableList() ?: mutableListOf()
+            if (clipData != null) {
+                for (i in 0 until clipData.itemCount) {
+                    val itemUri = clipData.getItemAt(i).uri
+                    if (!currentList.contains(itemUri.toString()))
+                        currentList.add(itemUri.toString())
+                }
+            } else if (uri != null) {
+                if (!currentList.contains(uri.toString()))
+                    currentList.add(uri.toString())
+            }
+            steps[idx] = steps[idx].copy(mediaUrls = currentList)
         }
     }
 
@@ -250,6 +267,13 @@ fun CreateRecipeScreen(
             putExtra(Intent.EXTRA_MIME_TYPES, arrayOf("image/*", "video/*"))
         }
         anyLauncher.launch(intent)
+    }
+
+    val connectivityManager = context.getSystemService(ConnectivityManager::class.java)
+    fun isOnMobileData(): Boolean {
+        val network = connectivityManager?.activeNetwork ?: return false
+        val capabilities = connectivityManager.getNetworkCapabilities(network) ?: return false
+        return capabilities.hasTransport(NetworkCapabilities.TRANSPORT_CELLULAR)
     }
 
 
@@ -787,6 +811,7 @@ fun CreateRecipeScreen(
                                 val intent = Intent(Intent.ACTION_OPEN_DOCUMENT).apply {
                                     type = "*/*"
                                     putExtra(Intent.EXTRA_MIME_TYPES, arrayOf("image/*", "video/*"))
+                                    putExtra(Intent.EXTRA_ALLOW_MULTIPLE, true)
                                 }
                                 stepMediaLauncher.launch(intent)
                             },
@@ -794,6 +819,13 @@ fun CreateRecipeScreen(
                                 steps.removeAt(idx)
                                 selectedStepIndex = null
                                 steps.forEachIndexed { i, s -> steps[i] = s.copy(numeroPaso = i + 1) }
+                            },
+                            onRemoveMedia = { mediaIdx ->
+                                val currentList = step.mediaUrls?.toMutableList() ?: mutableListOf()
+                                if (mediaIdx in currentList.indices) {
+                                    currentList.removeAt(mediaIdx)
+                                    steps[idx] = step.copy(mediaUrls = currentList)
+                                }
                             }
                         )
                         Spacer(Modifier.height(8.dp))
@@ -923,17 +955,22 @@ fun CreateRecipeScreen(
                                 pasosError = steps.isEmpty()
                                 showFormError = nombreError || descripcionError || categoriaError || tipoError || ingredientesError || pasosError
                                 if (showFormError) return@Button
-                                viewModel.createRecipe(
-                                    nombre      = nombre,
-                                    descripcion = descripcion,
-                                    tiempo      = tiempo,
-                                    porciones   = porciones,
-                                    tipoPlato   = selectedTipo!!,
-                                    categoria   = selectedCategory!!,
-                                    ingredients = ingredients.toList(),
-                                    steps       = steps.toList(),
-                                    onSuccess   = onPublished
-                                )
+                                if (isOnMobileData()) {
+                                    showMobileDataDialog = true
+                                    pendingPublish = true
+                                } else {
+                                    viewModel.createRecipe(
+                                        nombre      = nombre,
+                                        descripcion = descripcion,
+                                        tiempo      = tiempo,
+                                        porciones   = porciones,
+                                        tipoPlato   = selectedTipo!!,
+                                        categoria   = selectedCategory!!,
+                                        ingredients = ingredients.toList(),
+                                        steps       = steps.toList(),
+                                        onSuccess   = onPublished
+                                    )
+                                }
                             },
                             enabled   = !viewModel.submitting.collectAsState().value,
                             modifier  = Modifier.weight(1f).height(48.dp),
@@ -1094,6 +1131,60 @@ fun CreateRecipeScreen(
                 }
             )
         }
+
+        // Modal de advertencia por datos móviles
+        if (showMobileDataDialog) {
+            AlertDialog(
+                onDismissRequest = { showMobileDataDialog = false; pendingPublish = false },
+                title = { Text("Advertencia de conexión") },
+                text = { Text("No estás conectado a WiFi. ¿Querés publicar la receta usando tus datos móviles?") },
+                confirmButton = {
+                    TextButton(onClick = {
+                        showMobileDataDialog = false
+                        pendingPublish = false
+                        // Publicar receta
+                        viewModel.createRecipe(
+                            nombre      = nombre,
+                            descripcion = descripcion,
+                            tiempo      = tiempo,
+                            porciones   = porciones,
+                            tipoPlato   = selectedTipo!!,
+                            categoria   = selectedCategory!!,
+                            ingredients = ingredients.toList(),
+                            steps       = steps.toList(),
+                            onSuccess   = onPublished
+                        )
+                    }) { Text("Aceptar") }
+                },
+                dismissButton = {
+                    Row {
+                        TextButton(onClick = {
+                            showMobileDataDialog = false
+                            pendingPublish = false
+                        }) { Text("Cancelar") }
+                        Spacer(Modifier.width(8.dp))
+                        TextButton(onClick = {
+                            showMobileDataDialog = false
+                            pendingPublish = false
+                            // Guardar como borrador
+                            val request = RecipeRequest(
+                                nombre      = nombre,
+                                descripcion = descripcion,
+                                tiempo      = tiempo,
+                                porciones   = porciones,
+                                mediaUrls   = photoUrl?.let { listOf(it) } ?: emptyList(),
+                                tipoPlato   = selectedTipo!!,
+                                categoria   = selectedCategory!!,
+                                ingredients = ingredients.toList(),
+                                steps       = steps.toList()
+                            )
+                            viewModel.saveDraftWithMedia(request, localMediaUri)
+                        }) { Text("Guardar") }
+                    }
+                },
+                shape = RoundedCornerShape(16.dp)
+            )
+        }
     }
 }
 
@@ -1107,7 +1198,8 @@ private fun StepCard(
     onTitleChange: (String) -> Unit,
     onDescChange:  (String) -> Unit,
     onAddMedia:    () -> Unit,
-    onDelete:      () -> Unit           // callback para eliminar el paso
+    onDelete:      () -> Unit,           // callback para eliminar el paso
+    onRemoveMedia: ((Int) -> Unit)? = null // Nuevo callback para eliminar archivo individual
 ) {
     var showMediaPreview by remember { mutableStateOf(false) }
     val firstMedia = mediaUrls?.firstOrNull()
@@ -1184,38 +1276,52 @@ private fun StepCard(
                 )
             }
 
-            // —— Media placeholder fijo 120 dp ——————————————
-            Box(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .height(120.dp)
-                    .clip(RoundedCornerShape(8.dp))
-                    .background(Color(0xFFF0F0F0))
-                    .clickable { onAddMedia() },
-                contentAlignment = Alignment.Center
-            ) {
-                if (firstMedia == null) {
-                    Icon(
-                        Icons.Default.Add,
-                        contentDescription = "Agregar foto/video",
-                        modifier = Modifier.size(40.dp),
-                        tint = Accent
-                    )
-                } else {
-                    val uri = Uri.parse(firstMedia)
-                    val ctx = LocalContext.current
-                    val mime = ctx.contentResolver.getType(uri).orEmpty()
-                    if (mime.startsWith("video/")) {
-                        VideoPlayer(uri)
-                    } else {
-                        AsyncImage(
-                            model        = uri,
-                            contentDescription = null,
-                            modifier     = Modifier.fillMaxSize(),
-                            contentScale = ContentScale.Crop
-                        )
+            // —— Mini-carrusel de archivos ——————————————
+            if (!mediaUrls.isNullOrEmpty()) {
+                LazyRow(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .height(100.dp),
+                    horizontalArrangement = Arrangement.spacedBy(8.dp)
+                ) {
+                    items(mediaUrls.size) { i ->
+                        val uri = Uri.parse(mediaUrls[i])
+                        val ctx = LocalContext.current
+                        val mime = ctx.contentResolver.getType(uri).orEmpty()
+                        Box(
+                            Modifier
+                                .size(100.dp)
+                                .clip(RoundedCornerShape(8.dp))
+                                .background(Color(0xFFF0F0F0))
+                        ) {
+                            if (mime.startsWith("video/")) {
+                                VideoPlayer(uri)
+                            } else {
+                                AsyncImage(
+                                    model = uri,
+                                    contentDescription = null,
+                                    modifier = Modifier.fillMaxSize(),
+                                    contentScale = ContentScale.Crop
+                                )
+                            }
+                            // Botón eliminar
+                            IconButton(
+                                onClick = { onRemoveMedia?.invoke(i) },
+                                modifier = Modifier.align(Alignment.TopEnd)
+                            ) {
+                                Icon(Icons.Default.Delete, contentDescription = "Eliminar archivo", tint = Color.Red)
+                            }
+                        }
                     }
                 }
+            } else {
+                // Si no hay imágenes, mostrar el ícono de agregar
+                Icon(
+                    Icons.Default.Add,
+                    contentDescription = "Agregar foto/video",
+                    modifier = Modifier.size(40.dp),
+                    tint = Accent
+                )
             }
 
             // —— Botones “Agregar/Cambiar media” + “Eliminar” —————
@@ -1237,7 +1343,7 @@ private fun StepCard(
                     Icon(Icons.Default.CameraAlt, contentDescription = null, tint = Accent)
                     Spacer(Modifier.width(4.dp))
                     Text(
-                        text       = if (firstMedia == null) "Agregar" else "Cambiar",
+                        text       = if (mediaUrls.isNullOrEmpty()) "Agregar" else "Agregar más",
                         color      = Accent,
                         fontFamily = Destacado
                     )

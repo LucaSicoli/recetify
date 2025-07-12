@@ -9,6 +9,7 @@ import androidx.activity.result.contract.ActivityResultContracts.StartActivityFo
 import androidx.compose.foundation.*
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.foundation.lazy.LazyRow
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.CircleShape
@@ -182,10 +183,23 @@ fun EditRecipeScreen(
             localMediaUri = uri
         }
     }
+    // 1. Cambiar el launcher para aceptar selección múltiple y acumular archivos en mediaUrls
     val stepMediaLauncher = rememberLauncherForActivityResult(StartActivityForResult()) { result ->
-        val uri = result.data?.data ?: return@rememberLauncherForActivityResult
+        val clipData = result.data?.clipData
+        val uri = result.data?.data
         selectedStepIndex?.let { idx ->
-            steps[idx] = steps[idx].copy(mediaUrls = listOf(uri.toString()))
+            val currentList = steps[idx].mediaUrls?.toMutableList() ?: mutableListOf()
+            if (clipData != null) {
+                for (i in 0 until clipData.itemCount) {
+                    val itemUri = clipData.getItemAt(i).uri
+                    if (!currentList.contains(itemUri.toString()))
+                        currentList.add(itemUri.toString())
+                }
+            } else if (uri != null) {
+                if (!currentList.contains(uri.toString()))
+                    currentList.add(uri.toString())
+            }
+            steps[idx] = steps[idx].copy(mediaUrls = currentList)
         }
     }
     fun openPicker() {
@@ -377,7 +391,7 @@ fun EditRecipeScreen(
                                 stepNumber    = step.numeroPaso,
                                 title         = step.titulo.orEmpty(),
                                 description   = step.descripcion,
-                                mediaUrls     = step.mediaUrls,
+                                mediaUrls     = step.mediaUrls ?: emptyList(),
                                 onTitleChange = { new -> steps[idx] = step.copy(titulo = new) },
                                 onDescChange  = { new -> steps[idx] = step.copy(descripcion = new) },
                                 onAddMedia    = {
@@ -385,12 +399,20 @@ fun EditRecipeScreen(
                                     Intent(Intent.ACTION_OPEN_DOCUMENT).apply {
                                         type = "*/*"
                                         putExtra(Intent.EXTRA_MIME_TYPES, arrayOf("image/*","video/*"))
+                                        putExtra(Intent.EXTRA_ALLOW_MULTIPLE, true)
                                     }.also(stepMediaLauncher::launch)
                                 },
                                 onDelete      = {
                                     steps.removeAt(idx)
                                     selectedStepIndex = null
                                     steps.forEachIndexed { i, s -> steps[i] = s.copy(numeroPaso = i+1) }
+                                },
+                                onRemoveMedia = { mediaIdx ->
+                                    val currentList = step.mediaUrls?.toMutableList() ?: mutableListOf()
+                                    if (mediaIdx in currentList.indices) {
+                                        currentList.removeAt(mediaIdx)
+                                        steps[idx] = step.copy(mediaUrls = currentList)
+                                    }
                                 }
                             )
                             Spacer(Modifier.height(8.dp))
@@ -922,7 +944,8 @@ private fun StepCard(
     onTitleChange: (String) -> Unit,
     onDescChange:  (String) -> Unit,
     onAddMedia:    () -> Unit,
-    onDelete:      () -> Unit
+    onDelete:      () -> Unit,
+    onRemoveMedia: ((Int) -> Unit)? = null // Nuevo callback para eliminar archivo individual
 ) {
     var showMediaPreview by remember { mutableStateOf(false) }
     val firstMedia = mediaUrls?.firstOrNull()
@@ -981,22 +1004,43 @@ private fun StepCard(
                 },
                 textStyle      = LocalTextStyle.current.copy(color = Color.Black, fontSize = 14.sp)
             )
-            Box(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .height(120.dp)
-                    .clip(RoundedCornerShape(8.dp))
-                    .background(Color(0xFFF0F0F0))
-                    .clickable { onAddMedia() },
-                contentAlignment = Alignment.Center
-            ) {
-                if (firstMedia == null) {
-                    Icon(Icons.Default.Add, contentDescription = null, modifier = Modifier.size(40.dp), tint = Accent)
-                } else {
-                    val uri = Uri.parse(firstMedia)
-                    val mime = LocalContext.current.contentResolver.getType(uri).orEmpty()
-                    if (mime.startsWith("video/")) VideoPlayer(uri)
-                    else AsyncImage(model = uri, contentDescription = null, modifier = Modifier.fillMaxSize(), contentScale = ContentScale.Crop)
+            // —— Mini-carrusel de archivos ——
+            if (!mediaUrls.isNullOrEmpty()) {
+                LazyRow(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .height(100.dp),
+                    horizontalArrangement = Arrangement.spacedBy(8.dp)
+                ) {
+                    items(mediaUrls.size) { i ->
+                        val uri = Uri.parse(mediaUrls[i])
+                        val ctx = LocalContext.current
+                        val mime = ctx.contentResolver.getType(uri).orEmpty()
+                        Box(
+                            Modifier
+                                .size(100.dp)
+                                .clip(RoundedCornerShape(8.dp))
+                                .background(Color(0xFFF0F0F0))
+                        ) {
+                            if (mime.startsWith("video/")) {
+                                VideoPlayer(uri)
+                            } else {
+                                AsyncImage(
+                                    model = uri,
+                                    contentDescription = null,
+                                    modifier = Modifier.fillMaxSize(),
+                                    contentScale = ContentScale.Crop
+                                )
+                            }
+                            // Botón eliminar
+                            IconButton(
+                                onClick = { onRemoveMedia?.invoke(i) },
+                                modifier = Modifier.align(Alignment.TopEnd)
+                            ) {
+                                Icon(Icons.Default.Delete, contentDescription = "Eliminar archivo", tint = Color.Red)
+                            }
+                        }
+                    }
                 }
             }
             Row(

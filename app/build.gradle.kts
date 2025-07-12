@@ -96,6 +96,8 @@ dependencies {
     implementation("com.google.android.exoplayer:exoplayer:2.19.0")
     implementation("com.google.accompanist:accompanist-flowlayout:0.30.1")
     implementation("androidx.compose.material:material:1.4.3")
+    implementation("com.google.accompanist:accompanist-pager:0.30.1")
+    implementation("com.google.accompanist:accompanist-pager-indicators:0.30.1")
 
     // ——————————————————————
     // Room
