@@ -1,7 +1,9 @@
 package com.example.recetify.data
 
 import android.net.ConnectivityManager
+import android.content.Context
 import com.example.recetify.data.db.RecipeDao
+import com.example.recetify.data.db.DatabaseProvider
 import com.example.recetify.data.db.RecipeEntity
 import com.example.recetify.data.remote.ApiService
 import com.example.recetify.data.remote.model.RecipeIngredientRequest
@@ -10,6 +12,7 @@ import com.example.recetify.data.remote.model.RecipeResponse
 import com.example.recetify.data.remote.model.RecipeStepRequest
 import com.example.recetify.data.remote.model.RecipeSummaryResponse
 import com.example.recetify.data.remote.model.UserSavedRecipeDTO
+import com.example.recetify.data.remote.model.toEntity
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.emitAll
@@ -122,27 +125,43 @@ class RecipeRepository(
         api.syncDraftFull(recipe.id, req)
     }
 
-    fun getAllRecipes(): Flow<List<RecipeEntity>> = flow {
+    suspend fun getAllRecipes(context: Context): Flow<List<RecipeEntity>> = flow {
         if (connectivity.activeNetwork != null) {
             val list = api.getAllRecipesSummary()
-            val entities = list.map { s ->
-                RecipeEntity(
-                    id                  = s.id,
-                    nombre              = s.nombre,
-                    descripcion         = s.descripcion,
-                    mediaUrls           = s.mediaUrls,
-                    tiempo              = s.tiempo.toInt(),
-                    porciones           = s.porciones,
-                    tipoPlato           = s.tipoPlato,
-                    categoria           = s.categoria,
-                    usuarioCreadorAlias = s.usuarioCreadorAlias,
-                    promedioRating      = s.promedioRating,
-                    estadoAprobacion    = "",
-                    estadoPublicacion   = ""
-                )
-            }
+            val entities = list
+                .sortedByDescending { it.id }
+                .take(30)
+                .map { s ->
+                    RecipeEntity(
+                        id                  = s.id,
+                        nombre              = s.nombre,
+                        descripcion         = s.descripcion,
+                        mediaUrls           = s.mediaUrls,
+                        tiempo              = s.tiempo.toInt(),
+                        porciones           = s.porciones,
+                        tipoPlato           = s.tipoPlato,
+                        categoria           = s.categoria,
+                        usuarioCreadorAlias = s.usuarioCreadorAlias,
+                        promedioRating      = s.promedioRating,
+                        estadoAprobacion    = "",
+                        estadoPublicacion   = ""
+                    )
+                }
             dao.clearAll()
             dao.insertAll(entities)
+
+            // Guardar detalles completos (ingredientes y pasos) para cada receta
+            val detailDao = DatabaseProvider.getInstance(context).recipeDetailDao()
+            for (entity in entities) {
+                val remoteRecipe = api.getRecipeById(entity.id)
+                val remoteRatings = api.getRatingsForRecipe(entity.id)
+                val remoteIngredients = remoteRecipe.ingredients
+                val remoteSteps = remoteRecipe.steps
+                detailDao.insertRecipe(remoteRecipe.toEntity())
+                detailDao.insertRatings(remoteRatings.map { it.toEntity(entity.id) })
+                detailDao.insertIngredients(remoteIngredients.map { it.toEntity(entity.id) })
+                detailDao.insertSteps(remoteSteps.map { it.toEntity(entity.id) })
+            }
         }
         emitAll(dao.getAll())
     }.flowOn(Dispatchers.IO)

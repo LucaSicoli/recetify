@@ -95,6 +95,7 @@ dependencies {
     implementation("com.squareup.retrofit2:converter-scalars:2.9.0")
     implementation("com.google.android.exoplayer:exoplayer:2.19.0")
     implementation("com.google.accompanist:accompanist-flowlayout:0.30.1")
+    implementation("androidx.compose.material:material:1.4.3")
 
     // ——————————————————————
     // Room

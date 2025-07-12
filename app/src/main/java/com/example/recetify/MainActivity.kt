@@ -331,7 +331,16 @@ fun AppNavGraph() {
 
         // Overlay "Sin conexión"
         if (offline) {
-            NoConnectionScreen(onContinueOffline = { offline = false })
+            NoConnectionScreen(onContinueOffline = {
+                // Setear modo visitante y navegar a home
+                scope.launch {
+                    SessionManager.setVisitante(context)
+                    offline = false
+                    navController.navigate("home") {
+                        popUpTo("login") { inclusive = true }
+                    }
+                }
+            })
         }
     }
 }

@@ -30,27 +30,23 @@ class HomeViewModel(app: Application) : AndroidViewModel(app) {
     private val _isLoading = MutableStateFlow(true)
     val isLoading: StateFlow<Boolean> = _isLoading.asStateFlow()
 
-    // 1) Lista de recetas cacheadas (Room) que oculta el loading tras la primera emisión
-    val recipes: StateFlow<List<RecipeEntity>> =
-        repo.getAllRecipes()
-            .onStart {
-                _isLoading.value = true
-            }
-            .onEach {
-                _isLoading.value = false
-            }
-            .stateIn(
-                scope = viewModelScope,
-                started = SharingStarted.Lazily,
-                initialValue = emptyList()
-            )
+    // 1) Lista de recetas cacheadas (Room) usando StateFlow y corrutina
+    private val _recipes = MutableStateFlow<List<RecipeEntity>>(emptyList())
+    val recipes: StateFlow<List<RecipeEntity>> = _recipes.asStateFlow()
 
     // 2) Lista de resúmenes remotos (para foto de perfil, alias, rating…)
     private val _summaries = MutableStateFlow<List<RecipeSummaryResponse>>(emptyList())
     val summaries: StateFlow<List<RecipeSummaryResponse>> = _summaries.asStateFlow()
 
     init {
-        // Carga inicial de los resúmenes desde la API
+        viewModelScope.launch {
+            _isLoading.value = true
+            repo.getAllRecipes(app.applicationContext)
+                .collect {
+                    _recipes.value = it
+                    _isLoading.value = false
+                }
+        }
         viewModelScope.launch {
             try {
                 val list = RetrofitClient.api.getAllRecipesSummary()

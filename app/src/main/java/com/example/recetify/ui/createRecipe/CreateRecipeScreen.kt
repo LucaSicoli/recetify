@@ -57,20 +57,91 @@ import com.example.recetify.util.listaIngredientesConEmoji
 import android.content.Intent
 import android.widget.Toast
 import androidx.activity.result.contract.ActivityResultContracts.StartActivityForResult
+import androidx.compose.foundation.horizontalScroll
 import androidx.compose.material.icons.filled.Delete
 import androidx.compose.ui.viewinterop.AndroidView
 import com.example.recetify.data.remote.model.RecipeRequest
 import com.google.android.exoplayer2.MediaItem
 import com.google.android.exoplayer2.SimpleExoPlayer
 import com.google.android.exoplayer2.ui.PlayerView
+import androidx.compose.foundation.lazy.grid.GridCells
+import androidx.compose.foundation.lazy.grid.LazyVerticalGrid
+import androidx.compose.foundation.lazy.grid.items
+import androidx.compose.ui.text.style.TextOverflow
+import androidx.compose.ui.text.TextStyle
+import androidx.compose.ui.unit.TextUnit
+import androidx.compose.ui.layout.onGloballyPositioned
+import androidx.compose.ui.platform.LocalDensity
+import androidx.compose.ui.geometry.Size
+import androidx.compose.ui.text.rememberTextMeasurer
+import androidx.compose.ui.unit.TextUnitType
+import androidx.compose.animation.core.Animatable
+import androidx.compose.animation.core.tween
+import androidx.compose.foundation.gestures.detectHorizontalDragGestures
+import androidx.compose.runtime.rememberCoroutineScope
+import androidx.compose.ui.input.pointer.pointerInput
+import androidx.compose.ui.unit.IntOffset
+import kotlinx.coroutines.launch
 
 
 private val Accent = Color(0xFFBC6154)
 private val GrayBg  = Color(0xFFF8F8F8)
+private val Ladrillo = Color(0xFFBC6154) // Nuevo color para el chip seleccionado
 
 private val Destacado = FontFamily(
     Font(R.font.sen_semibold, weight = FontWeight.ExtraBold)
 )
+
+@Composable
+fun AutoResizeText(
+    text: String,
+    modifier: Modifier = Modifier,
+    fontFamily: FontFamily? = null,
+    fontWeight: FontWeight? = null,
+    color: Color = Color.Unspecified,
+    maxFontSize: TextUnit = 13.sp,
+    minFontSize: TextUnit = 9.sp,
+    textAlign: TextAlign = TextAlign.Center
+) {
+    var textSize by remember { mutableStateOf(maxFontSize) }
+    var readyToDraw by remember { mutableStateOf(false) }
+    val textMeasurer = rememberTextMeasurer()
+    Box(modifier = modifier) {
+        Text(
+            text = text,
+            fontFamily = fontFamily,
+            fontWeight = fontWeight,
+            color = color,
+            fontSize = textSize,
+            maxLines = 1,
+            softWrap = false,
+            overflow = TextOverflow.Clip,
+            textAlign = textAlign,
+            modifier = Modifier
+                .fillMaxWidth()
+                .onGloballyPositioned { layoutCoordinates ->
+                    if (!readyToDraw) {
+                        val boxWidth = layoutCoordinates.size.width
+                        val measured = textMeasurer.measure(
+                            text = text,
+                            style = TextStyle(
+                                fontFamily = fontFamily,
+                                fontWeight = fontWeight,
+                                fontSize = textSize
+                            ),
+                            maxLines = 1
+                        )
+                        val textWidthPx = measured.size.width
+                        if (textWidthPx > boxWidth && textSize > minFontSize) {
+                            textSize = TextUnit(textSize.value - 1, TextUnitType.Sp)
+                        } else {
+                            readyToDraw = true
+                        }
+                    }
+                }
+        )
+    }
+}
 
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -492,48 +563,34 @@ fun CreateRecipeScreen(
                         }
 
                         // 3. Categoría
-                        Card(
-                            modifier  = Modifier.fillMaxWidth(),
-                            shape     = RoundedCornerShape(6.dp),
-                            colors    = CardDefaults.cardColors(containerColor = Color.White),
-                            border    = BorderStroke(1.dp, Color.LightGray)
+                        Text("Categoría", fontFamily = Destacado, fontWeight = FontWeight.SemiBold, fontSize = 16.sp, color = DarkGray)
+                        FlowRow(
+                            modifier = Modifier.fillMaxWidth()
                         ) {
-                            Row(
-                                Modifier
-                                    .fillMaxWidth()
-                                    .padding(12.dp),
-                                horizontalArrangement = Arrangement.SpaceBetween,
-                                verticalAlignment     = Alignment.CenterVertically
-                            ) {
-                                Text("Categoría",
-                                    fontFamily = Destacado,
-                                    fontWeight = FontWeight.SemiBold,
-                                    fontSize   = 16.sp,
-                                    color = DarkGray
-                                )
-                                Box(
-                                    Modifier
-                                        .clip(RoundedCornerShape(6.dp))
-                                        .background(GrayBg)
-                                        .border(1.dp, Color.LightGray, RoundedCornerShape(6.dp))
-                                        .clickable { expandedCategory = true }
-                                        .padding(horizontal = 12.dp, vertical = 8.dp)
+                            categories.forEach { cat ->
+                                val selected = selectedCategory == cat
+                                OutlinedButton(
+                                    onClick = { selectedCategory = cat },
+                                    shape = RoundedCornerShape(50),
+                                    border = BorderStroke(1.dp, Color.Black),
+                                    colors = ButtonDefaults.outlinedButtonColors(
+                                        containerColor = if (selected) Ladrillo else Color.White,
+                                        contentColor = if (selected) Color.White else Color.Black
+                                    ),
+                                    modifier = Modifier
+                                        .height(44.dp)
+                                        .padding(end = 8.dp, bottom = 8.dp)
                                 ) {
-                                    Text(selectedCategory ?: "Seleccionar", color = DarkGray, fontFamily = Destacado)
-                                    DropdownMenu(
-                                        expanded = expandedCategory,
-                                        onDismissRequest = { expandedCategory = false }
-                                    ) {
-                                        categories.forEach { cat ->
-                                            DropdownMenuItem(
-                                                text = { Text(cat) },
-                                                onClick = {
-                                                    selectedCategory = cat
-                                                    expandedCategory = false
-                                                }
-                                            )
-                                        }
-                                    }
+                                    Text(
+                                        cat,
+                                        fontFamily = Destacado,
+                                        fontWeight = FontWeight.Medium,
+                                        fontSize = 13.sp,
+                                        maxLines = 1,
+                                        softWrap = false,
+                                        overflow = TextOverflow.Clip,
+                                        textAlign = TextAlign.Center
+                                    )
                                 }
                             }
                         }
@@ -542,48 +599,34 @@ fun CreateRecipeScreen(
                         }
 
                         // 4. Tipo de Plato
-                        Card(
-                            modifier  = Modifier.fillMaxWidth(),
-                            shape     = RoundedCornerShape(6.dp),
-                            colors    = CardDefaults.cardColors(containerColor = Color.White),
-                            border    = BorderStroke(1.dp, Color.LightGray)
+                        Text("Tipo de Plato", fontFamily = Destacado, fontWeight = FontWeight.SemiBold, fontSize = 16.sp, color = DarkGray)
+                        FlowRow(
+                            modifier = Modifier.fillMaxWidth()
                         ) {
-                            Row(
-                                Modifier
-                                    .fillMaxWidth()
-                                    .padding(12.dp),
-                                horizontalArrangement = Arrangement.SpaceBetween,
-                                verticalAlignment     = Alignment.CenterVertically
-                            ) {
-                                Text("Tipo de Plato",
-                                    fontFamily = Destacado,
-                                    fontWeight = FontWeight.SemiBold,
-                                    fontSize   = 16.sp,
-                                    color = DarkGray
-                                )
-                                Box(
-                                    Modifier
-                                        .clip(RoundedCornerShape(6.dp))
-                                        .background(GrayBg)
-                                        .border(1.dp, Color.LightGray, RoundedCornerShape(6.dp))
-                                        .clickable { expandedTipo = true }
-                                        .padding(horizontal = 12.dp, vertical = 8.dp)
+                            tiposPlato.forEach { tipo ->
+                                val selected = selectedTipo == tipo
+                                OutlinedButton(
+                                    onClick = { selectedTipo = tipo },
+                                    shape = RoundedCornerShape(50),
+                                    border = BorderStroke(1.dp, Color.Black),
+                                    colors = ButtonDefaults.outlinedButtonColors(
+                                        containerColor = if (selected) Ladrillo else Color.White,
+                                        contentColor = if (selected) Color.White else Color.Black
+                                    ),
+                                    modifier = Modifier
+                                        .height(44.dp)
+                                        .padding(end = 8.dp, bottom = 8.dp)
                                 ) {
-                                    Text(selectedTipo ?: "Seleccionar", color = DarkGray, fontFamily = Destacado)
-                                    DropdownMenu(
-                                        expanded = expandedTipo,
-                                        onDismissRequest = { expandedTipo = false }
-                                    ) {
-                                        tiposPlato.forEach { tipo ->
-                                            DropdownMenuItem(
-                                                text = { Text(tipo) },
-                                                onClick = {
-                                                    selectedTipo = tipo
-                                                    expandedTipo = false
-                                                }
-                                            )
-                                        }
-                                    }
+                                    Text(
+                                        tipo,
+                                        fontFamily = Destacado,
+                                        fontWeight = FontWeight.Medium,
+                                        fontSize = 13.sp,
+                                        maxLines = 1,
+                                        softWrap = false,
+                                        overflow = TextOverflow.Clip,
+                                        textAlign = TextAlign.Center
+                                    )
                                 }
                             }
                         }
@@ -621,11 +664,59 @@ fun CreateRecipeScreen(
                     }
                     // Ingredientes list
                     ingredients.forEachIndexed { idx, ing ->
-                        IngredientRow(idx, ing, onUpdate = { newIng ->
-                            ingredients[idx] = newIng
-                        }, onDelete = {
-                            ingredients.removeAt(idx)
-                        })
+                        val offsetX = remember { Animatable(0f) }
+                        val scope = rememberCoroutineScope()
+                        var dismissed by remember { mutableStateOf(false) }
+                        if (!dismissed) {
+                            Box(
+                                Modifier
+                                    .fillMaxWidth()
+                                    .height(IntrinsicSize.Min)
+                                    .pointerInput(Unit) {
+                                        detectHorizontalDragGestures(
+                                            onDragEnd = {
+                                                if (offsetX.value < -150f) {
+                                                    scope.launch {
+                                                        offsetX.animateTo(-500f, animationSpec = tween(300))
+                                                        dismissed = true
+                                                        ingredients.removeAt(idx)
+                                                    }
+                                                } else {
+                                                    scope.launch { offsetX.animateTo(0f, animationSpec = tween(300)) }
+                                                }
+                                            },
+                                            onHorizontalDrag = { change, dragAmount ->
+                                                val newOffset = (offsetX.value + dragAmount).coerceAtMost(0f)
+                                                scope.launch { offsetX.snapTo(newOffset) }
+                                            }
+                                        )
+                                    }
+                            ) {
+                                // Fondo rojo con tacho
+                                if (offsetX.value < -20f) {
+                                    Box(
+                                        Modifier
+                                            .matchParentSize()
+                                            .background(Color(0xFFD32F2F)),
+                                        contentAlignment = Alignment.CenterEnd
+                                    ) {
+                                        Icon(Icons.Default.Delete, contentDescription = "Eliminar", tint = Color.White, modifier = Modifier.padding(end = 24.dp))
+                                    }
+                                }
+                                // Contenido desplazable
+                                Box(
+                                    Modifier
+                                        .offset { IntOffset(offsetX.value.toInt(), 0) }
+                                ) {
+                                    IngredientRow(idx, ing, onUpdate = { newIng ->
+                                        ingredients[idx] = newIng
+                                    }, onDelete = {
+                                        dismissed = true
+                                        ingredients.removeAt(idx)
+                                    })
+                                }
+                            }
+                        }
                     }
                     if (ingredientesError) {
                         Text("Agrega al menos un ingrediente", color = Color.Red, fontSize = 12.sp)
