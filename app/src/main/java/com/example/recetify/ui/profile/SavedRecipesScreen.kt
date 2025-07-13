@@ -37,7 +37,6 @@ import androidx.lifecycle.viewmodel.compose.viewModel
 import coil.compose.AsyncImage
 import com.example.recetify.data.remote.RetrofitClient
 import com.example.recetify.data.remote.model.ISavedRecipe
-import com.example.recetify.data.remote.model.UserSavedRecipeDTO
 import com.example.recetify.ui.common.LoopingVideoPlayer
 import com.example.recetify.ui.home.Destacado
 import java.net.URI
@@ -45,7 +44,6 @@ import java.time.LocalDateTime
 import java.time.format.DateTimeFormatter
 import java.util.Locale
 import androidx.compose.ui.text.style.TextAlign
-import androidx.compose.material.icons.filled.Book
 import androidx.compose.material.icons.filled.AutoFixHigh
 
 @OptIn(ExperimentalFoundationApi::class)
@@ -67,10 +65,10 @@ fun SavedRecipesScreen(
         state = listState,
         modifier = Modifier.fillMaxSize(),
         contentPadding = PaddingValues(bottom = 80.dp),
-        verticalArrangement = Arrangement.spacedBy(16.dp)
+        verticalArrangement = Arrangement.spacedBy(12.dp) // Reducido de 16dp a 12dp
     ) {
-        // un pequeño top padding
-        item { Spacer(Modifier.height(16.dp)) }
+        // Reducir el top padding inicial
+        item { Spacer(Modifier.height(8.dp)) } // Reducido de 16dp a 8dp
 
         // HEADER *sticky* siempre visible
         stickyHeader {
@@ -78,31 +76,31 @@ fun SavedRecipesScreen(
             Box(
                 Modifier
                     .fillMaxWidth()
-                    .offset(y = if (!stuck) (-24).dp else 0.dp)
+                    .offset(y = if (!stuck) (-12).dp else 0.dp) // Reducido de -24dp a -12dp
                     .padding(horizontal = if (stuck) 0.dp else 24.dp)
                     .zIndex(10f)
             ) {
                 SavedHeader(
                     modifier = Modifier
                         .fillMaxWidth()
-                        .height(if (stuck) 100.dp else 90.dp),
+                        .height(if (stuck) 90.dp else 80.dp), // Reducido ligeramente las alturas
                     title = if (selectedTab == 0) "MIS FAVORITAS" else "MI GUSTO",
-                    shape = if (stuck) RoundedCornerShape(0.dp) else RoundedCornerShape(8.dp),
-                    selectedTab = selectedTab
+                    shape = if (stuck) RoundedCornerShape(0.dp) else RoundedCornerShape(8.dp)
                 )
             }
         }
 
-        // Pestañas siempre visibles
+        // Pestañas siempre visibles con menos padding superior
         item {
             TabRow(
                 selectedTabIndex = selectedTab,
                 modifier = Modifier
                     .fillMaxWidth()
-                    .padding(horizontal = 24.dp),
+                    .padding(horizontal = 24.dp)
+                    .padding(top = 4.dp), // Añadir un pequeño padding superior para ajustar
                 containerColor = Color.Transparent,
                 indicator = { positions ->
-                    TabRowDefaults.Indicator(
+                    TabRowDefaults.SecondaryIndicator(
                         Modifier
                             .tabIndicatorOffset(positions[selectedTab])
                             .height(3.dp),
@@ -314,8 +312,7 @@ private fun SavedRecipeCard(
 fun SavedHeader(
     modifier: Modifier = Modifier,
     title: String,
-    shape: Shape,
-    selectedTab: Int = 0 // nuevo parámetro opcional
+    shape: Shape
 ) {
     Surface(
         modifier = modifier,
@@ -329,7 +326,7 @@ fun SavedHeader(
                     Brush.horizontalGradient(
                         colors = listOf(
                             Color(0xFFCC3366), // fucsia más suave
-                            Color(0xFF993355)  // fuc// fucsia claro
+                            Color(0xFF993355)  // fucsia claro
                         )
                     )
                 )
@@ -355,9 +352,9 @@ fun SavedHeader(
                     text = title,
                     maxLines = 1,
                     style = MaterialTheme.typography.titleMedium.copy(
-                        color    = Color.White,
+                        color = Color.White,
                         fontFamily = Destacado,
-                        fontSize   = 20.sp
+                        fontSize = 20.sp
                     )
                 )
             }

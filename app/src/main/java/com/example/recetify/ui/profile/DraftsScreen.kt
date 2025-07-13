@@ -49,59 +49,72 @@ fun DraftsScreen(
     val drafts by draftVm.drafts.collectAsState(initial = emptyList())
     val listState = rememberLazyListState()
 
-    Column(Modifier.fillMaxSize()) {
-        // Encabezado siempre visible
-        DraftsHeader(
-            modifier = Modifier
-                .fillMaxWidth()
-                .height(90.dp),
-            title = "MIS BORRADORES",
-            shape = RoundedCornerShape(8.dp)
-        )
-        if (drafts.isEmpty()) {
+    LazyColumn(
+        state = listState,
+        modifier = Modifier.fillMaxSize(),
+        contentPadding = PaddingValues(bottom = 80.dp),
+        verticalArrangement = Arrangement.spacedBy(16.dp)
+    ) {
+        // Espacio superior
+        item { Spacer(Modifier.height(24.dp)) }
+
+        // HEADER *sticky* siempre visible
+        stickyHeader {
+            val stuck by remember { derivedStateOf { listState.firstVisibleItemIndex > 0 } }
             Box(
-                Modifier.fillMaxSize(),
-                contentAlignment = Alignment.TopCenter
+                Modifier
+                    .fillMaxWidth()
+                    .offset(y = if (!stuck) (-24).dp else 0.dp)
+                    .padding(horizontal = if (stuck) 0.dp else 24.dp)
+                    .zIndex(10f)
             ) {
-                Column(
-                    horizontalAlignment = Alignment.CenterHorizontally,
-                    modifier = Modifier.padding(top = 80.dp)
+                DraftsHeader(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .height(if (stuck) 100.dp else 90.dp),
+                    title = "MIS BORRADORES",
+                    shape = if (stuck) RoundedCornerShape(0.dp) else RoundedCornerShape(8.dp)
+                )
+            }
+        }
+
+        if (drafts.isEmpty()) {
+            item {
+                Box(
+                    Modifier.fillMaxSize(),
+                    contentAlignment = Alignment.TopCenter
                 ) {
-                    Icon(
-                        imageVector = Icons.Default.Book,
-                        contentDescription = null,
-                        tint = Color(0xFF5A6F8A),
-                        modifier = Modifier.size(48.dp)
-                    )
-                    Spacer(Modifier.height(12.dp))
-                    Text(
-                        "No hay borradores que mostrar",
-                        style = MaterialTheme.typography.bodyMedium,
-                        color = Color.Gray,
-                        textAlign = TextAlign.Center
-                    )
+                    Column(
+                        horizontalAlignment = Alignment.CenterHorizontally,
+                        modifier = Modifier.padding(top = 80.dp)
+                    ) {
+                        Icon(
+                            imageVector = Icons.Default.Book,
+                            contentDescription = null,
+                            tint = Color(0xFF5A6F8A),
+                            modifier = Modifier.size(48.dp)
+                        )
+                        Spacer(Modifier.height(12.dp))
+                        Text(
+                            "No hay borradores que mostrar",
+                            style = MaterialTheme.typography.bodyMedium,
+                            color = Color.Gray,
+                            textAlign = TextAlign.Center
+                        )
+                    }
                 }
             }
         } else {
-            LazyColumn(
-                state = listState,
-                modifier = Modifier.fillMaxSize(),
-                contentPadding = PaddingValues(bottom = 80.dp),
-                verticalArrangement = Arrangement.spacedBy(16.dp)
-            ) {
-                // Espacio superior
-                item { Spacer(Modifier.height(24.dp)) }
-                // Cards de borrador
-                items(drafts, key = { it.id }) { draft ->
-                    Box(Modifier.padding(horizontal = 24.dp)) {
-                        DraftRecipeCard(
-                            draft = draft,
-                            onClick = onDraftClick,
-                            onDelete = { draftVm.deleteDraft(it) }
-                        )
-                    }
-                    Spacer(Modifier.height(28.dp))
+            // Cards de borrador
+            items(drafts, key = { it.id }) { draft ->
+                Box(Modifier.padding(horizontal = 24.dp)) {
+                    DraftRecipeCard(
+                        draft = draft,
+                        onClick = onDraftClick,
+                        onDelete = { draftVm.deleteDraft(it) }
+                    )
                 }
+                Spacer(Modifier.height(28.dp))
             }
         }
     }

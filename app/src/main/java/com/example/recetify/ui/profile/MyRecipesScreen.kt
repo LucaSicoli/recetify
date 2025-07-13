@@ -82,10 +82,35 @@ fun MyRecipesScreen(
         }
 
         // Tus recetas publicadas
-        items(recipes, key = { it.id }) { recipe ->
-            Box(Modifier.padding(horizontal = 24.dp)) {
-                PublishedRecipeCard(recipe) {
-                    onRecipeClick(recipe.id)
+        if (recipes.isEmpty()) {
+            item {
+                Box(
+                    Modifier.fillParentMaxSize().padding(top = 48.dp),
+                    contentAlignment = Alignment.TopCenter
+                ) {
+                    Column(horizontalAlignment = Alignment.CenterHorizontally) {
+                        Icon(
+                            imageVector = Icons.Filled.Restaurant,
+                            contentDescription = null,
+                            tint = Color(0xFF2E7D32),
+                            modifier = Modifier.size(48.dp)
+                        )
+                        Spacer(Modifier.height(12.dp))
+                        Text(
+                            text = "No hay recetas publicadas que mostrar",
+                            style = MaterialTheme.typography.bodyMedium,
+                            color = Color.Gray,
+                            textAlign = androidx.compose.ui.text.style.TextAlign.Center
+                        )
+                    }
+                }
+            }
+        } else {
+            items(recipes, key = { it.id }) { recipe ->
+                Box(Modifier.padding(horizontal = 24.dp)) {
+                    PublishedRecipeCard(recipe) {
+                        onRecipeClick(recipe.id)
+                    }
                 }
             }
         }
