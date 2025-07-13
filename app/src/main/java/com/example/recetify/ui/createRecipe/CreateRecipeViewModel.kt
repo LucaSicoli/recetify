@@ -119,20 +119,27 @@ class CreateRecipeViewModel(
         _submitting.value = true
         _error.value      = null
         try {
+            // 1️⃣ Subir portada si es URI local
             val headerUrls = localMediaUri
                 ?.takeIf { it.scheme == "content" }
                 ?.let { uri ->
-                    val file = File(FileUtil.from(getApplication(), uri).path)
+                    val file = FileUtil.from(getApplication(), uri)
                     listOf(repo.uploadPhoto(file))
                 } ?: request.mediaUrls.orEmpty()
 
+            // 2️⃣ Subir medios de pasos
             val uploadedSteps = request.steps.map { step ->
                 val locals = step.mediaUrls.orEmpty().filter { it.startsWith("content://") }
                 if (locals.isNotEmpty()) {
-                    val remoteUrls = locals.map { localUriString ->
-                        val uri  = Uri.parse(localUriString)
-                        val file = File(FileUtil.from(getApplication(), uri).path)
-                        repo.uploadPhoto(file)
+                    val remoteUrls = locals.mapNotNull { localUriString ->
+                        try {
+                            val uri  = Uri.parse(localUriString)
+                            val file = FileUtil.from(getApplication(), uri)
+                            repo.uploadPhoto(file)
+                        } catch (e: Exception) {
+                            _error.value = "Error subiendo archivo: ${e.message}"
+                            null
+                        }
                     }
                     val preserved = step.mediaUrls.orEmpty()
                         .filterNot { it.startsWith("content://") }
@@ -147,6 +154,7 @@ class CreateRecipeViewModel(
             val resp = repo.saveDraft(newReq)
             _draftSaved.value = Result.success(resp)
         } catch (t: Throwable) {
+            _error.value = "Error guardando borrador: ${t.localizedMessage}"
             _draftSaved.value = Result.failure(t)
         } finally {
             _submitting.value = false
@@ -154,8 +162,7 @@ class CreateRecipeViewModel(
     }
 
     /**
-     * **Nuevo**: Sincroniza TODO el borrador (portada, ingredientes y pasos)
-     * Reutiliza el mismo endpoint de updateDraft, que devuelve RecipeResponse
+     * Sincroniza TODO el borrador (portada, ingredientes y pasos)
      */
     fun syncDraftFull(
         id: Long,
@@ -165,23 +172,32 @@ class CreateRecipeViewModel(
         _submitting.value = true
         _error.value      = null
         try {
-            // 1️ portada
+            // 1️⃣ Subir portada si es URI local
             val headerUrls = localMediaUri
-                ?.takeIf { it.scheme=="content" }
+                ?.takeIf { it.scheme == "content" }
                 ?.let { uri ->
-                    listOf(repo.uploadPhoto(File(FileUtil.from(getApplication(),uri).path)))
+                    val file = FileUtil.from(getApplication(), uri)
+                    listOf(repo.uploadPhoto(file))
                 } ?: request.mediaUrls.orEmpty()
 
-            // 2️ pasos
+            // 2️⃣ Subir medios de pasos
             val uploadedSteps = request.steps.map { step ->
                 val locals = step.mediaUrls.orEmpty().filter { it.startsWith("content://") }
-                if (locals.isEmpty()) return@map step
-                val remotes = locals.map {
-                    val uri = Uri.parse(it)
-                    repo.uploadPhoto(File(FileUtil.from(getApplication(),uri).path))
-                }
-                val already = step.mediaUrls.orEmpty().filterNot { it.startsWith("content://") }
-                step.copy(mediaUrls = already + remotes)
+                if (locals.isNotEmpty()) {
+                    val remoteUrls = locals.mapNotNull { localUriString ->
+                        try {
+                            val uri  = Uri.parse(localUriString)
+                            val file = FileUtil.from(getApplication(), uri)
+                            repo.uploadPhoto(file)
+                        } catch (e: Exception) {
+                            _error.value = "Error subiendo archivo: ${e.message}"
+                            null
+                        }
+                    }
+                    val preserved = step.mediaUrls.orEmpty()
+                        .filterNot { it.startsWith("content://") }
+                    step.copy(mediaUrls = preserved + remoteUrls)
+                } else step
             }
 
             val finalReq = request.copy(
@@ -189,11 +205,10 @@ class CreateRecipeViewModel(
                 steps     = uploadedSteps
             )
 
-            // en lugar de un método que devuelve Unit,
-            // llamamos a updateDraft que devuelve RecipeResponse:
             val resp = repo.syncDraftFull(id, finalReq)
             _draftSaved.value = Result.success(resp)
         } catch (t: Throwable) {
+            _error.value = "Error sincronizando borrador: ${t.localizedMessage}"
             _draftSaved.value = Result.failure(t)
         } finally {
             _submitting.value = false
@@ -205,6 +220,61 @@ class CreateRecipeViewModel(
         runCatching { repo.publishDraft(id) }
             .onSuccess { _publishResult.value = Result.success(it) }
             .onFailure { _publishResult.value = Result.failure(it) }
+    }
+
+    /** Sincroniza cambios y luego publica */
+    fun syncDraftFullAndPublish(
+        id: Long,
+        request: RecipeRequest,
+        localMediaUri: Uri?
+    ) = viewModelScope.launch {
+        _submitting.value = true
+        _error.value      = null
+        try {
+            // 1️⃣ Primero sincronizar todos los cambios (igual que syncDraftFull)
+            val headerUrls = localMediaUri
+                ?.takeIf { it.scheme == "content" }
+                ?.let { uri ->
+                    val file = FileUtil.from(getApplication(), uri)
+                    listOf(repo.uploadPhoto(file))
+                } ?: request.mediaUrls.orEmpty()
+
+            val uploadedSteps = request.steps.map { step ->
+                val locals = step.mediaUrls.orEmpty().filter { it.startsWith("content://") }
+                if (locals.isNotEmpty()) {
+                    val remoteUrls = locals.mapNotNull { localUriString ->
+                        try {
+                            val uri  = Uri.parse(localUriString)
+                            val file = FileUtil.from(getApplication(), uri)
+                            repo.uploadPhoto(file)
+                        } catch (e: Exception) {
+                            _error.value = "Error subiendo archivo: ${e.message}"
+                            null
+                        }
+                    }
+                    val preserved = step.mediaUrls.orEmpty()
+                        .filterNot { it.startsWith("content://") }
+                    step.copy(mediaUrls = preserved + remoteUrls)
+                } else step
+            }
+
+            val finalReq = request.copy(
+                mediaUrls = headerUrls,
+                steps     = uploadedSteps
+            )
+
+            // 2️⃣ Sincronizar los cambios
+            repo.syncDraftFull(id, finalReq)
+
+            // 3️⃣ Luego publicar
+            val publishedRecipe = repo.publishDraft(id)
+            _publishResult.value = Result.success(publishedRecipe)
+        } catch (t: Throwable) {
+            _error.value = "Error sincronizando y publicando: ${t.localizedMessage}"
+            _publishResult.value = Result.failure(t)
+        } finally {
+            _submitting.value = false
+        }
     }
 
     /** Crea una receta y envía a publicar */
@@ -222,19 +292,29 @@ class CreateRecipeViewModel(
         _submitting.value = true
         _error.value      = null
         try {
+            // 1️⃣ Subir medios de pasos
             val uploadedSteps = steps.map { step ->
                 val locals = step.mediaUrls.orEmpty().filter { it.startsWith("content://") }
                 if (locals.isNotEmpty()) {
-                    val remoteUrls = locals.map { localUri ->
-                        val file = File(FileUtil.from(getApplication(), Uri.parse(localUri)).path)
-                        repo.uploadPhoto(file)
+                    val remoteUrls = locals.mapNotNull { localUriString ->
+                        try {
+                            val uri  = Uri.parse(localUriString)
+                            val file = FileUtil.from(getApplication(), uri)
+                            repo.uploadPhoto(file)
+                        } catch (e: Exception) {
+                            _error.value = "Error subiendo archivo del paso: ${e.message}"
+                            null
+                        }
                     }
-                    val preserved = step.mediaUrls.orEmpty().filter { !it.startsWith("content://") }
+                    val preserved = step.mediaUrls.orEmpty()
+                        .filterNot { it.startsWith("content://") }
                     step.copy(mediaUrls = preserved + remoteUrls)
                 } else step
             }
 
+            // 2️⃣ Usar la URL de portada ya subida
             val headerUrls = _photoUrl.value?.let { listOf(it) } ?: emptyList()
+
             val req = RecipeRequest(
                 nombre      = nombre,
                 descripcion = descripcion,
@@ -247,10 +327,12 @@ class CreateRecipeViewModel(
                 steps       = uploadedSteps
             )
 
-            repo.createRecipe(req)
+            val result = repo.createRecipe(req)
+            _publishResult.value = Result.success(result)
             onSuccess()
         } catch (t: Throwable) {
-            _error.value = t.localizedMessage
+            _error.value = "Error publicando receta: ${t.localizedMessage}"
+            _publishResult.value = Result.failure(t)
         } finally {
             _submitting.value = false
         }

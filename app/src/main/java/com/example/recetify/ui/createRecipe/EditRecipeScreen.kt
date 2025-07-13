@@ -6,7 +6,10 @@ import android.net.Uri
 import android.widget.Toast
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts.StartActivityForResult
+import androidx.compose.animation.core.Animatable
+import androidx.compose.animation.core.tween
 import androidx.compose.foundation.*
+import androidx.compose.foundation.gestures.detectHorizontalDragGestures
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.LazyRow
@@ -18,6 +21,7 @@ import androidx.compose.foundation.text.BasicTextField
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.filled.*
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
@@ -25,27 +29,28 @@ import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.collectAsState
 import androidx.compose.ui.*
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.draw.shadow
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.SolidColor
+import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.Font
 import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.KeyboardType
-import androidx.compose.ui.text.input.TextFieldValue
 import androidx.compose.ui.text.style.TextAlign
+import androidx.compose.ui.text.style.TextOverflow
+import androidx.compose.ui.unit.IntOffset
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import androidx.compose.ui.viewinterop.AndroidView
+import androidx.core.net.toUri
 import coil.compose.AsyncImage
 import com.example.recetify.R
 import com.example.recetify.data.remote.model.*
 import com.example.recetify.util.*
 import com.example.recetify.util.TheMealDBImages
-import com.google.android.exoplayer2.MediaItem
-import com.google.android.exoplayer2.SimpleExoPlayer
-import com.google.android.exoplayer2.ui.PlayerView
+import kotlinx.coroutines.launch
 
 private val Accent    = Color(0xFFBC6154)
 private val GrayBg    = Color(0xFFF8F8F8)
@@ -67,13 +72,7 @@ fun EditRecipeScreen(
     var isVideo              by remember { mutableStateOf(false) }
     var showIngredientDialog by remember { mutableStateOf(false) }
     var showStepDialog       by remember { mutableStateOf(false) }
-    var editingIngredientIndex by remember { mutableStateOf<Int?>(null) }
-    var dialogIngredientName  by rememberSaveable { mutableStateOf("") }
-    var editingStepIndex      by remember { mutableStateOf<Int?>(null) }
-    var dialogStepTitle       by rememberSaveable { mutableStateOf("") }
-    var dialogStepDesc        by rememberSaveable { mutableStateOf("") }
     var loaded by rememberSaveable { mutableStateOf(false) }
-
 
     var nombre        by rememberSaveable { mutableStateOf("") }
     var descripcion   by rememberSaveable { mutableStateOf("") }
@@ -362,11 +361,66 @@ fun EditRecipeScreen(
                         onAdd = { showIngredientDialog = true }
                     ) {
                         ingredients.forEachIndexed { idx, ing ->
-                            IngredientRow(idx, ing, onUpdate = { new ->
-                                ingredients[idx] = new
-                            }, onDelete = {
-                                ingredients.removeAt(idx)
-                            })
+                            val offsetX = remember { Animatable(0f) }
+                            val scope = rememberCoroutineScope()
+                            var dismissed by remember { mutableStateOf(false) }
+
+                            if (!dismissed) {
+                                Box(
+                                    Modifier
+                                        .fillMaxWidth()
+                                        .height(IntrinsicSize.Min)
+                                        .pointerInput(Unit) {
+                                            detectHorizontalDragGestures(
+                                                onDragEnd = {
+                                                    if (offsetX.value < -150f) {
+                                                        scope.launch {
+                                                            offsetX.animateTo(-500f, animationSpec = tween(300))
+                                                            dismissed = true
+                                                            ingredients.removeAt(idx)
+                                                        }
+                                                    } else {
+                                                        scope.launch { offsetX.animateTo(0f, animationSpec = tween(300)) }
+                                                    }
+                                                },
+                                                onHorizontalDrag = { change, dragAmount ->
+                                                    val newOffset = (offsetX.value + dragAmount).coerceAtMost(0f)
+                                                    scope.launch { offsetX.snapTo(newOffset) }
+                                                }
+                                            )
+                                        }
+                                ) {
+                                    // Fondo rojo con tacho
+                                    if (offsetX.value < -20f) {
+                                        Box(
+                                            Modifier
+                                                .matchParentSize()
+                                                .background(Color(0xFFD32F2F)),
+                                            contentAlignment = Alignment.CenterEnd
+                                        ) {
+                                            Icon(
+                                                Icons.Default.Delete,
+                                                contentDescription = "Eliminar",
+                                                tint = Color.White,
+                                                modifier = Modifier.padding(end = 24.dp)
+                                            )
+                                        }
+                                    }
+
+                                    // Contenido desplazable
+                                    Box(
+                                        Modifier
+                                            .offset { IntOffset(offsetX.value.toInt(), 0) }
+                                    ) {
+                                        IngredientRow(idx, ing, onUpdate = { new ->
+                                            ingredients[idx] = new
+                                        }, onDelete = {
+                                            dismissed = true
+                                            ingredients.removeAt(idx)
+                                        })
+                                    }
+                                }
+                            }
                         }
                     }
 
@@ -448,13 +502,28 @@ fun EditRecipeScreen(
                                 .height(48.dp),
                             shape    = RoundedCornerShape(24.dp),
                             border   = BorderStroke(1.dp, Color.Black),
-                            colors   = ButtonDefaults.outlinedButtonColors(contentColor = Color.Black), // ← NUEVO
+                            colors   = ButtonDefaults.outlinedButtonColors(contentColor = Color.Black),
                             enabled  = !uploading
                         ) {
                             Text("GUARDAR", color = Color.Black, fontWeight = FontWeight.Bold)
                         }
                         Button(
-                            onClick   = { viewModel.publishDraft(recipeId) },
+                            onClick   = {
+                                // Primero sincronizar los cambios, luego publicar
+                                val req = RecipeRequest(
+                                    nombre      = nombre,
+                                    descripcion = descripcion,
+                                    tiempo      = tiempo,
+                                    porciones   = porciones,
+                                    mediaUrls   = localMediaUri?.let{ listOf(it.toString()) } ?: emptyList(),
+                                    tipoPlato   = selectedTipo!!,
+                                    categoria   = selectedCategory!!,
+                                    ingredients = ingredients.toList(),
+                                    steps       = steps.toList()
+                                )
+                                // Usar syncDraftFull y luego publicar
+                                viewModel.syncDraftFullAndPublish(recipeId, req, localMediaUri)
+                            },
                             modifier  = Modifier.weight(1f).height(48.dp),
                             shape     = RoundedCornerShape(24.dp),
                             colors    = ButtonDefaults.buttonColors(containerColor = Color.Black),
@@ -773,165 +842,204 @@ private fun IngredientRow(
     onDelete: () -> Unit
 ) {
     var cantidadText by remember { mutableStateOf(ingredient.cantidad.toInt().toString()) }
-    var unidad      by remember { mutableStateOf(ingredient.unidadMedida) }
-    var expanded    by remember { mutableStateOf(false) }
+    var unidad by remember { mutableStateOf(ingredient.unidadMedida) }
+    var expanded by remember { mutableStateOf(false) }
 
     Card(
-        modifier  = Modifier
+        modifier = Modifier
             .fillMaxWidth()
             .padding(vertical = 4.dp),
-        shape     = RoundedCornerShape(6.dp),
-        colors    = CardDefaults.cardColors(containerColor = Color.White),
-        elevation = CardDefaults.cardElevation(2.dp)
+        shape = RoundedCornerShape(16.dp),
+        colors = CardDefaults.cardColors(containerColor = Color.White),
+        elevation = CardDefaults.cardElevation(2.dp),
+        border = BorderStroke(1.dp, Color(0xFFE8E8E8))
     ) {
         Row(
-            Modifier
-                .padding(12.dp),
-            verticalAlignment = Alignment.CenterVertically
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(16.dp),
+            verticalAlignment = Alignment.CenterVertically,
+            horizontalArrangement = Arrangement.spacedBy(12.dp)
         ) {
-            // Emoji
+            // Imagen del ingrediente
             val imageUrl = TheMealDBImages.getIngredientImageUrlSmart(ingredient.nombre.orEmpty())
             if (imageUrl != null) {
+                AsyncImage(
+                    model = imageUrl,
+                    contentDescription = ingredient.nombre.orEmpty(),
+                    modifier = Modifier
+                        .size(56.dp)
+                        .clip(CircleShape),
+                    contentScale = ContentScale.Crop
+                )
+            } else {
                 Box(
                     modifier = Modifier
-                        .size(32.dp)
-                        .clip(CircleShape)
-                        .background(Color(0xFFE6EBF2)),
+                        .size(56.dp),
                     contentAlignment = Alignment.Center
                 ) {
-                    AsyncImage(
-                        model = imageUrl,
-                        contentDescription = ingredient.nombre.orEmpty(),
-                        modifier = Modifier.fillMaxSize(),
-                        contentScale = ContentScale.Crop
+                    Text(
+                        text = obtenerEmoji(ingredient.nombre.orEmpty()),
+                        fontSize = 24.sp
                     )
                 }
-            } else {
-                // Fallback al emoji si no hay imagen disponible
+            }
+
+            // Nombre del ingrediente
+            Column(
+                modifier = Modifier.weight(1f),
+                horizontalAlignment = Alignment.CenterHorizontally
+            ) {
                 Text(
-                    text       = obtenerEmoji(ingredient.nombre.orEmpty()),
-                    fontSize   = 24.sp,
-                    color      = Color.Black,
-                    fontFamily = Destacado
+                    text = ingredient.nombre.orEmpty(),
+                    fontSize = 16.sp,
+                    fontWeight = FontWeight.SemiBold,
+                    color = Color.Black,
+                    fontFamily = Destacado,
+                    maxLines = 1,
+                    overflow = TextOverflow.Ellipsis,
+                    textAlign = TextAlign.Center
                 )
-            }
-            Spacer(Modifier.width(8.dp))
 
-            // Nombre
-            Text(
-                text       = ingredient.nombre.orEmpty(),
-                modifier   = Modifier.weight(1f),
-                fontSize   = 16.sp,
-                fontWeight = FontWeight.Medium,
-                color      = Color.Black,
-                fontFamily = Destacado
-            )
-            Spacer(Modifier.width(8.dp))
-
-            // Botón “−”
-            IconButton(
-                onClick = {
-                    val current = cantidadText.toIntOrNull() ?: 1
-                    if (current > 1) {
-                        cantidadText = (current - 1).toString()
-                        onUpdate(ingredient.copy(cantidad = (current - 1).toDouble(), unidadMedida = unidad))
-                    }
-                },
-                modifier = Modifier.size(28.dp)
-            ) {
-                Icon(Icons.Default.Remove, contentDescription = null, tint = Color.Red)
-            }
-            Spacer(Modifier.width(4.dp))
-
-            // Caja de cantidad editable
-            Box(
-                modifier = Modifier
-                    .width(64.dp)
-                    .height(36.dp)
-                    .background(Color.White, RoundedCornerShape(6.dp))
-                    .border(1.dp, Color.LightGray, RoundedCornerShape(6.dp)),
-                contentAlignment = Alignment.Center
-            ) {
-                BasicTextField(
-                    value         = cantidadText,
-                    onValueChange = { new ->
-                        if (new.all(Char::isDigit)) {
-                            cantidadText = new
-                            val parsed = new.toIntOrNull() ?: 0
-                            onUpdate(ingredient.copy(cantidad = parsed.toDouble(), unidadMedida = unidad))
-                        }
-                    },
-                    singleLine = true,
-                    keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
-                    textStyle = LocalTextStyle.current.copy(
-                        color      = Color.Black,
-                        fontSize   = 18.sp,
-                        fontWeight = FontWeight.Bold,
-                        textAlign  = TextAlign.Center,
-                        fontFamily = Destacado
-                    ),
-                    cursorBrush = SolidColor(Color.Black),
-                    decorationBox = { inner ->
-                        Box(Modifier.fillMaxSize(), contentAlignment = Alignment.Center) { inner() }
-                    }
-                )
-            }
-            Spacer(Modifier.width(8.dp))
-
-            // Caja de unidad
-            Box(
-                modifier = Modifier
-                    .width(56.dp)
-                    .height(36.dp)
-                    .background(Color.White, RoundedCornerShape(6.dp))
-                    .border(1.dp, Color.LightGray, RoundedCornerShape(6.dp))
-                    .clickable { expanded = true },
-                contentAlignment = Alignment.Center
-            ) {
-                Text(unidad, color = Color.Black, fontFamily = Destacado)
-
-                DropdownMenu(
-                    expanded         = expanded,
-                    onDismissRequest = { expanded = false },
-                    // ↓ aquí forzamos el fondo blanco y un radio
-                    modifier = Modifier
-                        .background(Color.White, shape = RoundedCornerShape(6.dp))
+                // Controles de cantidad y unidad en una fila compacta
+                Row(
+                    verticalAlignment = Alignment.CenterVertically,
+                    horizontalArrangement = Arrangement.Center,
+                    modifier = Modifier.padding(top = 12.dp)
                 ) {
-                    listOf("un","g","kg","ml","l","tsp","tbsp","cup").forEach { u ->
-                        DropdownMenuItem(
-                            text = { Text(u, color = Color.Black, fontFamily = Destacado) },
-                            onClick = {
-                                unidad   = u
-                                expanded = false
-                                val qty = cantidadText.toIntOrNull() ?: 0
-                                onUpdate(ingredient.copy(cantidad = qty.toDouble(), unidadMedida = unidad))
+                    // Botón decrementar
+                    IconButton(
+                        onClick = {
+                            val current = cantidadText.toIntOrNull() ?: 1
+                            if (current > 1) {
+                                cantidadText = (current - 1).toString()
+                                onUpdate(ingredient.copy(cantidad = (current - 1).toDouble(), unidadMedida = unidad))
                             }
+                        },
+                        modifier = Modifier.size(28.dp)
+                    ) {
+                        Icon(
+                            Icons.Default.Remove,
+                            contentDescription = null,
+                            tint = Accent,
+                            modifier = Modifier.size(16.dp)
                         )
+                    }
+
+                    // Campo cantidad
+                    Card(
+                        modifier = Modifier.width(50.dp),
+                        shape = RoundedCornerShape(8.dp),
+                        colors = CardDefaults.cardColors(containerColor = Color(0xFFF8F8F8)),
+                        border = BorderStroke(1.dp, Color(0xFFE0E0E0))
+                    ) {
+                        BasicTextField(
+                            value = cantidadText,
+                            onValueChange = { new ->
+                                if (new.all { it.isDigit() } || new.isEmpty()) {
+                                    cantidadText = new
+                                    val parsed = new.toIntOrNull() ?: 0
+                                    onUpdate(ingredient.copy(cantidad = parsed.toDouble(), unidadMedida = unidad))
+                                }
+                            },
+                            singleLine = true,
+                            keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
+                            textStyle = LocalTextStyle.current.copy(
+                                color = Color.Black,
+                                fontSize = 14.sp,
+                                fontWeight = FontWeight.Medium,
+                                textAlign = TextAlign.Center,
+                                fontFamily = Destacado
+                            ),
+                            cursorBrush = SolidColor(Accent),
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .padding(8.dp)
+                        )
+                    }
+
+                    // Botón incrementar
+                    IconButton(
+                        onClick = {
+                            val current = cantidadText.toIntOrNull() ?: 0
+                            cantidadText = (current + 1).toString()
+                            onUpdate(ingredient.copy(cantidad = (current + 1).toDouble(), unidadMedida = unidad))
+                        },
+                        modifier = Modifier.size(28.dp)
+                    ) {
+                        Icon(
+                            Icons.Default.Add,
+                            contentDescription = null,
+                            tint = Accent,
+                            modifier = Modifier.size(16.dp)
+                        )
+                    }
+
+                    // Selector de unidad
+                    Card(
+                        modifier = Modifier.width(60.dp),
+                        shape = RoundedCornerShape(8.dp),
+                        colors = CardDefaults.cardColors(containerColor = Color(0xFFF8F8F8)),
+                        border = BorderStroke(1.dp, Color(0xFFE0E0E0))
+                    ) {
+                        Box(
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .clickable { expanded = true }
+                                .padding(8.dp),
+                            contentAlignment = Alignment.Center
+                        ) {
+                            Text(
+                                unidad,
+                                color = Color.Black,
+                                fontFamily = Destacado,
+                                fontSize = 12.sp,
+                                fontWeight = FontWeight.Medium
+                            )
+
+                            DropdownMenu(
+                                expanded = expanded,
+                                onDismissRequest = { expanded = false },
+                                modifier = Modifier.background(Color.White, shape = RoundedCornerShape(8.dp))
+                            ) {
+                                listOf("un","g","kg","ml","l","tsp","tbsp","cup").forEach { u ->
+                                    DropdownMenuItem(
+                                        text = {
+                                            Text(
+                                                u,
+                                                color = Color.Black,
+                                                fontFamily = Destacado,
+                                                fontSize = 12.sp
+                                            )
+                                        },
+                                        onClick = {
+                                            unidad = u
+                                            expanded = false
+                                            val qty = cantidadText.toIntOrNull() ?: 0
+                                            onUpdate(ingredient.copy(cantidad = qty.toDouble(), unidadMedida = unidad))
+                                        },
+                                        contentPadding = PaddingValues(horizontal = 8.dp, vertical = 4.dp)
+                                    )
+                                }
+                            }
+                        }
                     }
                 }
             }
-            Spacer(Modifier.width(4.dp))
 
-            // Botón “+”
-            IconButton(
-                onClick = {
-                    val current = cantidadText.toIntOrNull() ?: 0
-                    cantidadText = (current + 1).toString()
-                    onUpdate(ingredient.copy(cantidad = (current + 1).toDouble(), unidadMedida = unidad))
-                },
-                modifier = Modifier.size(28.dp)
-            ) {
-                Icon(Icons.Default.Add, contentDescription = null, tint = Color(0xFF00C853))
-            }
-            // --- Tacho de basura ---
+            // Botón eliminar
             IconButton(
                 onClick = onDelete,
-                modifier = Modifier.size(28.dp)
+                modifier = Modifier.size(36.dp)
             ) {
-                Icon(Icons.Default.Delete, contentDescription = "Eliminar ingrediente", tint = Color(0xFFD32F2F))
+                Icon(
+                    Icons.Default.Close,
+                    contentDescription = "Eliminar ingrediente",
+                    tint = Color(0xFF757575),
+                    modifier = Modifier.size(20.dp)
+                )
             }
         }
-
     }
 }
 
@@ -945,155 +1053,336 @@ private fun StepCard(
     onDescChange:  (String) -> Unit,
     onAddMedia:    () -> Unit,
     onDelete:      () -> Unit,
-    onRemoveMedia: ((Int) -> Unit)? = null // Nuevo callback para eliminar archivo individual
+    onRemoveMedia: ((Int) -> Unit)? = null
 ) {
-    var showMediaPreview by remember { mutableStateOf(false) }
     val firstMedia = mediaUrls?.firstOrNull()
 
     Card(
-        modifier  = Modifier
+        modifier = Modifier
             .fillMaxWidth()
-            .padding(vertical = 4.dp),
-        shape     = RoundedCornerShape(6.dp),
-        colors    = CardDefaults.cardColors(containerColor = Color.White),
-        elevation = CardDefaults.cardElevation(2.dp)
+            .padding(vertical = 8.dp),
+        shape = RoundedCornerShape(20.dp),
+        colors = CardDefaults.cardColors(containerColor = Color.White),
+        elevation = CardDefaults.cardElevation(6.dp),
+        border = BorderStroke(1.dp, Color(0xFFF0F0F0))
     ) {
-        Column(Modifier.padding(12.dp), verticalArrangement = Arrangement.spacedBy(12.dp)) {
-            Row(verticalAlignment = Alignment.CenterVertically) {
-                Box(
-                    Modifier
-                        .size(24.dp)
-                        .background(Accent.copy(alpha = 0.2f), RoundedCornerShape(6.dp)),
-                    contentAlignment = Alignment.Center
+        Column(
+            Modifier.padding(20.dp),
+            verticalArrangement = Arrangement.spacedBy(16.dp)
+        ) {
+            // Header con número de paso y título
+            Row(
+                verticalAlignment = Alignment.Top,
+                modifier = Modifier.fillMaxWidth()
+            ) {
+                // Columna para el número de paso
+                Column(
+                    horizontalAlignment = Alignment.CenterHorizontally
                 ) {
-                    Text("$stepNumber", color = Accent, fontWeight = FontWeight.Bold)
-                }
-                Spacer(Modifier.width(12.dp))
-                BasicTextField(
-                    value         = title,
-                    onValueChange = onTitleChange,
-                    singleLine    = true,
-                    modifier      = Modifier
-                        .fillMaxWidth()
-                        .background(Color(0xFFF8F8F8), RoundedCornerShape(6.dp))
-                        .border(1.dp, Color.LightGray, RoundedCornerShape(6.dp))
-                        .padding(8.dp),
-                    decorationBox = { inner ->
-                        if (title.isEmpty()) Text("Nombre del Paso", color = Color.Gray)
-                        inner()
-                    },
-                    textStyle = LocalTextStyle.current.copy(
-                        color      = Color.Black,
-                        fontSize   = 16.sp,
-                        fontWeight = FontWeight.SemiBold
-                    )
-                )
-            }
-            BasicTextField(
-                value         = description,
-                onValueChange = onDescChange,
-                modifier      = Modifier
-                    .fillMaxWidth()
-                    .height(80.dp)
-                    .background(Color(0xFFF8F8F8), RoundedCornerShape(6.dp))
-                    .border(1.dp, Color.LightGray, RoundedCornerShape(6.dp))
-                    .padding(8.dp),
-                decorationBox = { inner ->
-                    if (description.isEmpty()) Text("Descripción de los pasos…", color = Color.Gray)
-                    inner()
-                },
-                textStyle      = LocalTextStyle.current.copy(color = Color.Black, fontSize = 14.sp)
-            )
-            // —— Mini-carrusel de archivos ——
-            if (!mediaUrls.isNullOrEmpty()) {
-                LazyRow(
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .height(100.dp),
-                    horizontalArrangement = Arrangement.spacedBy(8.dp)
-                ) {
-                    items(mediaUrls.size) { i ->
-                        val uri = Uri.parse(mediaUrls[i])
-                        val ctx = LocalContext.current
-                        val mime = ctx.contentResolver.getType(uri).orEmpty()
+                    Spacer(Modifier.height(22.dp)) // Espacio para alinear con el label de título
+
+                    Card(
+                        modifier = Modifier.size(48.dp),
+                        shape = CircleShape,
+                        colors = CardDefaults.cardColors(containerColor = Accent),
+                        elevation = CardDefaults.cardElevation(4.dp)
+                    ) {
                         Box(
-                            Modifier
-                                .size(100.dp)
-                                .clip(RoundedCornerShape(8.dp))
-                                .background(Color(0xFFF0F0F0))
+                            modifier = Modifier.fillMaxSize(),
+                            contentAlignment = Alignment.Center
                         ) {
-                            if (mime.startsWith("video/")) {
-                                VideoPlayer(uri)
-                            } else {
-                                AsyncImage(
-                                    model = uri,
-                                    contentDescription = null,
-                                    modifier = Modifier.fillMaxSize(),
-                                    contentScale = ContentScale.Crop
+                            Text(
+                                text = "$stepNumber",
+                                color = Color.White,
+                                fontWeight = FontWeight.Bold,
+                                fontSize = 18.sp,
+                                fontFamily = Destacado
+                            )
+                        }
+                    }
+                }
+
+                Spacer(Modifier.width(16.dp))
+
+                // Campo de título expandido
+                Column(modifier = Modifier.weight(1f)) {
+                    Text(
+                        text = "Título del paso",
+                        fontSize = 14.sp,
+                        fontWeight = FontWeight.SemiBold,
+                        color = Color(0xFF6B7280),
+                        fontFamily = Destacado,
+                        letterSpacing = 0.5.sp
+                    )
+
+                    Spacer(Modifier.height(8.dp))
+
+                    Card(
+                        modifier = Modifier.fillMaxWidth(),
+                        shape = RoundedCornerShape(12.dp),
+                        colors = CardDefaults.cardColors(containerColor = Color(0xFFFAFAFA)),
+                        elevation = CardDefaults.cardElevation(0.dp),
+                        border = BorderStroke(1.dp, Color(0xFFE5E7EB))
+                    ) {
+                        BasicTextField(
+                            value = title,
+                            onValueChange = onTitleChange,
+                            singleLine = true,
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .padding(12.dp),
+                            decorationBox = { inner ->
+                                if (title.isEmpty()) {
+                                    Text(
+                                        "Título del paso...",
+                                        color = Color(0xFF9CA3AF),
+                                        fontSize = 16.sp,
+                                        fontFamily = Destacado
+                                    )
+                                }
+                                inner()
+                            },
+                            textStyle = LocalTextStyle.current.copy(
+                                color = Color(0xFF1F2937),
+                                fontSize = 16.sp,
+                                fontWeight = FontWeight.SemiBold,
+                                fontFamily = Destacado
+                            ),
+                            cursorBrush = SolidColor(Accent)
+                        )
+                    }
+                }
+            }
+
+            // Descripción con mejor diseño
+            Column {
+                Text(
+                    text = "Instrucciones del paso",
+                    fontSize = 14.sp,
+                    fontWeight = FontWeight.Medium,
+                    color = Color(0xFF6B7280),
+                    fontFamily = Destacado,
+                    letterSpacing = 0.5.sp
+                )
+
+                Spacer(Modifier.height(8.dp))
+
+                Card(
+                    modifier = Modifier.fillMaxWidth(),
+                    shape = RoundedCornerShape(12.dp),
+                    colors = CardDefaults.cardColors(containerColor = Color(0xFFFAFAFA)),
+                    elevation = CardDefaults.cardElevation(0.dp),
+                    border = BorderStroke(1.dp, Color(0xFFE5E7EB))
+                ) {
+                    BasicTextField(
+                        value = description,
+                        onValueChange = onDescChange,
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .height(100.dp)
+                            .padding(12.dp),
+                        decorationBox = { inner ->
+                            if (description.isEmpty()) {
+                                Text(
+                                    "Describe los pasos detalladamente...",
+                                    color = Color(0xFF9CA3AF),
+                                    fontSize = 14.sp,
+                                    fontFamily = Destacado
                                 )
                             }
-                            // Botón eliminar
-                            IconButton(
-                                onClick = { onRemoveMedia?.invoke(i) },
-                                modifier = Modifier.align(Alignment.TopEnd)
+                            inner()
+                        },
+                        textStyle = LocalTextStyle.current.copy(
+                            color = Color(0xFF1F2937),
+                            fontSize = 14.sp,
+                            lineHeight = 20.sp,
+                            fontFamily = Destacado
+                        ),
+                        cursorBrush = SolidColor(Accent)
+                    )
+                }
+            }
+
+            // Sección de medios mejorada
+            if (!mediaUrls.isNullOrEmpty()) {
+                Column {
+                    Row(
+                        verticalAlignment = Alignment.CenterVertically,
+                        modifier = Modifier.fillMaxWidth()
+                    ) {
+                        Text(
+                            text = "Archivos adjuntos",
+                            fontSize = 14.sp,
+                            fontWeight = FontWeight.Medium,
+                            color = Color(0xFF6B7280),
+                            fontFamily = Destacado,
+                            letterSpacing = 0.5.sp
+                        )
+
+                        Spacer(Modifier.width(8.dp))
+
+                        Card(
+                            shape = RoundedCornerShape(12.dp),
+                            colors = CardDefaults.cardColors(containerColor = Accent.copy(alpha = 0.1f)),
+                            elevation = CardDefaults.cardElevation(0.dp)
+                        ) {
+                            Text(
+                                text = "${mediaUrls.size}",
+                                modifier = Modifier.padding(horizontal = 8.dp, vertical = 4.dp),
+                                fontSize = 10.sp,
+                                fontWeight = FontWeight.Bold,
+                                color = Accent,
+                                fontFamily = Destacado
+                            )
+                        }
+                    }
+
+                    Spacer(Modifier.height(8.dp))
+
+                    LazyRow(
+                        modifier = Modifier.fillMaxWidth(),
+                        horizontalArrangement = Arrangement.spacedBy(12.dp)
+                    ) {
+                        items(mediaUrls.size) { i ->
+                            val uri = mediaUrls[i].toUri()
+                            val ctx = LocalContext.current
+                            val mime = ctx.contentResolver.getType(uri).orEmpty()
+
+                            Card(
+                                modifier = Modifier.size(120.dp),
+                                shape = RoundedCornerShape(16.dp),
+                                elevation = CardDefaults.cardElevation(4.dp)
                             ) {
-                                Icon(Icons.Default.Delete, contentDescription = "Eliminar archivo", tint = Color.Red)
+                                Box(modifier = Modifier.fillMaxSize()) {
+                                    if (mime.startsWith("video/")) {
+                                        VideoPlayer(uri)
+                                        // Overlay para indicar que es video
+                                        Box(
+                                            modifier = Modifier
+                                                .align(Alignment.Center)
+                                                .size(32.dp)
+                                                .background(
+                                                    Color.Black.copy(alpha = 0.6f),
+                                                    CircleShape
+                                                ),
+                                            contentAlignment = Alignment.Center
+                                        ) {
+                                            Icon(
+                                                Icons.Default.PlayArrow,
+                                                contentDescription = "Video",
+                                                tint = Color.White,
+                                                modifier = Modifier.size(20.dp)
+                                            )
+                                        }
+                                    } else {
+                                        AsyncImage(
+                                            model = uri,
+                                            contentDescription = null,
+                                            modifier = Modifier.fillMaxSize(),
+                                            contentScale = ContentScale.Crop
+                                        )
+                                    }
+
+                                    // Botón eliminar mejorado
+                                    Card(
+                                        onClick = { onRemoveMedia?.invoke(i) },
+                                        modifier = Modifier
+                                            .align(Alignment.TopEnd)
+                                            .padding(8.dp)
+                                            .size(28.dp),
+                                        shape = CircleShape,
+                                        colors = CardDefaults.cardColors(
+                                            containerColor = Color.Black.copy(alpha = 0.7f)
+                                        ),
+                                        elevation = CardDefaults.cardElevation(2.dp)
+                                    ) {
+                                        Box(
+                                            modifier = Modifier.fillMaxSize(),
+                                            contentAlignment = Alignment.Center
+                                        ) {
+                                            Icon(
+                                                Icons.Default.Close,
+                                                contentDescription = "Eliminar archivo",
+                                                tint = Color.White,
+                                                modifier = Modifier.size(16.dp)
+                                            )
+                                        }
+                                    }
+                                }
                             }
                         }
                     }
                 }
             }
+
+            // Línea separadora sutil
+            Box(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .height(1.dp)
+                    .background(Color(0xFFF3F4F6))
+            )
+
+            // Botones de acción rediseñados
             Row(
-                Modifier.fillMaxWidth(),
+                modifier = Modifier.fillMaxWidth(),
                 horizontalArrangement = Arrangement.spacedBy(12.dp)
             ) {
-                // 1) Agregar / Cambiar media
-                OutlinedButton(
-                    onClick        = onAddMedia,
-                    modifier       = Modifier
-                        .weight(1f)
-                        .height(40.dp),
-                    shape          = RoundedCornerShape(8.dp),
-                    border         = BorderStroke(1.dp, Accent),
-                    contentPadding = PaddingValues(horizontal = 12.dp)
+                // Botón agregar media
+                Card(
+                    onClick = onAddMedia,
+                    modifier = Modifier.weight(1f).height(56.dp),
+                    shape = RoundedCornerShape(12.dp),
+                    colors = CardDefaults.cardColors(containerColor = Accent.copy(alpha = 0.1f)),
+                    elevation = CardDefaults.cardElevation(0.dp),
+                    border = BorderStroke(1.dp, Accent.copy(alpha = 0.3f))
                 ) {
-                    Icon(Icons.Default.CameraAlt, contentDescription = null, tint = Accent)
-                    Spacer(Modifier.width(4.dp))
-                    Text(
-                        text  = if (firstMedia == null) "Agregar" else "Cambiar",
-                        color = Accent,
-                        fontFamily = Destacado
-                    )
+                    Row(
+                        modifier = Modifier
+                            .fillMaxSize()
+                            .padding(16.dp),
+                        horizontalArrangement = Arrangement.Center,
+                        verticalAlignment = Alignment.CenterVertically
+                    ) {
+                        Icon(
+                            Icons.Default.CameraAlt,
+                            contentDescription = null,
+                            tint = Accent,
+                            modifier = Modifier.size(18.dp)
+                        )
+                        Spacer(Modifier.width(8.dp))
+                        Text(
+                            text = if (firstMedia == null) "Agregar" else "Más archivos",
+                            color = Accent,
+                            fontFamily = Destacado,
+                            fontWeight = FontWeight.SemiBold,
+                            fontSize = 14.sp
+                        )
+                    }
                 }
 
-                // 2) Eliminar paso  ➜ mismo estilo
-                OutlinedButton(
-                    onClick        = onDelete,
-                    modifier       = Modifier
-                        .weight(1f)
-                        .height(40.dp),
-                    shape          = RoundedCornerShape(8.dp),
-                    border         = BorderStroke(1.dp, Accent),
-                    contentPadding = PaddingValues(horizontal = 12.dp)
+                // Botón eliminar paso
+                Card(
+                    onClick = onDelete,
+                    modifier = Modifier.width(80.dp).height(56.dp),
+                    shape = RoundedCornerShape(12.dp),
+                    colors = CardDefaults.cardColors(containerColor = Color(0xFFFEF2F2)),
+                    elevation = CardDefaults.cardElevation(0.dp),
+                    border = BorderStroke(1.dp, Color(0xFFFECACA))
                 ) {
-                    Icon(Icons.Default.Delete, contentDescription = null, tint = Accent)
-                    Spacer(Modifier.width(4.dp))
-                    Text("Eliminar", color = Accent, fontFamily = Destacado)
+                    Box(
+                        modifier = Modifier.fillMaxSize(),
+                        contentAlignment = Alignment.Center
+                    ) {
+                        Icon(
+                            Icons.Default.Delete,
+                            contentDescription = "Eliminar paso",
+                            tint = Color(0xFFEF4444),
+                            modifier = Modifier.size(18.dp)
+                        )
+                    }
                 }
             }
         }
-    }
-
-    if (showMediaPreview && firstMedia != null) {
-        AlertDialog(
-            onDismissRequest = { showMediaPreview = false },
-            confirmButton   = { TextButton(onClick = { showMediaPreview = false }) { Text("Cerrar") } },
-            text            = {
-                val uri = Uri.parse(firstMedia)
-                val mime = LocalContext.current.contentResolver.getType(uri).orEmpty()
-                if (mime.startsWith("video/")) VideoPlayer(uri)
-                else AsyncImage(model = uri, contentDescription = null, modifier = Modifier.fillMaxWidth().height(260.dp), contentScale = ContentScale.Crop)
-            }
-        )
     }
 }

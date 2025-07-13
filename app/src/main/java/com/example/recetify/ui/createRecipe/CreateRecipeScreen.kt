@@ -1387,7 +1387,7 @@ private fun IngredientRow(
     index: Int,
     ingredient: RecipeIngredientRequest,
     onUpdate: (RecipeIngredientRequest) -> Unit,
-    onDelete: () -> Unit // <--- nuevo parámetro
+    onDelete: () -> Unit
 ) {
     var cantidadText by remember { mutableStateOf(ingredient.cantidad.toInt().toString()) }
     var unidad      by remember { mutableStateOf(ingredient.unidadMedida) }
@@ -1397,157 +1397,221 @@ private fun IngredientRow(
         modifier  = Modifier
             .fillMaxWidth()
             .padding(vertical = 4.dp),
-        shape     = RoundedCornerShape(6.dp),
+        shape     = RoundedCornerShape(12.dp),
         colors    = CardDefaults.cardColors(containerColor = Color.White),
-        elevation = CardDefaults.cardElevation(2.dp)
+        elevation = CardDefaults.cardElevation(3.dp)
     ) {
-        Row(
-            Modifier
-                .padding(12.dp),
-            verticalAlignment = Alignment.CenterVertically
+        Column(
+            Modifier.padding(16.dp),
+            verticalArrangement = Arrangement.spacedBy(8.dp)
         ) {
-            // Reemplazamos el emoji con la imagen de TheMealDB
-            val imageUrl = TheMealDBImages.getIngredientImageUrlSmart(ingredient.nombre.orEmpty())
-            if (imageUrl != null) {
-                Box(
-                    modifier = Modifier
-                        .size(32.dp)
-                        .clip(CircleShape)
-                        .background(Color(0xFFE6EBF2)),
-                    contentAlignment = Alignment.Center
-                ) {
-                    AsyncImage(
-                        model = imageUrl,
-                        contentDescription = ingredient.nombre.orEmpty(),
-                        modifier = Modifier.fillMaxSize(),
-                        contentScale = ContentScale.Crop
-                    )
-                }
-            } else {
-                // Fallback al emoji si no hay imagen disponible
-                Text(
-                    text       = obtenerEmoji(ingredient.nombre.orEmpty()),
-                    fontSize   = 24.sp,
-                    color      = Color.Black,
-                    fontFamily = Destacado
-                )
-            }
-            Spacer(Modifier.width(8.dp))
-
-            // Nombre
-            Text(
-                text       = ingredient.nombre.orEmpty(),
-                modifier   = Modifier.weight(1f),
-                fontSize   = 16.sp,
-                fontWeight = FontWeight.Medium,
-                color      = Color.Black,
-                fontFamily = Destacado
-            )
-            Spacer(Modifier.width(8.dp))
-
-            // Botón “−”
-            IconButton(
-                onClick = {
-                    val current = cantidadText.toIntOrNull() ?: 1
-                    if (current > 1) {
-                        cantidadText = (current - 1).toString()
-                        onUpdate(ingredient.copy(cantidad = (current - 1).toDouble(), unidadMedida = unidad))
+            // Primera fila: Imagen + Nombre
+            Row(
+                verticalAlignment = Alignment.CenterVertically,
+                modifier = Modifier.fillMaxWidth()
+            ) {
+                // Imagen del ingrediente
+                val imageUrl = TheMealDBImages.getIngredientImageUrlSmart(ingredient.nombre.orEmpty())
+                if (imageUrl != null) {
+                    Box(
+                        modifier = Modifier
+                            .size(48.dp)
+                            .clip(CircleShape)
+                            .background(Color(0xFFE6EBF2)),
+                        contentAlignment = Alignment.Center
+                    ) {
+                        AsyncImage(
+                            model = imageUrl,
+                            contentDescription = ingredient.nombre.orEmpty(),
+                            modifier = Modifier.fillMaxSize(),
+                            contentScale = ContentScale.Crop
+                        )
                     }
-                },
-                modifier = Modifier.size(28.dp)
-            ) {
-                Icon(Icons.Default.Remove, contentDescription = null, tint = Red)
-            }
-            Spacer(Modifier.width(4.dp))
-
-            // Caja de cantidad editable
-            Box(
-                modifier = Modifier
-                    .width(64.dp)
-                    .height(36.dp)
-                    .background(Color.White, RoundedCornerShape(6.dp))
-                    .border(1.dp, Color.LightGray, RoundedCornerShape(6.dp)),
-                contentAlignment = Alignment.Center
-            ) {
-                BasicTextField(
-                    value         = cantidadText,
-                    onValueChange = { new ->
-                        if (new.all(Char::isDigit)) {
-                            cantidadText = new
-                            val parsed = new.toIntOrNull() ?: 0
-                            onUpdate(ingredient.copy(cantidad = parsed.toDouble(), unidadMedida = unidad))
-                        }
-                    },
-                    singleLine = true,
-                    keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
-                    textStyle = LocalTextStyle.current.copy(
-                        color      = Color.Black,
-                        fontSize   = 18.sp,
-                        fontWeight = FontWeight.Bold,
-                        textAlign  = TextAlign.Center,
-                        fontFamily = Destacado
-                    ),
-                    cursorBrush = SolidColor(Color.Black),
-                    decorationBox = { inner ->
-                        Box(Modifier.fillMaxSize(), contentAlignment = Alignment.Center) { inner() }
-                    }
-                )
-            }
-            Spacer(Modifier.width(8.dp))
-
-            // Caja de unidad
-            Box(
-                modifier = Modifier
-                    .width(56.dp)
-                    .height(36.dp)
-                    .background(Color.White, RoundedCornerShape(6.dp))
-                    .border(1.dp, Color.LightGray, RoundedCornerShape(6.dp))
-                    .clickable { expanded = true },
-                contentAlignment = Alignment.Center
-            ) {
-                Text(unidad, color = Color.Black, fontFamily = Destacado)
-
-                DropdownMenu(
-                    expanded         = expanded,
-                    onDismissRequest = { expanded = false },
-                    // ↓ aquí forzamos el fondo blanco y un radio
-                    modifier = Modifier
-                        .background(Color.White, shape = RoundedCornerShape(6.dp))
-                ) {
-                    listOf("un","g","kg","ml","l","tsp","tbsp","cup").forEach { u ->
-                        DropdownMenuItem(
-                            text = { Text(u, color = Color.Black, fontFamily = Destacado) },
-                            onClick = {
-                                unidad   = u
-                                expanded = false
-                                val qty = cantidadText.toIntOrNull() ?: 0
-                                onUpdate(ingredient.copy(cantidad = qty.toDouble(), unidadMedida = unidad))
-                            }
+                } else {
+                    // Fallback al emoji
+                    Box(
+                        modifier = Modifier
+                            .size(48.dp)
+                            .clip(CircleShape)
+                            .background(Color(0xFFE6EBF2)),
+                        contentAlignment = Alignment.Center
+                    ) {
+                        Text(
+                            text = obtenerEmoji(ingredient.nombre.orEmpty()),
+                            fontSize = 20.sp,
+                            color = Color.Black
                         )
                     }
                 }
-            }
-            Spacer(Modifier.width(4.dp))
 
-            // Botón “+”
-            IconButton(
-                onClick = {
-                    val current = cantidadText.toIntOrNull() ?: 0
-                    cantidadText = (current + 1).toString()
-                    onUpdate(ingredient.copy(cantidad = (current + 1).toDouble(), unidadMedida = unidad))
-                },
-                modifier = Modifier.size(28.dp)
-            ) {
-                Icon(Icons.Default.Add, contentDescription = null, tint = Color(0xFF00C853))
+                Spacer(Modifier.width(12.dp))
+
+                // Nombre del ingrediente con más espacio
+                Text(
+                    text = ingredient.nombre.orEmpty(),
+                    modifier = Modifier.weight(1f),
+                    fontSize = 18.sp,
+                    fontWeight = FontWeight.SemiBold,
+                    color = Color.Black,
+                    fontFamily = Destacado,
+                    maxLines = 2,
+                    overflow = TextOverflow.Ellipsis
+                )
+
+                // Botón eliminar más discreto
+                IconButton(
+                    onClick = onDelete,
+                    modifier = Modifier.size(32.dp)
+                ) {
+                    Icon(
+                        imageVector = Icons.Default.Delete,
+                        contentDescription = "Eliminar ingrediente",
+                        tint = Color(0xFFD32F2F),
+                        modifier = Modifier.size(20.dp)
+                    )
+                }
             }
-            // --- Tacho de basura ---
-            IconButton(
-                onClick = onDelete,
-                modifier = Modifier.size(28.dp)
+
+            // Segunda fila: Controles de cantidad y unidad
+            Row(
+                verticalAlignment = Alignment.CenterVertically,
+                horizontalArrangement = Arrangement.spacedBy(8.dp),
+                modifier = Modifier.fillMaxWidth()
             ) {
-                Icon(Icons.Default.Delete, contentDescription = "Eliminar ingrediente", tint = Color(0xFFD32F2F))
+                // Texto "Cantidad:"
+                Text(
+                    text = "Cantidad:",
+                    fontSize = 14.sp,
+                    fontWeight = FontWeight.Medium,
+                    color = Color.Gray,
+                    fontFamily = Destacado
+                )
+
+                // Controles de cantidad más compactos
+                Row(
+                    verticalAlignment = Alignment.CenterVertically,
+                    modifier = Modifier.weight(1f)
+                ) {
+                    // Botón decrementar
+                    Surface(
+                        onClick = {
+                            val current = cantidadText.toIntOrNull() ?: 1
+                            if (current > 1) {
+                                cantidadText = (current - 1).toString()
+                                onUpdate(ingredient.copy(cantidad = (current - 1).toDouble(), unidadMedida = unidad))
+                            }
+                        },
+                        modifier = Modifier.size(32.dp),
+                        shape = CircleShape,
+                        color = Color(0xFFF5F5F5)
+                    ) {
+                        Box(contentAlignment = Alignment.Center) {
+                            Icon(
+                                Icons.Default.Remove,
+                                contentDescription = null,
+                                tint = Color(0xFF666666),
+                                modifier = Modifier.size(16.dp)
+                            )
+                        }
+                    }
+
+                    // Campo de cantidad
+                    Box(
+                        modifier = Modifier
+                            .width(60.dp)
+                            .height(36.dp)
+                            .background(Color(0xFFF8F8F8), RoundedCornerShape(8.dp))
+                            .border(1.dp, Color(0xFFE0E0E0), RoundedCornerShape(8.dp)),
+                        contentAlignment = Alignment.Center
+                    ) {
+                        BasicTextField(
+                            value = cantidadText,
+                            onValueChange = { new ->
+                                if (new.all(Char::isDigit) && new.isNotEmpty()) {
+                                    cantidadText = new
+                                    val parsed = new.toIntOrNull() ?: 1
+                                    onUpdate(ingredient.copy(cantidad = parsed.toDouble(), unidadMedida = unidad))
+                                }
+                            },
+                            singleLine = true,
+                            keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
+                            textStyle = LocalTextStyle.current.copy(
+                                color = Color.Black,
+                                fontSize = 16.sp,
+                                fontWeight = FontWeight.Bold,
+                                textAlign = TextAlign.Center,
+                                fontFamily = Destacado
+                            ),
+                            cursorBrush = SolidColor(Color.Black)
+                        )
+                    }
+
+                    // Botón incrementar
+                    Surface(
+                        onClick = {
+                            val current = cantidadText.toIntOrNull() ?: 0
+                            cantidadText = (current + 1).toString()
+                            onUpdate(ingredient.copy(cantidad = (current + 1).toDouble(), unidadMedida = unidad))
+                        },
+                        modifier = Modifier.size(32.dp),
+                        shape = CircleShape,
+                        color = Color(0xFFF5F5F5)
+                    ) {
+                        Box(contentAlignment = Alignment.Center) {
+                            Icon(
+                                Icons.Default.Add,
+                                contentDescription = null,
+                                tint = Color(0xFF666666),
+                                modifier = Modifier.size(16.dp)
+                            )
+                        }
+                    }
+                }
+
+                // Selector de unidad más compacto
+                Surface(
+                    onClick = { expanded = true },
+                    modifier = Modifier.width(70.dp).height(36.dp),
+                    shape = RoundedCornerShape(8.dp),
+                    color = Color(0xFFF8F8F8),
+                    border = BorderStroke(1.dp, Color(0xFFE0E0E0))
+                ) {
+                    Box(contentAlignment = Alignment.Center) {
+                        Text(
+                            text = unidad,
+                            color = Color.Black,
+                            fontSize = 14.sp,
+                            fontWeight = FontWeight.Medium,
+                            fontFamily = Destacado
+                        )
+
+                        DropdownMenu(
+                            expanded = expanded,
+                            onDismissRequest = { expanded = false },
+                            modifier = Modifier.background(Color.White, RoundedCornerShape(8.dp))
+                        ) {
+                            listOf("un", "g", "kg", "ml", "l", "tsp", "tbsp", "cup").forEach { u ->
+                                DropdownMenuItem(
+                                    text = {
+                                        Text(
+                                            u,
+                                            color = Color.Black,
+                                            fontFamily = Destacado,
+                                            fontSize = 14.sp
+                                        )
+                                    },
+                                    onClick = {
+                                        unidad = u
+                                        expanded = false
+                                        val qty = cantidadText.toIntOrNull() ?: 1
+                                        onUpdate(ingredient.copy(cantidad = qty.toDouble(), unidadMedida = unidad))
+                                    }
+                                )
+                            }
+                        }
+                    }
+                }
             }
         }
-
     }
 }
