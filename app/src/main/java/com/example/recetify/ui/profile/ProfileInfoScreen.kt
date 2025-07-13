@@ -271,7 +271,7 @@ fun ProfileInfoScreen(
                             scope.launch {
                                 SessionManager.clearSession(context)
                                 navController.navigate("login") {
-                                    popUpTo(navController.graph.startDestinationId) { inclusive = true }
+                                    popUpTo(0) { inclusive = true }
                                     launchSingleTop = true
                                 }
                             }
