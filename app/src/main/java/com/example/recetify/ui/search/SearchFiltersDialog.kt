@@ -93,7 +93,11 @@ fun SearchFiltersDialog(
                         modifier = Modifier.fillMaxWidth().zIndex(1f),
                         shape = RoundedCornerShape(12.dp),
                         keyboardOptions = KeyboardOptions.Default.copy(imeAction = ImeAction.Done),
-                        keyboardActions = KeyboardActions(onDone = { showDropdown = false })
+                        keyboardActions = KeyboardActions(onDone = { showDropdown = false }),
+                        colors = OutlinedTextFieldDefaults.colors(
+                            focusedTextColor = Color.Black,
+                            unfocusedTextColor = Color.Black
+                        )
                     )
                     if (showDropdown && filteredIngredients.isNotEmpty()) {
                         Card(
@@ -171,7 +175,11 @@ fun SearchFiltersDialog(
                         modifier = Modifier.fillMaxWidth().zIndex(1f),
                         shape = RoundedCornerShape(12.dp),
                         keyboardOptions = KeyboardOptions.Default.copy(imeAction = ImeAction.Done),
-                        keyboardActions = KeyboardActions(onDone = { showDropdownExclude = false })
+                        keyboardActions = KeyboardActions(onDone = { showDropdownExclude = false }),
+                        colors = OutlinedTextFieldDefaults.colors(
+                            focusedTextColor = Color.Black,
+                            unfocusedTextColor = Color.Black
+                        )
                     )
                     if (showDropdownExclude && filteredExcludeIngredients.isNotEmpty()) {
                         Card(
@@ -243,7 +251,11 @@ fun SearchFiltersDialog(
                     placeholder = { Text("Buscar…") },
                     singleLine = true,
                     modifier = Modifier.fillMaxWidth(),
-                    shape = RoundedCornerShape(12.dp)
+                    shape = RoundedCornerShape(12.dp),
+                    colors = OutlinedTextFieldDefaults.colors(
+                        focusedTextColor = Color.Black,
+                        unfocusedTextColor = Color.Black
+                    )
                 )
                 Spacer(Modifier.height(14.dp))
 

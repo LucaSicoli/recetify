@@ -46,7 +46,9 @@ fun BottomNavBar(
             shape           = RoundedCornerShape(topStart = 32.dp, topEnd = 32.dp)
         ) {
             val navColors = NavigationBarItemDefaults.colors(
-                unselectedIconColor = Color.Black
+                unselectedIconColor = Color.Black,
+                selectedIconColor = Color.White,
+                indicatorColor = Color(0xFF00261C)
             )
             Row(
                 modifier            = Modifier

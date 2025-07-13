@@ -222,19 +222,15 @@ fun PublicHeader(
     title: String,
     shape: Shape
 ) {
-    Card(
-        modifier  = modifier,
-        shape     = shape,
-        elevation = CardDefaults.cardElevation(defaultElevation = 8.dp),
-        colors    = CardDefaults.cardColors(containerColor = Color.Transparent)
+    Surface(
+        modifier = modifier,
+        shape = shape,
+        color = Color.Transparent
     ) {
         Box(
             Modifier
                 .fillMaxSize()
-                .background(
-                    color = Color(0xFF2E7D32), // SOLO verde oscuro
-                    shape = RoundedCornerShape(topStart = 8.dp, bottomEnd = 8.dp)
-                )
+                .background(Color(0xFF2E7D32))
         ) {
             Row(
                 Modifier
@@ -244,20 +240,20 @@ fun PublicHeader(
                 verticalAlignment = Alignment.CenterVertically
             ) {
                 Icon(
-                    imageVector        = Icons.Filled.Restaurant,
+                    imageVector = Icons.Filled.Restaurant,
                     contentDescription = null,
-                    tint               = Color.White,
-                    modifier           = Modifier.size(28.dp)
+                    tint = Color.White,
+                    modifier = Modifier.size(28.dp)
                 )
                 Spacer(Modifier.width(12.dp))
                 Text(
-                    text       = title,
-                    maxLines   = 1,
-                    overflow   = TextOverflow.Ellipsis,
-                    style      = MaterialTheme.typography.titleMedium.copy(
-                        color      = Color.White,
+                    text = title,
+                    maxLines = 1,
+                    overflow = TextOverflow.Ellipsis,
+                    style = MaterialTheme.typography.titleMedium.copy(
+                        color = Color.White,
                         fontWeight = FontWeight.Bold,
-                        fontSize   = 20.sp,
+                        fontSize = 20.sp,
                         fontFamily = Destacado
                     )
                 )
