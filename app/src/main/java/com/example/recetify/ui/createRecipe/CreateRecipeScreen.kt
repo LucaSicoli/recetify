@@ -398,7 +398,7 @@ fun CreateRecipeScreen(
 
                     Divider(
                         color = Color(0xFFE0E0E0),
-                        thickness = 4.dp,
+                        thickness = 2.dp,
                         modifier = Modifier
                             .fillMaxWidth()
                             .padding(vertical = 8.dp)
@@ -406,16 +406,10 @@ fun CreateRecipeScreen(
 
 
                     // STEPPERS
-                    val stepBg = Color.Black
-                    val stepFg = Color.White
-
-                    // STEPPERS
                     // ── STEPPERS (Porciones / Tiempo / Categoria / Tipo) ─────────────────
                     Column(
-                        Modifier
-                            .fillMaxWidth()
-                            .padding(vertical = 16.dp),
-                        verticalArrangement = Arrangement.spacedBy(12.dp)
+                        Modifier.fillMaxWidth(),
+                        verticalArrangement = Arrangement.spacedBy(16.dp)
                     ) {
                         // 1. Porciones
                         Card(
@@ -577,35 +571,70 @@ fun CreateRecipeScreen(
                             }
                         }
 
+                        // Divider antes de las categorías
+                        Divider(
+                            color = Color(0xFFE0E0E0),
+                            thickness = 2.dp,
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .padding(vertical = 8.dp)
+                        )
+
                         // 3. Categoría
-                        Text("Categoría", fontFamily = Destacado, fontWeight = FontWeight.SemiBold, fontSize = 16.sp, color = DarkGray)
-                        FlowRow(
-                            modifier = Modifier.fillMaxWidth()
+                        Box(
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .clip(RoundedCornerShape(12.dp))
+                                .background(Color(0xFF333333))
+                                .padding(vertical = 16.dp),
+                            contentAlignment = Alignment.Center
                         ) {
-                            categories.forEach { cat ->
-                                val selected = selectedCategory == cat
-                                OutlinedButton(
-                                    onClick = { selectedCategory = cat },
-                                    shape = RoundedCornerShape(50),
-                                    border = BorderStroke(1.dp, Color.Black),
-                                    colors = ButtonDefaults.outlinedButtonColors(
-                                        containerColor = if (selected) Ladrillo else Color.White,
-                                        contentColor = if (selected) Color.White else Color.Black
-                                    ),
-                                    modifier = Modifier
-                                        .height(44.dp)
-                                        .padding(end = 8.dp, bottom = 8.dp)
-                                ) {
-                                    Text(
-                                        cat,
-                                        fontFamily = Destacado,
-                                        fontWeight = FontWeight.Medium,
-                                        fontSize = 13.sp,
-                                        maxLines = 1,
-                                        softWrap = false,
-                                        overflow = TextOverflow.Clip,
-                                        textAlign = TextAlign.Center
-                                    )
+                            Text(
+                                "Categoría",
+                                color = Color.White,
+                                fontWeight = FontWeight.SemiBold,
+                                fontSize = 16.sp,
+                                textAlign = TextAlign.Center,
+                                fontFamily = Destacado
+                            )
+                        }
+
+                        // Grid manual de 3 columnas para categorías
+                        val categoryRows = categories.chunked(3)
+                        categoryRows.forEach { rowCategories ->
+                            Row(
+                                modifier = Modifier.fillMaxWidth(),
+                                horizontalArrangement = Arrangement.spacedBy(8.dp)
+                            ) {
+                                rowCategories.forEach { cat ->
+                                    val selected = selectedCategory == cat
+                                    OutlinedButton(
+                                        onClick = { selectedCategory = cat },
+                                        shape = RoundedCornerShape(50),
+                                        border = BorderStroke(1.dp, Color.Black),
+                                        colors = ButtonDefaults.outlinedButtonColors(
+                                            containerColor = if (selected) Ladrillo else Color.White,
+                                            contentColor = if (selected) Color.White else Color.Black
+                                        ),
+                                        modifier = Modifier
+                                            .weight(1f)
+                                            .height(44.dp),
+                                        contentPadding = PaddingValues(horizontal = 4.dp, vertical = 8.dp)
+                                    ) {
+                                        AutoResizeText(
+                                            text = cat,
+                                            fontFamily = Destacado,
+                                            fontWeight = FontWeight.Medium,
+                                            maxFontSize = 13.sp,
+                                            minFontSize = 9.sp,
+                                            textAlign = TextAlign.Center,
+                                            modifier = Modifier.fillMaxWidth()
+                                        )
+                                    }
+                                }
+                                // Rellenar espacios vacíos en la última fila
+                                repeat(3 - rowCategories.size) {
+                                    Spacer(modifier = Modifier.weight(1f))
                                 }
                             }
                         }
@@ -613,35 +642,70 @@ fun CreateRecipeScreen(
                             Text("Selecciona una categoría", color = Color.Red, fontSize = 12.sp)
                         }
 
+                        // Divider entre categoría y tipo de plato
+                        Divider(
+                            color = Color(0xFFE0E0E0),
+                            thickness = 2.dp,
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .padding(vertical = 8.dp)
+                        )
+
                         // 4. Tipo de Plato
-                        Text("Tipo de Plato", fontFamily = Destacado, fontWeight = FontWeight.SemiBold, fontSize = 16.sp, color = DarkGray)
-                        FlowRow(
-                            modifier = Modifier.fillMaxWidth()
+                        Box(
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .clip(RoundedCornerShape(12.dp))
+                                .background(Color(0xFF333333))
+                                .padding(vertical = 16.dp),
+                            contentAlignment = Alignment.Center
                         ) {
-                            tiposPlato.forEach { tipo ->
-                                val selected = selectedTipo == tipo
-                                OutlinedButton(
-                                    onClick = { selectedTipo = tipo },
-                                    shape = RoundedCornerShape(50),
-                                    border = BorderStroke(1.dp, Color.Black),
-                                    colors = ButtonDefaults.outlinedButtonColors(
-                                        containerColor = if (selected) Ladrillo else Color.White,
-                                        contentColor = if (selected) Color.White else Color.Black
-                                    ),
-                                    modifier = Modifier
-                                        .height(44.dp)
-                                        .padding(end = 8.dp, bottom = 8.dp)
-                                ) {
-                                    Text(
-                                        tipo,
-                                        fontFamily = Destacado,
-                                        fontWeight = FontWeight.Medium,
-                                        fontSize = 13.sp,
-                                        maxLines = 1,
-                                        softWrap = false,
-                                        overflow = TextOverflow.Clip,
-                                        textAlign = TextAlign.Center
-                                    )
+                            Text(
+                                "Tipo de Plato",
+                                color = Color.White,
+                                fontWeight = FontWeight.SemiBold,
+                                fontSize = 16.sp,
+                                textAlign = TextAlign.Center,
+                                fontFamily = Destacado
+                            )
+                        }
+
+                        // Grid manual de 3 columnas para tipos de plato
+                        val tipoRows = tiposPlato.chunked(3)
+                        tipoRows.forEach { rowTipos ->
+                            Row(
+                                modifier = Modifier.fillMaxWidth(),
+                                horizontalArrangement = Arrangement.spacedBy(8.dp)
+                            ) {
+                                rowTipos.forEach { tipo ->
+                                    val selected = selectedTipo == tipo
+                                    OutlinedButton(
+                                        onClick = { selectedTipo = tipo },
+                                        shape = RoundedCornerShape(50),
+                                        border = BorderStroke(1.dp, Color.Black),
+                                        colors = ButtonDefaults.outlinedButtonColors(
+                                            containerColor = if (selected) Ladrillo else Color.White,
+                                            contentColor = if (selected) Color.White else Color.Black
+                                        ),
+                                        modifier = Modifier
+                                            .weight(1f)
+                                            .height(44.dp),
+                                        contentPadding = PaddingValues(horizontal = 4.dp, vertical = 8.dp)
+                                    ) {
+                                        AutoResizeText(
+                                            text = tipo,
+                                            fontFamily = Destacado,
+                                            fontWeight = FontWeight.Medium,
+                                            maxFontSize = 13.sp,
+                                            minFontSize = 9.sp,
+                                            textAlign = TextAlign.Center,
+                                            modifier = Modifier.fillMaxWidth()
+                                        )
+                                    }
+                                }
+                                // Rellenar espacios vacíos en la última fila
+                                repeat(3 - rowTipos.size) {
+                                    Spacer(modifier = Modifier.weight(1f))
                                 }
                             }
                         }
@@ -652,7 +716,7 @@ fun CreateRecipeScreen(
 // ── Divider justo después de todos los steppers ─────────────────
                     Divider(
                         color = Color(0xFFE0E0E0),
-                        thickness = 4.dp,
+                        thickness = 2.dp,
                         modifier = Modifier
                             .fillMaxWidth()
                             .padding(vertical = 8.dp)
@@ -762,7 +826,7 @@ fun CreateRecipeScreen(
 
                     Divider(
                         color = Color(0xFFE0E0E0),
-                        thickness = 4.dp,
+                        thickness = 2.dp,
                         modifier = Modifier
                             .fillMaxWidth()
                             .padding(vertical = 8.dp)
@@ -868,7 +932,7 @@ fun CreateRecipeScreen(
 
                     Divider(
                         color = Color(0xFFE0E0E0),
-                        thickness = 4.dp,
+                        thickness = 2.dp,
                         modifier = Modifier
                             .fillMaxWidth()
                             .padding(vertical = 8.dp)
