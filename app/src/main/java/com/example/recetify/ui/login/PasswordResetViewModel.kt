@@ -19,8 +19,8 @@ class PasswordResetViewModel : ViewModel() {
 
     fun onEmailChange(e: String)        = _state.update { it.copy(email = e) }
     fun onCodeChange(c: String)         = _state.update { it.copy(code = c) }
-    //fun onNewPassChange(p: String)      = _state.update { it.copy(newPassword = p) }
     fun onConfirmPassChange(p: String)  = _state.update { it.copy(confirmPassword = p) }
+
     fun onNewPassChange(p: String) {
         _state.update {
             it.copy(
@@ -34,20 +34,48 @@ class PasswordResetViewModel : ViewModel() {
         }
     }
 
-
     fun requestReset(onSuccess: ()->Unit) {
         viewModelScope.launch {
             _state.update { it.copy(isLoading = true, error = null) }
             try {
-                RetrofitClient.api.requestReset(EmailDTO(state.value.email))
+                // Llamar a requestReset que ahora devuelve PasswordResetResponse
+                val response = RetrofitClient.api.requestReset(EmailDTO(state.value.email))
                 _state.update { it.copy(isLoading = false) }
-                onSuccess()
+
+                // Manejar la respuesta según el status
+                when (response.status) {
+                    com.example.recetify.data.remote.model.PasswordResetResponse.Status.SUCCESS -> {
+                        // Éxito: continuar al siguiente paso
+                        onSuccess()
+                    }
+                    com.example.recetify.data.remote.model.PasswordResetResponse.Status.USER_INACTIVE -> {
+                        // Usuario inactivo: mostrar dialog
+                        _state.update {
+                            it.copy(showUserInactiveDialog = true)
+                        }
+                    }
+                    com.example.recetify.data.remote.model.PasswordResetResponse.Status.USER_NOT_FOUND -> {
+                        // Usuario no encontrado: mostrar mensaje de error
+                        _state.update {
+                            it.copy(error = "El mail ingresado está mal escrito o no existe")
+                        }
+                    }
+                }
             } catch (t: Throwable) {
-                _state.update { it.copy(isLoading = false, error = t.localizedMessage) }
+                // Manejar errores de red/conexión
+                _state.update {
+                    it.copy(
+                        isLoading = false,
+                        error = "Error de conexión. Verificá tu internet e intentá nuevamente."
+                    )
+                }
             }
         }
     }
 
+    fun dismissUserInactiveDialog() {
+        _state.update { it.copy(showUserInactiveDialog = false) }
+    }
 
     fun verifyCode(
         code: String,

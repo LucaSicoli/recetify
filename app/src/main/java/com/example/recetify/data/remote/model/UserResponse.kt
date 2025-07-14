@@ -7,5 +7,6 @@ data class UserResponse(
     val email: String,
     val fechaCreacion: String,
     val urlFotoPerfil: String?,
-    val descripcion: String?      // ← nuevo campo opcional
+    val descripcion: String?,
+    val activo: Boolean = true  // ← Nuevo campo con valor por defecto
 )

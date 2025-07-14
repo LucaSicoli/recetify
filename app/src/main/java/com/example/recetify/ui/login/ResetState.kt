@@ -13,5 +13,8 @@ data class ResetState(
     val isLengthValid: Boolean = false,
     val hasUppercase: Boolean = false,
     val hasNumber: Boolean = false,
-    val hasSpecialChar: Boolean = false
+    val hasSpecialChar: Boolean = false,
+
+    // Nuevo: Estado del usuario
+    val showUserInactiveDialog: Boolean = false
 )

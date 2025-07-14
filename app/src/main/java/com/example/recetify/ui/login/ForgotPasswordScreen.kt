@@ -8,12 +8,13 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.MailOutline
+import androidx.compose.material.icons.filled.ArrowBack
+import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
-import androidx.compose.material.icons.filled.ArrowBack
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
@@ -35,11 +36,7 @@ import androidx.lifecycle.viewmodel.compose.viewModel
 import com.example.recetify.R
 import android.content.Intent
 import android.net.Uri
-import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.text.KeyboardActions
-import androidx.compose.material.icons.automirrored.filled.ArrowBack
-import androidx.compose.material.icons.filled.ArrowBack
-import androidx.compose.material3.IconButton
 import androidx.navigation.NavController
 import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.platform.LocalFocusManager
@@ -238,5 +235,43 @@ fun ForgotPasswordScreen(
                 Spacer(modifier = Modifier.height(90.dp))
             }
         }
+    }
+
+    // ── Dialog para usuario inactivo ───────────────────────
+    if (state.showUserInactiveDialog) {
+        AlertDialog(
+            onDismissRequest = { viewModel.dismissUserInactiveDialog() },
+            title = {
+                Text(
+                    text = "Registro Incompleto",
+                    fontFamily = Sen,
+                    fontWeight = FontWeight.Bold,
+                    fontSize = 18.sp,
+                    color = Color.Black
+                )
+            },
+            text = {
+                Text(
+                    text = "Tu registro no está completo o tu usuario no está habilitado. Por favor, comunicate con soporte para habilitar tu cuenta.",
+                    fontFamily = Sen,
+                    fontSize = 14.sp,
+                    color = Color.Black
+                )
+            },
+            confirmButton = {
+                Button(
+                    onClick = { viewModel.dismissUserInactiveDialog() },
+                    colors = ButtonDefaults.buttonColors(containerColor = Color(0xCCBC6154))
+                ) {
+                    Text(
+                        "Entendido",
+                        color = Color.White,
+                        fontFamily = Sen
+                    )
+                }
+            },
+            shape = RoundedCornerShape(16.dp),
+            containerColor = Color.White
+        )
     }
 }

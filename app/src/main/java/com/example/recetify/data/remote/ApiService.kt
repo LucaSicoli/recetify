@@ -6,6 +6,7 @@ import com.example.recetify.data.remote.model.CreateRatingRequest
 import com.example.recetify.data.remote.model.EmailDTO
 import com.example.recetify.data.remote.model.JwtResponse
 import com.example.recetify.data.remote.model.LoginRequest
+import com.example.recetify.data.remote.model.PasswordResetResponse
 import com.example.recetify.data.remote.model.RatingResponse
 import com.example.recetify.data.remote.model.RecipeRequest
 import com.example.recetify.data.remote.model.RecipeResponse
@@ -33,7 +34,7 @@ interface ApiService {
     suspend fun login(@Body req: LoginRequest): JwtResponse
 
     @POST("api/auth/request-reset")
-    suspend fun requestReset(@Body req: EmailDTO): Unit
+    suspend fun requestReset(@Body req: EmailDTO): PasswordResetResponse
 
     @POST("api/auth/verify-reset-code")
     suspend fun verifyResetCode(@Body req: CodeDTO): Unit
@@ -126,4 +127,8 @@ interface ApiService {
     suspend fun uploadImage(
         @Part file: MultipartBody.Part
     ): String
+
+    // —— Usuarios ——
+    @GET("users/by-email/{email}")
+    suspend fun getUserByEmail(@Path("email") email: String): UserResponse
 }
