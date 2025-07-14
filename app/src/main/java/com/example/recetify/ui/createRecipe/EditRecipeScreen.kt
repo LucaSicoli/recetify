@@ -62,36 +62,37 @@ fun EditRecipeScreen(
     val context = LocalContext.current
 
     // UI state
-    var localMediaUri        by remember { mutableStateOf<Uri?>(null) }
-    var isVideo              by remember { mutableStateOf(false) }
+    var localMediaUri by remember { mutableStateOf<Uri?>(null) }
+    var isVideo by remember { mutableStateOf(false) }
     var showIngredientDialog by remember { mutableStateOf(false) }
-    var showStepDialog       by remember { mutableStateOf(false) }
+    var showStepDialog by remember { mutableStateOf(false) }
     var loaded by rememberSaveable { mutableStateOf(false) }
 
-    var nombre        by rememberSaveable { mutableStateOf("") }
-    var descripcion   by rememberSaveable { mutableStateOf("") }
-    var porciones     by rememberSaveable { mutableStateOf(1) }
-    var tiempo        by rememberSaveable { mutableStateOf(15) }
+    var nombre by rememberSaveable { mutableStateOf("") }
+    var descripcion by rememberSaveable { mutableStateOf("") }
+    var porciones by rememberSaveable { mutableStateOf(1) }
+    var tiempo by rememberSaveable { mutableStateOf(15) }
     var porcionesText by rememberSaveable { mutableStateOf("1") }
-    var tiempoText    by rememberSaveable { mutableStateOf("15") }
+    var tiempoText by rememberSaveable { mutableStateOf("15") }
 
-    val categories = listOf("DESAYUNO","ALMUERZO","MERIENDA","CENA","SNACK","POSTRE")
+    val categories = listOf("DESAYUNO", "ALMUERZO", "MERIENDA", "CENA", "SNACK", "POSTRE")
     val tiposPlato = listOf(
-        "FIDEOS","PIZZA","HAMBURGUESA","ENSALADA","SOPA","PASTA",
-        "ARROZ","PESCADO","CARNE","POLLO","VEGETARIANO","VEGANO",
-        "SIN_TACC","RAPIDO","SALUDABLE"
+        "FIDEOS", "PIZZA", "HAMBURGUESA", "ENSALADA", "SOPA", "PASTA",
+        "ARROZ", "PESCADO", "CARNE", "POLLO", "VEGETARIANO", "VEGANO",
+        "SIN_TACC", "RAPIDO", "SALUDABLE"
     )
     var selectedCategory by rememberSaveable { mutableStateOf<String?>(null) }
-    var selectedTipo     by rememberSaveable { mutableStateOf<String?>(null) }
+    var selectedTipo by rememberSaveable { mutableStateOf<String?>(null) }
 
-    val ingredients       = remember { mutableStateListOf<RecipeIngredientRequest>() }
+    // Cambiar a remember simple en lugar de mutableStateListOf para mejor rendimiento
+    var ingredients by remember { mutableStateOf(listOf<RecipeIngredientRequest>()) }
     var selectedStepIndex by remember { mutableStateOf<Int?>(null) }
-    val steps             = remember { mutableStateListOf<RecipeStepRequest>() }
+    var steps by remember { mutableStateOf(listOf<RecipeStepRequest>()) }
 
     // ViewModel state
-    val uploading     by viewModel.uploading.collectAsState()
-    val draftDetail   by viewModel.draftDetail.collectAsState()
-    val draftResult   by viewModel.draftSaved.collectAsState()
+    val uploading by viewModel.uploading.collectAsState()
+    val draftDetail by viewModel.draftDetail.collectAsState()
+    val draftResult by viewModel.draftSaved.collectAsState()
     val publishResult by viewModel.publishResult.collectAsState()
 
     // Load draft once
@@ -104,34 +105,32 @@ fun EditRecipeScreen(
         val d = draftDetail ?: return@LaunchedEffect
         if (!loaded) {
             loaded = true
-            nombre        = d.nombre.orEmpty()
-            descripcion   = d.descripcion.orEmpty()
-            porciones     = d.porciones
+            nombre = d.nombre.orEmpty()
+            descripcion = d.descripcion.orEmpty()
+            porciones = d.porciones
             porcionesText = d.porciones.toString()
-            tiempo        = d.tiempo.toInt()
-            tiempoText    = d.tiempo.toString()
+            tiempo = d.tiempo.toInt()
+            tiempoText = d.tiempo.toString()
             selectedCategory = d.categoria
-            selectedTipo     = d.tipoPlato
+            selectedTipo = d.tipoPlato
 
-            ingredients.clear()
-            ingredients.addAll(d.ingredients.map {
+            ingredients = d.ingredients.map {
                 RecipeIngredientRequest(
                     ingredientId = null,
-                    nombre       = it.nombre.orEmpty(),
-                    cantidad     = it.cantidad,
+                    nombre = it.nombre.orEmpty(),
+                    cantidad = it.cantidad,
                     unidadMedida = it.unidadMedida.orEmpty()
                 )
-            })
+            }
 
-            steps.clear()
-            steps.addAll(d.steps.map {
+            steps = d.steps.map {
                 RecipeStepRequest(
-                    numeroPaso  = it.numeroPaso,
-                    titulo      = it.titulo.orEmpty(),
+                    numeroPaso = it.numeroPaso,
+                    titulo = it.titulo.orEmpty(),
                     descripcion = it.descripcion,
-                    mediaUrls   = it.mediaUrls ?: emptyList()
+                    mediaUrls = it.mediaUrls ?: emptyList()
                 )
-            })
+            }
 
             d.mediaUrls
                 ?.firstOrNull()
@@ -152,7 +151,8 @@ fun EditRecipeScreen(
                 onSaved()
             }
             ?.onFailure {
-                Toast.makeText(context, "Error actualizando: ${it.message}", Toast.LENGTH_SHORT).show()
+                Toast.makeText(context, "Error actualizando: ${it.message}", Toast.LENGTH_SHORT)
+                    .show()
             }
     }
 
@@ -163,7 +163,8 @@ fun EditRecipeScreen(
                 onPublished()
             }
             ?.onFailure {
-                Toast.makeText(context, "Error publicando: ${it.message}", Toast.LENGTH_SHORT).show()
+                Toast.makeText(context, "Error publicando: ${it.message}", Toast.LENGTH_SHORT)
+                    .show()
             }
     }
 
@@ -172,7 +173,7 @@ fun EditRecipeScreen(
         val uri = result.data?.data ?: return@rememberLauncherForActivityResult
         FileUtil.from(context, uri).also { viewModel.uploadPhoto(it) }
         context.contentResolver.getType(uri)?.let { mime ->
-            isVideo       = mime.startsWith("video/")
+            isVideo = mime.startsWith("video/")
             localMediaUri = uri
         }
     }
@@ -181,25 +182,30 @@ fun EditRecipeScreen(
         val clipData = result.data?.clipData
         val uri = result.data?.data
         selectedStepIndex?.let { idx ->
-            val currentList = steps[idx].mediaUrls?.toMutableList() ?: mutableListOf()
-            if (clipData != null) {
-                for (i in 0 until clipData.itemCount) {
-                    val itemUri = clipData.getItemAt(i).uri
-                    if (!currentList.contains(itemUri.toString()))
-                        currentList.add(itemUri.toString())
+            if (idx < steps.size) {
+                val currentStep = steps[idx]
+                val currentList = currentStep.mediaUrls?.toMutableList() ?: mutableListOf()
+                if (clipData != null) {
+                    for (i in 0 until clipData.itemCount) {
+                        val itemUri = clipData.getItemAt(i).uri
+                        if (!currentList.contains(itemUri.toString()))
+                            currentList.add(itemUri.toString())
+                    }
+                } else if (uri != null) {
+                    if (!currentList.contains(uri.toString()))
+                        currentList.add(uri.toString())
                 }
-            } else if (uri != null) {
-                if (!currentList.contains(uri.toString()))
-                    currentList.add(uri.toString())
+                val updatedSteps = steps.toMutableList()
+                updatedSteps[idx] = currentStep.copy(mediaUrls = currentList)
+                steps = updatedSteps
             }
-            steps[idx] = steps[idx].copy(mediaUrls = currentList)
         }
     }
 
     fun openPicker() {
         Intent(Intent.ACTION_OPEN_DOCUMENT).apply {
             type = "*/*"
-            putExtra(Intent.EXTRA_MIME_TYPES, arrayOf("image/*","video/*"))
+            putExtra(Intent.EXTRA_MIME_TYPES, arrayOf("image/*", "video/*"))
         }.also(anyLauncher::launch)
     }
 
@@ -220,22 +226,33 @@ fun EditRecipeScreen(
             ) {
                 when {
                     localMediaUri != null && isVideo -> VideoPlayer(localMediaUri!!)
-                    localMediaUri != null             -> AsyncImage(
-                        model              = localMediaUri,
+                    localMediaUri != null -> AsyncImage(
+                        model = localMediaUri,
                         contentDescription = null,
-                        contentScale       = ContentScale.Crop,
-                        modifier           = Modifier.fillMaxSize().align(Alignment.Center)
+                        contentScale = ContentScale.Crop,
+                        modifier = Modifier.fillMaxSize().align(Alignment.Center)
                     )
+
                     else -> Row(
                         Modifier
                             .align(Alignment.Center)
                             .clickable { openPicker() }
                             .padding(8.dp),
                         horizontalArrangement = Arrangement.spacedBy(4.dp),
-                        verticalAlignment     = Alignment.CenterVertically
+                        verticalAlignment = Alignment.CenterVertically
                     ) {
-                        Icon(Icons.Filled.RamenDining, contentDescription = null, tint = Color.White, modifier = Modifier.size(80.dp))
-                        Icon(Icons.Default.Add,        contentDescription = null, tint = Color.White, modifier = Modifier.size(40.dp))
+                        Icon(
+                            Icons.Filled.RamenDining,
+                            contentDescription = null,
+                            tint = Color.White,
+                            modifier = Modifier.size(80.dp)
+                        )
+                        Icon(
+                            Icons.Default.Add,
+                            contentDescription = null,
+                            tint = Color.White,
+                            modifier = Modifier.size(40.dp)
+                        )
                     }
                 }
                 if (uploading) {
@@ -245,8 +262,8 @@ fun EditRecipeScreen(
                     )
                 }
                 IconButton(
-                    onClick   = onClose,
-                    modifier  = Modifier
+                    onClick = onClose,
+                    modifier = Modifier
                         .padding(16.dp)
                         .size(40.dp)
                         .background(Color.DarkGray, CircleShape)
@@ -267,24 +284,24 @@ fun EditRecipeScreen(
                 ) {
                     // Nombre de la receta
                     OutlinedTextField(
-                        value         = nombre,
+                        value = nombre,
                         onValueChange = { nombre = it },
-                        modifier      = Modifier.fillMaxWidth(),
-                        label         = { Text("Nombre de la Receta", color = Color.Gray) },
-                        textStyle     = LocalTextStyle.current.copy(color = Color.Black),
-                        shape         = RoundedCornerShape(12.dp)
+                        modifier = Modifier.fillMaxWidth(),
+                        label = { Text("Nombre de la Receta", color = Color.Gray) },
+                        textStyle = LocalTextStyle.current.copy(color = Color.Black),
+                        shape = RoundedCornerShape(12.dp)
                     )
 
                     // Descripción
                     OutlinedTextField(
-                        value         = descripcion,
+                        value = descripcion,
                         onValueChange = { descripcion = it },
-                        modifier      = Modifier.fillMaxWidth().height(120.dp),
-                        label         = { Text("Breve descripción…", color = Color.Gray) },
-                        placeholder   = { Text("", color = Color.Black) },
-                        textStyle     = LocalTextStyle.current.copy(color = Color.Black),
-                        maxLines      = 4,
-                        shape         = RoundedCornerShape(12.dp)
+                        modifier = Modifier.fillMaxWidth().height(120.dp),
+                        label = { Text("Breve descripción…", color = Color.Gray) },
+                        placeholder = { Text("", color = Color.Black) },
+                        textStyle = LocalTextStyle.current.copy(color = Color.Black),
+                        maxLines = 4,
+                        shape = RoundedCornerShape(12.dp)
                     )
 
                     Divider(color = Color(0xFFE0E0E0), thickness = 2.dp)
@@ -297,21 +314,22 @@ fun EditRecipeScreen(
                         // 1. Porciones
                         Card(
                             modifier = Modifier.fillMaxWidth(),
-                            shape    = RoundedCornerShape(6.dp),
-                            border   = BorderStroke(1.dp, Color.LightGray),
-                            colors   = CardDefaults.cardColors(containerColor = Color.White)
+                            shape = RoundedCornerShape(6.dp),
+                            border = BorderStroke(1.dp, Color.LightGray),
+                            colors = CardDefaults.cardColors(containerColor = Color.White)
                         ) {
                             Row(
                                 Modifier
                                     .fillMaxWidth()
                                     .padding(12.dp),
                                 horizontalArrangement = Arrangement.SpaceBetween,
-                                verticalAlignment     = Alignment.CenterVertically
+                                verticalAlignment = Alignment.CenterVertically
                             ) {
-                                Text("Porciones",
-                                    fontWeight  = FontWeight.SemiBold,
-                                    fontSize    = 16.sp,
-                                    color       = DarkGray
+                                Text(
+                                    "Porciones",
+                                    fontWeight = FontWeight.SemiBold,
+                                    fontSize = 16.sp,
+                                    color = DarkGray
                                 )
                                 Row(verticalAlignment = Alignment.CenterVertically) {
                                     IconButton(
@@ -319,12 +337,16 @@ fun EditRecipeScreen(
                                             val v = porcionesText.toIntOrNull() ?: 0
                                             if (v > 1) {
                                                 porcionesText = (v - 1).toString()
-                                                porciones     = v - 1
+                                                porciones = v - 1
                                             }
                                         },
                                         modifier = Modifier.size(28.dp)
                                     ) {
-                                        Icon(Icons.Default.Remove, contentDescription = null, tint = Red)
+                                        Icon(
+                                            Icons.Default.Remove,
+                                            contentDescription = null,
+                                            tint = Red
+                                        )
                                     }
 
                                     Box(
@@ -332,28 +354,35 @@ fun EditRecipeScreen(
                                             .width(64.dp)
                                             .height(36.dp)
                                             .background(Color.White, RoundedCornerShape(6.dp))
-                                            .border(1.dp, Color.LightGray, RoundedCornerShape(8.dp)),
+                                            .border(
+                                                1.dp,
+                                                Color.LightGray,
+                                                RoundedCornerShape(8.dp)
+                                            ),
                                         contentAlignment = Alignment.Center
                                     ) {
                                         BasicTextField(
-                                            value           = porcionesText,
-                                            onValueChange   = { str ->
+                                            value = porcionesText,
+                                            onValueChange = { str ->
                                                 if (str.all { it.isDigit() } || str.isEmpty()) {
                                                     porcionesText = str
-                                                    porciones     = str.toIntOrNull() ?: 0
+                                                    porciones = str.toIntOrNull() ?: 0
                                                 }
                                             },
-                                            singleLine      = true,
+                                            singleLine = true,
                                             keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
-                                            textStyle       = LocalTextStyle.current.copy(
-                                                color      = Color.Black,
-                                                fontSize   = 18.sp,
+                                            textStyle = LocalTextStyle.current.copy(
+                                                color = Color.Black,
+                                                fontSize = 18.sp,
                                                 fontWeight = FontWeight.Bold,
-                                                textAlign  = TextAlign.Center
+                                                textAlign = TextAlign.Center
                                             ),
-                                            cursorBrush     = SolidColor(Color.Black),
-                                            decorationBox   = { inner ->
-                                                Box(Modifier.fillMaxSize(), contentAlignment = Alignment.Center) { inner() }
+                                            cursorBrush = SolidColor(Color.Black),
+                                            decorationBox = { inner ->
+                                                Box(
+                                                    Modifier.fillMaxSize(),
+                                                    contentAlignment = Alignment.Center
+                                                ) { inner() }
                                             }
                                         )
                                     }
@@ -362,11 +391,15 @@ fun EditRecipeScreen(
                                         onClick = {
                                             val v = porcionesText.toIntOrNull() ?: 0
                                             porcionesText = (v + 1).toString()
-                                            porciones     = v + 1
+                                            porciones = v + 1
                                         },
                                         modifier = Modifier.size(28.dp)
                                     ) {
-                                        Icon(Icons.Default.Add, contentDescription = null, tint = Green)
+                                        Icon(
+                                            Icons.Default.Add,
+                                            contentDescription = null,
+                                            tint = Green
+                                        )
                                     }
                                 }
                             }
@@ -375,21 +408,22 @@ fun EditRecipeScreen(
                         // 2. Tiempo
                         Card(
                             modifier = Modifier.fillMaxWidth(),
-                            shape    = RoundedCornerShape(6.dp),
-                            border   = BorderStroke(1.dp, Color.LightGray),
-                            colors   = CardDefaults.cardColors(containerColor = Color.White)
+                            shape = RoundedCornerShape(6.dp),
+                            border = BorderStroke(1.dp, Color.LightGray),
+                            colors = CardDefaults.cardColors(containerColor = Color.White)
                         ) {
                             Row(
                                 Modifier
                                     .fillMaxWidth()
                                     .padding(12.dp),
                                 horizontalArrangement = Arrangement.SpaceBetween,
-                                verticalAlignment     = Alignment.CenterVertically
+                                verticalAlignment = Alignment.CenterVertically
                             ) {
-                                Text("Tiempo (min)",
-                                    fontWeight  = FontWeight.SemiBold,
-                                    fontSize    = 16.sp,
-                                    color       = DarkGray
+                                Text(
+                                    "Tiempo (min)",
+                                    fontWeight = FontWeight.SemiBold,
+                                    fontSize = 16.sp,
+                                    color = DarkGray
                                 )
                                 Row(verticalAlignment = Alignment.CenterVertically) {
                                     IconButton(
@@ -397,12 +431,16 @@ fun EditRecipeScreen(
                                             val v = tiempoText.toIntOrNull() ?: 0
                                             if (v > 1) {
                                                 tiempoText = (v - 1).toString()
-                                                tiempo     = v - 1
+                                                tiempo = v - 1
                                             }
                                         },
                                         modifier = Modifier.size(28.dp)
                                     ) {
-                                        Icon(Icons.Default.Remove, contentDescription = null, tint = Red)
+                                        Icon(
+                                            Icons.Default.Remove,
+                                            contentDescription = null,
+                                            tint = Red
+                                        )
                                     }
 
                                     Box(
@@ -410,28 +448,35 @@ fun EditRecipeScreen(
                                             .width(64.dp)
                                             .height(36.dp)
                                             .background(Color.White, RoundedCornerShape(6.dp))
-                                            .border(1.dp, Color.LightGray, RoundedCornerShape(8.dp)),
+                                            .border(
+                                                1.dp,
+                                                Color.LightGray,
+                                                RoundedCornerShape(8.dp)
+                                            ),
                                         contentAlignment = Alignment.Center
                                     ) {
                                         BasicTextField(
-                                            value           = tiempoText,
-                                            onValueChange   = { str ->
+                                            value = tiempoText,
+                                            onValueChange = { str ->
                                                 if (str.all { it.isDigit() } || str.isEmpty()) {
                                                     tiempoText = str
-                                                    tiempo     = str.toIntOrNull() ?: 0
+                                                    tiempo = str.toIntOrNull() ?: 0
                                                 }
                                             },
-                                            singleLine      = true,
+                                            singleLine = true,
                                             keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
-                                            textStyle       = LocalTextStyle.current.copy(
-                                                color      = Color.Black,
-                                                fontSize   = 18.sp,
+                                            textStyle = LocalTextStyle.current.copy(
+                                                color = Color.Black,
+                                                fontSize = 18.sp,
                                                 fontWeight = FontWeight.Bold,
-                                                textAlign  = TextAlign.Center
+                                                textAlign = TextAlign.Center
                                             ),
-                                            cursorBrush     = SolidColor(Color.Black),
-                                            decorationBox   = { inner ->
-                                                Box(Modifier.fillMaxSize(), contentAlignment = Alignment.Center) { inner() }
+                                            cursorBrush = SolidColor(Color.Black),
+                                            decorationBox = { inner ->
+                                                Box(
+                                                    Modifier.fillMaxSize(),
+                                                    contentAlignment = Alignment.Center
+                                                ) { inner() }
                                             }
                                         )
                                     }
@@ -440,11 +485,15 @@ fun EditRecipeScreen(
                                         onClick = {
                                             val v = tiempoText.toIntOrNull() ?: 0
                                             tiempoText = (v + 1).toString()
-                                            tiempo     = v + 1
+                                            tiempo = v + 1
                                         },
                                         modifier = Modifier.size(28.dp)
                                     ) {
-                                        Icon(Icons.Default.Add, contentDescription = null, tint = Green)
+                                        Icon(
+                                            Icons.Default.Add,
+                                            contentDescription = null,
+                                            tint = Green
+                                        )
                                     }
                                 }
                             }
@@ -497,7 +546,10 @@ fun EditRecipeScreen(
                                         modifier = Modifier
                                             .weight(1f)
                                             .height(44.dp),
-                                        contentPadding = PaddingValues(horizontal = 4.dp, vertical = 8.dp)
+                                        contentPadding = PaddingValues(
+                                            horizontal = 4.dp,
+                                            vertical = 8.dp
+                                        )
                                     ) {
                                         AutoResizeText(
                                             text = cat,
@@ -563,7 +615,10 @@ fun EditRecipeScreen(
                                         modifier = Modifier
                                             .weight(1f)
                                             .height(44.dp),
-                                        contentPadding = PaddingValues(horizontal = 4.dp, vertical = 8.dp)
+                                        contentPadding = PaddingValues(
+                                            horizontal = 4.dp,
+                                            vertical = 8.dp
+                                        )
                                     ) {
                                         AutoResizeText(
                                             text = tipo,
@@ -613,16 +668,28 @@ fun EditRecipeScreen(
                                                 onDragEnd = {
                                                     if (offsetX.value < -150f) {
                                                         scope.launch {
-                                                            offsetX.animateTo(-500f, animationSpec = tween(300))
+                                                            offsetX.animateTo(
+                                                                -500f,
+                                                                animationSpec = tween(300)
+                                                            )
                                                             dismissed = true
-                                                            ingredients.removeAt(idx)
+                                                            val updatedIngredients =
+                                                                ingredients.toMutableList()
+                                                            updatedIngredients.removeAt(idx)
+                                                            ingredients = updatedIngredients
                                                         }
                                                     } else {
-                                                        scope.launch { offsetX.animateTo(0f, animationSpec = tween(300)) }
+                                                        scope.launch {
+                                                            offsetX.animateTo(
+                                                                0f,
+                                                                animationSpec = tween(300)
+                                                            )
+                                                        }
                                                     }
                                                 },
                                                 onHorizontalDrag = { change, dragAmount ->
-                                                    val newOffset = (offsetX.value + dragAmount).coerceAtMost(0f)
+                                                    val newOffset =
+                                                        (offsetX.value + dragAmount).coerceAtMost(0f)
                                                     scope.launch { offsetX.snapTo(newOffset) }
                                                 }
                                             )
@@ -651,10 +718,14 @@ fun EditRecipeScreen(
                                             .offset { IntOffset(offsetX.value.toInt(), 0) }
                                     ) {
                                         IngredientRow(idx, ing, onUpdate = { new ->
-                                            ingredients[idx] = new
+                                            val updatedIngredients = ingredients.toMutableList()
+                                            updatedIngredients[idx] = new
+                                            ingredients = updatedIngredients
                                         }, onDelete = {
                                             dismissed = true
-                                            ingredients.removeAt(idx)
+                                            val updatedIngredients = ingredients.toMutableList()
+                                            updatedIngredients.removeAt(idx)
+                                            ingredients = updatedIngredients
                                         })
                                     }
                                 }
@@ -666,8 +737,8 @@ fun EditRecipeScreen(
                                 .fillMaxWidth()
                                 .clickable { showIngredientDialog = true }
                                 .padding(8.dp),
-                            shape     = RoundedCornerShape(12.dp),
-                            colors    = CardDefaults.cardColors(containerColor = Color.White),
+                            shape = RoundedCornerShape(12.dp),
+                            colors = CardDefaults.cardColors(containerColor = Color.White),
                             elevation = CardDefaults.cardElevation(4.dp)
                         ) {
                             Row(
@@ -675,11 +746,20 @@ fun EditRecipeScreen(
                                     .fillMaxWidth()
                                     .padding(16.dp),
                                 horizontalArrangement = Arrangement.Center,
-                                verticalAlignment     = Alignment.CenterVertically
+                                verticalAlignment = Alignment.CenterVertically
                             ) {
-                                Icon(Icons.Default.Add, contentDescription = null, tint = Color(0xFF006400))
+                                Icon(
+                                    Icons.Default.Add,
+                                    contentDescription = null,
+                                    tint = Color(0xFF006400)
+                                )
                                 Spacer(Modifier.width(8.dp))
-                                Text("Agregar ingrediente", color = Color(0xFF006400), fontWeight = FontWeight.Medium, fontFamily = Destacado)
+                                Text(
+                                    "Agregar ingrediente",
+                                    color = Color(0xFF006400),
+                                    fontWeight = FontWeight.Medium,
+                                    fontFamily = Destacado
+                                )
                             }
                         }
                     }
@@ -698,67 +778,143 @@ fun EditRecipeScreen(
                         Text("Instrucciones (${steps.size})", color = Color.White)
                     }
 
-                    Column(Modifier.padding(vertical = 8.dp)) {
-                        steps.forEachIndexed { idx, step ->
+                    // Carrusel de pasos - mostrar uno a la vez
+                    if (steps.isNotEmpty()) {
+                        var currentStepIndex by remember { mutableStateOf(0) }
+
+                        Column(
+                            modifier = Modifier.fillMaxWidth(),
+                            verticalArrangement = Arrangement.spacedBy(8.dp)
+                        ) {
+                            // Indicador de página
+                            Row(
+                                modifier = Modifier.fillMaxWidth(),
+                                horizontalArrangement = Arrangement.Center,
+                                verticalAlignment = Alignment.CenterVertically
+                            ) {
+                                IconButton(
+                                    onClick = {
+                                        if (currentStepIndex > 0) currentStepIndex--
+                                    },
+                                    enabled = currentStepIndex > 0
+                                ) {
+                                    Icon(
+                                        Icons.Default.ArrowBack,
+                                        contentDescription = "Paso anterior",
+                                        tint = if (currentStepIndex > 0) Color(0xFFBC6154) else Color.Gray
+                                    )
+                                }
+
+                                Text(
+                                    "Paso ${currentStepIndex + 1} de ${steps.size}",
+                                    color = Color.DarkGray,
+                                    fontWeight = FontWeight.Medium,
+                                    modifier = Modifier.padding(horizontal = 16.dp)
+                                )
+
+                                IconButton(
+                                    onClick = {
+                                        if (currentStepIndex < steps.size - 1) currentStepIndex++
+                                    },
+                                    enabled = currentStepIndex < steps.size - 1
+                                ) {
+                                    Icon(
+                                        Icons.Default.ArrowForward,
+                                        contentDescription = "Paso siguiente",
+                                        tint = if (currentStepIndex < steps.size - 1) Color(0xFFBC6154) else Color.Gray
+                                    )
+                                }
+                            }
+
+                            // Mostrar solo el paso actual
+                            val currentStep = steps[currentStepIndex]
                             StepCard(
-                                stepNumber    = step.numeroPaso,
-                                title         = step.titulo.orEmpty(),
-                                description   = step.descripcion,
-                                mediaUrls     = step.mediaUrls ?: emptyList(),
-                                onTitleChange = { new -> steps[idx] = step.copy(titulo = new) },
-                                onDescChange  = { new -> steps[idx] = step.copy(descripcion = new) },
-                                onAddMedia    = {
-                                    selectedStepIndex = idx
+                                stepNumber = currentStep.numeroPaso,
+                                title = currentStep.titulo.orEmpty(),
+                                description = currentStep.descripcion,
+                                mediaUrls = currentStep.mediaUrls ?: emptyList(),
+                                onTitleChange = { new ->
+                                    val updatedSteps = steps.toMutableList()
+                                    updatedSteps[currentStepIndex] = currentStep.copy(titulo = new)
+                                    steps = updatedSteps
+                                },
+                                onDescChange = { new ->
+                                    val updatedSteps = steps.toMutableList()
+                                    updatedSteps[currentStepIndex] = currentStep.copy(descripcion = new)
+                                    steps = updatedSteps
+                                },
+                                onAddMedia = {
+                                    selectedStepIndex = currentStepIndex
                                     Intent(Intent.ACTION_OPEN_DOCUMENT).apply {
                                         type = "*/*"
-                                        putExtra(Intent.EXTRA_MIME_TYPES, arrayOf("image/*","video/*"))
+                                        putExtra(Intent.EXTRA_MIME_TYPES, arrayOf("image/*", "video/*"))
                                         putExtra(Intent.EXTRA_ALLOW_MULTIPLE, true)
                                     }.also(stepMediaLauncher::launch)
                                 },
-                                onDelete      = {
-                                    steps.removeAt(idx)
+                                onDelete = {
+                                    val updatedSteps = steps.toMutableList()
+                                    updatedSteps.removeAt(currentStepIndex)
+                                    // Reajustar números de paso
+                                    val reindexedSteps = updatedSteps.mapIndexed { i, s ->
+                                        s.copy(numeroPaso = i + 1)
+                                    }
+                                    steps = reindexedSteps
                                     selectedStepIndex = null
-                                    steps.forEachIndexed { i, s -> steps[i] = s.copy(numeroPaso = i+1) }
+                                    // Ajustar índice currentStepIndex si es necesario
+                                    if (currentStepIndex >= steps.size && steps.isNotEmpty()) {
+                                        currentStepIndex = steps.size - 1
+                                    } else if (steps.isEmpty()) {
+                                        currentStepIndex = 0
+                                    }
                                 },
                                 onRemoveMedia = { mediaIdx ->
-                                    val currentList = step.mediaUrls?.toMutableList() ?: mutableListOf()
+                                    val currentList = currentStep.mediaUrls?.toMutableList() ?: mutableListOf()
                                     if (mediaIdx in currentList.indices) {
                                         currentList.removeAt(mediaIdx)
-                                        steps[idx] = step.copy(mediaUrls = currentList)
+                                        val updatedSteps = steps.toMutableList()
+                                        updatedSteps[currentStepIndex] = currentStep.copy(mediaUrls = currentList)
+                                        steps = updatedSteps
                                     }
                                 }
                             )
-                            Spacer(Modifier.height(8.dp))
                         }
+                    }
 
-                        Card(
-                            Modifier
-                                .fillMaxWidth()
-                                .clickable {
-                                    steps += RecipeStepRequest(
+                    Card(
+                        Modifier
+                            .fillMaxWidth()
+                            .clickable {
+                                // Limitar el número máximo de pasos para prevenir problemas de rendimiento
+                                if (steps.size < 20) {
+                                    val newStep = RecipeStepRequest(
                                         numeroPaso  = steps.size + 1,
                                         titulo      = "",
                                         descripcion = "",
                                         mediaUrls   = emptyList()
                                     )
-                                    selectedStepIndex = steps.lastIndex
+                                    steps = steps + newStep
+                                    selectedStepIndex = steps.size - 1
                                 }
-                                .padding(8.dp),
-                            shape     = RoundedCornerShape(12.dp),
-                            colors    = CardDefaults.cardColors(containerColor = Color.White),
-                            elevation = CardDefaults.cardElevation(4.dp)
-                        ) {
-                            Row(
-                                Modifier
-                                    .fillMaxWidth()
-                                    .padding(16.dp),
-                                horizontalArrangement = Arrangement.Center,
-                                verticalAlignment     = Alignment.CenterVertically
-                            ) {
-                                Icon(Icons.Default.Add, contentDescription = null, tint = Color(0xFF006400))
-                                Spacer(Modifier.width(8.dp))
-                                Text("Agregar paso", color = Color(0xFF006400), fontFamily = Destacado)
                             }
+                            .padding(8.dp),
+                        shape     = RoundedCornerShape(12.dp),
+                        colors    = CardDefaults.cardColors(containerColor = Color.White),
+                        elevation = CardDefaults.cardElevation(4.dp)
+                    ) {
+                        Row(
+                            Modifier
+                                .fillMaxWidth()
+                                .padding(16.dp),
+                            horizontalArrangement = Arrangement.Center,
+                            verticalAlignment     = Alignment.CenterVertically
+                        ) {
+                            Icon(Icons.Default.Add, contentDescription = null, tint = Color(0xFF006400))
+                            Spacer(Modifier.width(8.dp))
+                            Text(
+                                if (steps.size >= 20) "Máximo 20 pasos" else "Agregar paso",
+                                color = if (steps.size >= 20) Color.Gray else Color(0xFF006400),
+                                fontFamily = Destacado
+                            )
                         }
                     }
 
@@ -979,18 +1135,21 @@ fun EditRecipeScreen(
                             .padding(bottom = 8.dp),
                         singleLine = true
                     )
-                    LazyColumn {
+                    LazyColumn(
+                        modifier = Modifier.heightIn(max = 300.dp) // Limitar altura del diálogo
+                    ) {
                         items(filteredIngredients) { ing ->
                             Row(
                                 modifier = Modifier
                                     .fillMaxWidth()
                                     .clickable {
-                                        ingredients += RecipeIngredientRequest(
+                                        val newIngredient = RecipeIngredientRequest(
                                             ingredientId = null,
                                             nombre       = ing,
                                             cantidad     = 1.0,
                                             unidadMedida = "un"
                                         )
+                                        ingredients = ingredients + newIngredient
                                         showIngredientDialog = false
                                     }
                                     .background(Color.White)
@@ -1051,7 +1210,10 @@ fun EditRecipeScreen(
             },
             confirmButton = {
                 TextButton(onClick = {
-                    steps += RecipeStepRequest(numeroPaso = steps.size + 1, titulo = t, descripcion = d, mediaUrls = null)
+                    if (steps.size < 20) {
+                        val newStep = RecipeStepRequest(numeroPaso = steps.size + 1, titulo = t, descripcion = d, mediaUrls = null)
+                        steps = steps + newStep
+                    }
                     showStepDialog = false
                 }) { Text("Agregar") }
             },
@@ -1061,3 +1223,4 @@ fun EditRecipeScreen(
         )
     }
 }
+
