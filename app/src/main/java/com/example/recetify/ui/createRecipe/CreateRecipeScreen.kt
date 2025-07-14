@@ -1297,7 +1297,7 @@ fun CreateRecipeScreen(
 
 // Componente tarjeta de paso
 @Composable
-private fun StepCard(
+internal fun StepCard(
     stepNumber:    Int,
     title:         String,
     description:   String,
@@ -1667,7 +1667,7 @@ fun VideoPlayer(uri: Uri) {
 }
 
 @Composable
-private fun IngredientRow(
+internal fun IngredientRow(
     index: Int,
     ingredient: RecipeIngredientRequest,
     onUpdate: (RecipeIngredientRequest) -> Unit,
