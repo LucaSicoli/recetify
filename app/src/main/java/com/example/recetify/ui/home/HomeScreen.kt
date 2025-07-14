@@ -35,6 +35,7 @@ import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.PlatformTextStyle
 import androidx.compose.ui.text.font.Font
 import androidx.compose.ui.text.font.FontFamily
+import androidx.compose.ui.text.font.FontStyle
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
@@ -58,6 +59,10 @@ internal val Sen = FontFamily(
 )
 internal val Destacado = FontFamily(
     Font(R.font.sen_semibold, weight = FontWeight.ExtraBold)
+)
+
+val SegoeScript = FontFamily(
+    Font(R.font.segoe_script, FontWeight.Normal),
 )
 
 @OptIn(ExperimentalFoundationApi::class)
@@ -205,72 +210,154 @@ fun HomeScreen(
     }
 }
 
+//@Composable
+//fun FeaturedHeader(
+//    modifier: Modifier = Modifier,
+//    title: String = "DESTACADOS",
+//    subtitle: String = "del día",
+//    shape: Shape = RoundedCornerShape(16.dp)
+//) {
+//    Card(
+//        modifier = modifier.height(90.dp),
+//        shape = shape,
+//        elevation = CardDefaults.cardElevation(defaultElevation = 8.dp),
+//        colors = CardDefaults.cardColors(containerColor = Color.Transparent)
+//    ) {
+//        Box(
+//            Modifier
+//                .fillMaxSize()
+//                .background(
+//                    brush = Brush.horizontalGradient(
+//                        colors = listOf(
+//                            Color(0xFFCC5E5A),
+//                            Color(0xFFC6665A),
+//                            Color(0xFFE29587)
+//                        )
+//                    )
+//                )
+//        ) {
+//            Row(
+//                Modifier
+//                    .align(Alignment.Center)
+//                    .wrapContentWidth()
+//                    .padding(horizontal = 12.dp),
+//                verticalAlignment = Alignment.CenterVertically
+//            ) {
+//                Icon(
+//                    Icons.Filled.Star,
+//                    contentDescription = null,
+//                    tint = Color.White,
+//                    modifier = Modifier.size(28.dp)
+//                )
+//                Spacer(Modifier.width(12.dp))
+//                Text(
+//                    text = title,
+//                    maxLines = 1,
+//                    overflow = TextOverflow.Clip,
+//                    style = MaterialTheme.typography.titleMedium.copy(
+//                        color = Color.White,
+//                        fontFamily = Destacado,
+//                        fontWeight = FontWeight.Bold,
+//                        fontSize = 20.sp,
+//                        letterSpacing = 1.sp,
+//                        platformStyle = PlatformTextStyle(includeFontPadding = false)
+//                    )
+//                )
+//                Spacer(Modifier.width(8.dp))
+//                Text(
+//                    text = subtitle,
+//                    maxLines = 1,
+//                    overflow = TextOverflow.Clip,
+//                    style = MaterialTheme.typography.bodyMedium.copy(
+//                        color = Color.White.copy(alpha = 0.9f),
+//                        fontFamily = Sen,
+//                        fontSize = 20.sp,
+//                        platformStyle = PlatformTextStyle(includeFontPadding = false)
+//                    )
+//                )
+//            }
+//        }
+//    }
+//}
+
 @Composable
 fun FeaturedHeader(
     modifier: Modifier = Modifier,
     title: String = "DESTACADOS",
     subtitle: String = "del día",
-    shape: Shape = RoundedCornerShape(16.dp)
+    shape: Shape = RoundedCornerShape(0.dp)
 ) {
     Card(
-        modifier = modifier.height(90.dp),
+        modifier = modifier
+            .fillMaxWidth()
+            .height(90.dp),
         shape = shape,
-        elevation = CardDefaults.cardElevation(defaultElevation = 8.dp),
+        elevation = CardDefaults.cardElevation(defaultElevation = 4.dp),
         colors = CardDefaults.cardColors(containerColor = Color.Transparent)
     ) {
         Box(
-            Modifier
+            modifier = Modifier
                 .fillMaxSize()
                 .background(
                     brush = Brush.horizontalGradient(
                         colors = listOf(
-                            Color(0xFFCC5E5A),
-                            Color(0xFFC6665A),
-                            Color(0xFFE29587)
+                            Color(0xFFDF877C),
+                            Color(0xFFC6665A)
                         )
                     )
                 )
         ) {
-            Row(
-                Modifier
+            // Column for vertically stacked texts
+            Column(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(horizontal = 24.dp, vertical = 8.dp)
                     .align(Alignment.Center)
-                    .wrapContentWidth()
-                    .padding(horizontal = 12.dp),
-                verticalAlignment = Alignment.CenterVertically
+//                verticalArrangement = Arrangement.spacedBy(2.dp) // Tight spacing
             ) {
-                Icon(
-                    Icons.Filled.Star,
-                    contentDescription = null,
-                    tint = Color.White,
-                    modifier = Modifier.size(28.dp)
-                )
-                Spacer(Modifier.width(12.dp))
+                // Title (Left-aligned)
                 Text(
                     text = title,
-                    maxLines = 1,
-                    overflow = TextOverflow.Clip,
-                    style = MaterialTheme.typography.titleMedium.copy(
+                    modifier = Modifier
+                        .fillMaxWidth(),
+//                        .padding(bottom = 4.dp),
+                    style = MaterialTheme.typography.headlineSmall.copy(
                         color = Color.White,
-                        fontFamily = Destacado,
                         fontWeight = FontWeight.Bold,
-                        fontSize = 20.sp,
-                        letterSpacing = 1.sp,
-                        platformStyle = PlatformTextStyle(includeFontPadding = false)
+                        fontSize = 32.sp,
+                        letterSpacing = 0.5.sp
                     )
                 )
-                Spacer(Modifier.width(8.dp))
-                Text(
-                    text = subtitle,
-                    maxLines = 1,
-                    overflow = TextOverflow.Clip,
-                    style = MaterialTheme.typography.bodyMedium.copy(
-                        color = Color.White.copy(alpha = 0.9f),
-                        fontFamily = Sen,
-                        fontSize = 20.sp,
-                        platformStyle = PlatformTextStyle(includeFontPadding = false)
+
+                // Subtitle (Right-aligned)
+                Box(
+                    modifier = Modifier.fillMaxWidth()
+                ) {
+                    Text(
+                        text = subtitle,
+                        modifier = Modifier
+                            .align(Alignment.TopEnd)
+                            .padding(end = 60.dp), // Push left from image
+                        style = MaterialTheme.typography.bodyMedium.copy(
+                            fontFamily = SegoeScript, // Apply custom font
+                            fontSize = 30.sp,
+                            color = Color.White.copy(alpha = 0.9f),
+                            fontStyle = FontStyle.Normal // Remove italic if using a script font
+                        )
                     )
-                )
+                }
             }
+
+            // Icon (Far Right Side, Full Height)
+            Icon(
+                painter = painterResource(id = R.drawable.plate_outline),
+                contentDescription = null,
+                tint = Color.White,
+                modifier = Modifier
+                    .fillMaxHeight()
+                    .width(90.dp)
+                    .align(Alignment.CenterEnd)
+            )
         }
     }
 }
