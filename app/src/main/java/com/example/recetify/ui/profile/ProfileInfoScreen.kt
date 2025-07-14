@@ -27,6 +27,8 @@ import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalClipboardManager
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.AnnotatedString
+import androidx.compose.ui.text.font.Font
+import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
@@ -34,10 +36,18 @@ import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.navigation.NavController
 import coil.compose.AsyncImage
 import coil.request.ImageRequest
+import com.example.recetify.R
 import com.example.recetify.data.remote.RetrofitClient
 import com.example.recetify.data.remote.model.SessionManager
-import com.example.recetify.ui.home.Destacado
 import kotlinx.coroutines.launch
+
+// Usando la misma paleta de colores que CreateRecipeScreen
+private val Accent = Color(0xFFBC6154)
+private val AccentDark = Color(0xFFA0453C)
+
+private val Destacado = FontFamily(
+    Font(R.font.sen_semibold, weight = FontWeight.ExtraBold)
+)
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -75,7 +85,7 @@ fun ProfileInfoScreen(
                     }
                 },
                 colors = TopAppBarDefaults.topAppBarColors(
-                    containerColor = Color(0xFF6366F1)
+                    containerColor = Color(0xFF1F2937)
                 )
             )
         }
@@ -94,15 +104,15 @@ fun ProfileInfoScreen(
                     contentAlignment = Alignment.Center
                 ) {
                     CircularProgressIndicator(
-                        color = Color(0xFF6366F1),
+                        color = Accent,
                         strokeWidth = 3.dp
                     )
                 }
             } else {
-                // Header con avatar y gradiente
+                // Header con avatar y gradiente actualizado
                 Card(
                     modifier = Modifier.fillMaxWidth(),
-                    shape = RoundedCornerShape(16.dp),
+                    shape = RoundedCornerShape(20.dp),
                     elevation = CardDefaults.cardElevation(8.dp)
                 ) {
                     Box(
@@ -111,8 +121,8 @@ fun ProfileInfoScreen(
                             .background(
                                 Brush.linearGradient(
                                     colors = listOf(
-                                        Color(0xFF6366F1),
-                                        Color(0xFF8B5CF6)
+                                        Color(0xFF1F2937),
+                                        Color(0xFF111827)
                                     )
                                 )
                             )
@@ -128,8 +138,8 @@ fun ProfileInfoScreen(
                                 modifier = Modifier
                                     .size(120.dp)
                                     .clip(CircleShape)
-                                    .background(Color.White.copy(alpha = 0.2f))
-                                    .border(4.dp, Color.White, CircleShape),
+                                    .background(Color.White.copy(alpha = 0.15f))
+                                    .border(3.dp, Color.White, CircleShape),
                                 contentAlignment = Alignment.Center
                             ) {
                                 val remote = user.urlFotoPerfil
@@ -156,7 +166,7 @@ fun ProfileInfoScreen(
                                     Icon(
                                         imageVector = Icons.Default.AccountCircle,
                                         contentDescription = "Avatar",
-                                        tint = Color.White.copy(alpha = 0.8f),
+                                        tint = Color.White.copy(alpha = 0.9f),
                                         modifier = Modifier.size(80.dp)
                                     )
                                 }
@@ -184,7 +194,7 @@ fun ProfileInfoScreen(
                         icon = Icons.Default.Person,
                         label = "Alias",
                         value = user.alias,
-                        iconColor = Color(0xFF10B981)
+                        iconColor = Accent
                     ) {
                         clipboard.setText(AnnotatedString(user.alias))
                     }
@@ -194,7 +204,7 @@ fun ProfileInfoScreen(
                         icon = Icons.Default.Email,
                         label = "Email",
                         value = user.email,
-                        iconColor = Color(0xFF3B82F6)
+                        iconColor = Color(0xFF6B7280)
                     ) {
                         clipboard.setText(AnnotatedString(user.email))
                     }
@@ -207,7 +217,7 @@ fun ProfileInfoScreen(
                     modifier = Modifier
                         .fillMaxWidth()
                         .clickable { showLogoutDialog = true },
-                    shape = RoundedCornerShape(12.dp),
+                    shape = RoundedCornerShape(16.dp),
                     elevation = CardDefaults.cardElevation(4.dp),
                     colors = CardDefaults.cardColors(
                         containerColor = Color(0xFFFEF2F2)
@@ -230,6 +240,7 @@ fun ProfileInfoScreen(
                         Text(
                             text = "Cerrar sesión",
                             style = MaterialTheme.typography.titleMedium.copy(
+                                fontFamily = Destacado,
                                 fontWeight = FontWeight.SemiBold,
                                 color = Color(0xFFEF4444)
                             )
@@ -279,20 +290,20 @@ fun ProfileInfoScreen(
                         colors = ButtonDefaults.buttonColors(
                             containerColor = Color(0xFFEF4444)
                         ),
-                        shape = RoundedCornerShape(8.dp)
+                        shape = RoundedCornerShape(12.dp)
                     ) {
-                        Text("Cerrar sesión", color = Color.White)
+                        Text("Cerrar sesión", color = Color.White, fontFamily = Destacado)
                     }
                 },
                 dismissButton = {
                     OutlinedButton(
                         onClick = { showLogoutDialog = false },
-                        shape = RoundedCornerShape(8.dp)
+                        shape = RoundedCornerShape(12.dp)
                     ) {
-                        Text("Cancelar")
+                        Text("Cancelar", fontFamily = Destacado)
                     }
                 },
-                shape = RoundedCornerShape(16.dp)
+                shape = RoundedCornerShape(20.dp)
             )
         }
     }
@@ -308,7 +319,7 @@ private fun ModernInfoCard(
 ) {
     Card(
         modifier = Modifier.fillMaxWidth(),
-        shape = RoundedCornerShape(12.dp),
+        shape = RoundedCornerShape(16.dp),
         elevation = CardDefaults.cardElevation(4.dp),
         colors = CardDefaults.cardColors(containerColor = Color.White)
     ) {
@@ -316,7 +327,7 @@ private fun ModernInfoCard(
             modifier = Modifier
                 .fillMaxWidth()
                 .padding(20.dp),
-            verticalAlignment = Alignment.CenterVertically
+            verticalAlignment = Alignment.Top
         ) {
             // Icono con fondo circular
             Box(
@@ -338,7 +349,7 @@ private fun ModernInfoCard(
 
             Spacer(modifier = Modifier.width(16.dp))
 
-            // Información
+            // Información con mejor manejo de texto largo
             Column(
                 modifier = Modifier.weight(1f)
             ) {
@@ -346,35 +357,46 @@ private fun ModernInfoCard(
                     text = label,
                     style = MaterialTheme.typography.labelMedium.copy(
                         color = Color.Gray,
-                        fontWeight = FontWeight.Medium
+                        fontWeight = FontWeight.Medium,
+                        fontFamily = Destacado
                     )
                 )
-                Spacer(modifier = Modifier.height(4.dp))
+                Spacer(modifier = Modifier.height(6.dp))
                 Text(
                     text = value,
                     style = MaterialTheme.typography.bodyLarge.copy(
                         fontWeight = FontWeight.SemiBold,
-                        color = Color(0xFF1F2937)
-                    )
+                        color = Color(0xFF1F2937),
+                        fontFamily = Destacado,
+                        lineHeight = 20.sp
+                    ),
+                    softWrap = true,
+                    maxLines = 2
                 )
             }
 
-            // Botón copiar
-            IconButton(
-                onClick = onCopy,
-                modifier = Modifier
-                    .size(40.dp)
-                    .background(
-                        Color(0xFFF3F4F6),
-                        CircleShape
-                    )
+            Spacer(modifier = Modifier.width(12.dp))
+
+            // Botón copiar alineado arriba
+            Box(
+                modifier = Modifier.padding(top = 4.dp)
             ) {
-                Icon(
-                    imageVector = Icons.Default.ContentCopy,
-                    contentDescription = "Copiar",
-                    tint = Color(0xFF6B7280),
-                    modifier = Modifier.size(18.dp)
-                )
+                IconButton(
+                    onClick = onCopy,
+                    modifier = Modifier
+                        .size(40.dp)
+                        .background(
+                            Color(0xFFF3F4F6),
+                            CircleShape
+                        )
+                ) {
+                    Icon(
+                        imageVector = Icons.Default.ContentCopy,
+                        contentDescription = "Copiar",
+                        tint = Color(0xFF6B7280),
+                        modifier = Modifier.size(18.dp)
+                    )
+                }
             }
         }
     }
