@@ -3,6 +3,7 @@ package com.example.recetify.ui.login
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.KeyboardActions
 import androidx.compose.foundation.text.KeyboardOptions
@@ -133,138 +134,145 @@ fun ResetPasswordScreen(
             color = Color.White,
             shape = RoundedCornerShape(topStart = 24.dp, topEnd = 24.dp)
         ) {
-            Column(
+            LazyColumn(
                 modifier = Modifier
                     .fillMaxSize()
+                    .imePadding()
                     .padding(24.dp),
                 verticalArrangement = Arrangement.spacedBy(16.dp)
             ) {
-                OutlinedTextField(
-                    value = state.newPassword,
-                    onValueChange = viewModel::onNewPassChange,
-                    label = { Text("Nueva contraseña") },
-                    leadingIcon = {
-                        Icon(
-                            imageVector = Icons.Default.Lock,
-                            contentDescription = null,
-                            tint = Color.DarkGray
-                        )
-                    },
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .focusRequester(newPassFocusRequester),
-                    shape = RoundedCornerShape(12.dp),
-                    visualTransformation = PasswordVisualTransformation(),
-                    keyboardOptions = KeyboardOptions(
-                        keyboardType = KeyboardType.Password,
-                        imeAction = ImeAction.Next
-                    ),
-                    keyboardActions = KeyboardActions(
-                        onNext = { confirmPassFocusRequester.requestFocus() }
-                    ),
-                    textStyle = TextStyle(
-                        fontFamily = Sen,
-                        fontSize   = 16.sp,
-                        color      = Color.Black
-                    ),
-                    colors = OutlinedTextFieldDefaults.colors(
-                        focusedBorderColor = focusColor,
-                        unfocusedBorderColor = unfocusColor,
-                        errorBorderColor = Color.Red
-                    ),
-                    isError = errorIsMismatch,
-                    singleLine = true
+                item {
+                    OutlinedTextField(
+                        value = state.newPassword,
+                        onValueChange = viewModel::onNewPassChange,
+                        label = { Text("Nueva contraseña") },
+                        leadingIcon = {
+                            Icon(
+                                imageVector = Icons.Default.Lock,
+                                contentDescription = null,
+                                tint = Color.DarkGray
+                            )
+                        },
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .focusRequester(newPassFocusRequester),
+                        shape = RoundedCornerShape(12.dp),
+                        visualTransformation = PasswordVisualTransformation(),
+                        keyboardOptions = KeyboardOptions(
+                            keyboardType = KeyboardType.Password,
+                            imeAction = ImeAction.Next
+                        ),
+                        keyboardActions = KeyboardActions(
+                            onNext = { confirmPassFocusRequester.requestFocus() }
+                        ),
+                        textStyle = TextStyle(
+                            fontFamily = Sen,
+                            fontSize = 16.sp,
+                            color = Color.Black
+                        ),
+                        colors = OutlinedTextFieldDefaults.colors(
+                            focusedBorderColor = focusColor,
+                            unfocusedBorderColor = unfocusColor,
+                            errorBorderColor = Color.Red
+                        ),
+                        isError = errorIsMismatch,
+                        singleLine = true
 
-                )
-
-                OutlinedTextField(
-                    value = state.confirmPassword,
-                    onValueChange = viewModel::onConfirmPassChange,
-                    label = { Text("Repetir contraseña") },
-                    leadingIcon = {
-                        Icon(
-                            imageVector = Icons.Default.Lock,
-                            contentDescription = null,
-                            tint = Color.DarkGray
-                        )
-                    },
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .focusRequester(confirmPassFocusRequester),
-                    shape = RoundedCornerShape(12.dp),
-                    visualTransformation = PasswordVisualTransformation(),
-                    keyboardOptions = KeyboardOptions(
-                        keyboardType = KeyboardType.Password,
-                        imeAction = ImeAction.Done
-                    ),
-                    keyboardActions = KeyboardActions(
-                        onDone = {
-                            keyboardController?.hide()
-                            focusManager.clearFocus()
-                            if (allValid) viewModel.resetPassword(onFinish)
-                        }
-                    ),
-                    textStyle = TextStyle(
-                        fontFamily = Sen,
-                        fontSize   = 16.sp,
-                        color      = Color.Black
-                    ),
-                    colors = OutlinedTextFieldDefaults.colors(
-                        focusedBorderColor = focusColor,
-                        unfocusedBorderColor = unfocusColor,
-                        errorBorderColor = Color.Red
-                    ),
-                    isError = errorIsMismatch,
-                    singleLine = true
-
-                )
-
-                Column(verticalArrangement = Arrangement.spacedBy(4.dp)) {
-                    ValidationRow("Mínimo 8 caracteres", state.isLengthValid)
-                    ValidationRow("Al menos una mayúscula", state.hasUppercase)
-                    ValidationRow("Número o símbolo", state.hasNumberOrSymbol)
-                    ValidationRow("Las contraseñas coinciden", passwordsMatch)
-
+                    )
                 }
-
-
-                Button(
-                    onClick = { viewModel.resetPassword(onFinish) },
-                    enabled = allValid,
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .height(48.dp),
-                    shape = RoundedCornerShape(12.dp),
-                    colors = ButtonDefaults.buttonColors(containerColor = Color(0xCCBC6154))
-                ) {
-                    if (state.isLoading)
-                        CircularProgressIndicator(
-                            modifier = Modifier.size(24.dp),
-                            color = Color.White,
-                            strokeWidth = 2.dp
-                        )
-                    else
-                        Text("CAMBIAR", color = Color.White, fontFamily = Sen)
+                item {
+                    OutlinedTextField(
+                        value = state.confirmPassword,
+                        onValueChange = viewModel::onConfirmPassChange,
+                        label = { Text("Repetir contraseña") },
+                        leadingIcon = {
+                            Icon(
+                                imageVector = Icons.Default.Lock,
+                                contentDescription = null,
+                                tint = Color.DarkGray
+                            )
+                        },
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .focusRequester(confirmPassFocusRequester),
+                        shape = RoundedCornerShape(12.dp),
+                        visualTransformation = PasswordVisualTransformation(),
+                        keyboardOptions = KeyboardOptions(
+                            keyboardType = KeyboardType.Password,
+                            imeAction = ImeAction.Done
+                        ),
+                        keyboardActions = KeyboardActions(
+                            onDone = {
+                                keyboardController?.hide()
+                                focusManager.clearFocus()
+                                if (allValid) viewModel.resetPassword(onFinish)
+                            }
+                        ),
+                        textStyle = TextStyle(
+                            fontFamily = Sen,
+                            fontSize = 16.sp,
+                            color = Color.Black
+                        ),
+                        colors = OutlinedTextFieldDefaults.colors(
+                            focusedBorderColor = focusColor,
+                            unfocusedBorderColor = unfocusColor,
+                            errorBorderColor = Color.Red
+                        ),
+                        isError = errorIsMismatch,
+                        singleLine = true
+                    )
+                }
+                item {
+                    Column(verticalArrangement = Arrangement.spacedBy(4.dp)) {
+                        ValidationRow("Mínimo 8 caracteres", state.isLengthValid)
+                        ValidationRow("Al menos una mayúscula", state.hasUppercase)
+                        ValidationRow("Número o símbolo", state.hasNumberOrSymbol)
+                        ValidationRow("Las contraseñas coinciden", passwordsMatch)
+                    }
+                }
+                item {
+                    Button(
+                        onClick = { viewModel.resetPassword(onFinish) },
+                        enabled = allValid,
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .height(48.dp),
+                        shape = RoundedCornerShape(12.dp),
+                        colors = ButtonDefaults.buttonColors(containerColor = Color(0xCCBC6154))
+                    ) {
+                        if (state.isLoading)
+                            CircularProgressIndicator(
+                                modifier = Modifier.size(24.dp),
+                                color = Color.White,
+                                strokeWidth = 2.dp
+                            )
+                        else
+                            Text("CAMBIAR", color = Color.White, fontFamily = Sen)
+                    }
                 }
 
                 if (showSuccessMessage) {
-                    Text(
-                        text = "Contraseña cambiada exitosamente",
-                        color = successColor,
-                        fontSize = 14.sp,
-                        fontFamily = Sen,
-                        modifier = Modifier.align(Alignment.CenterHorizontally)
-                    )
+                    item {
+                        Text(
+                            text = "Contraseña cambiada exitosamente",
+                            color = successColor,
+                            fontSize = 14.sp,
+                            fontFamily = Sen,
+                            modifier = Modifier.align(Alignment.CenterHorizontally)
+                        )
+                    }
                 }
 
                 state.error?.let {
-                    Text(
-                        text = it,
-                        color = MaterialTheme.colorScheme.error,
-                        fontSize = 12.sp,
-                        modifier = Modifier.align(Alignment.CenterHorizontally),
-                        fontFamily = Sen
-                    )
+                    item {
+                        Text(
+                            text = it,
+                            color = MaterialTheme.colorScheme.error,
+                            fontSize = 12.sp,
+                            modifier = Modifier.align(Alignment.CenterHorizontally),
+                            fontFamily = Sen
+                        )
+                    }
                 }
             }
         }

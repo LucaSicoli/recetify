@@ -35,6 +35,7 @@ import kotlinx.coroutines.launch
 import kotlinx.coroutines.delay
 import android.content.Intent
 import android.net.Uri
+import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.text.KeyboardActions
 import androidx.compose.ui.platform.LocalFocusManager
 import androidx.compose.ui.focus.FocusRequester
@@ -199,179 +200,188 @@ fun LoginScreen(
             shape = RoundedCornerShape(topStart = 24.dp, topEnd = 24.dp)
         ) {
             Box(Modifier.fillMaxSize()) {
-                Column(
+                LazyColumn(
                     modifier = Modifier
                         .fillMaxSize()
+                        .imePadding() // <- evita que el teclado tape los campos
                         .padding(24.dp),
                     verticalArrangement = Arrangement.spacedBy(16.dp)
                 ) {
-                    // Alias
-                    OutlinedTextField(
-                        value = state.alias,
-                        onValueChange = viewModel::onAliasChanged,
-                        label = { Text("Alias") },
-                        placeholder = { Text("Tu alias") },
-                        modifier = Modifier
-                            .fillMaxWidth(),
-                        shape = RoundedCornerShape(12.dp),
-                        textStyle = TextStyle(color = Color.Black, fontSize = 16.sp),
-                        singleLine = true,
-                        keyboardOptions = KeyboardOptions.Default.copy(
-                            imeAction = ImeAction.Next
-                        ),
-                        keyboardActions = KeyboardActions(
-                            onNext = { emailFocusRequester.requestFocus() }
-                        )
-                    )
-
-                    // Email
-                    OutlinedTextField(
-                        value = state.email,
-                        onValueChange = viewModel::onEmailChanged,
-                        label = { Text("Email") },
-                        placeholder = { Text("example@gmail.com") },
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .focusRequester(emailFocusRequester),
-                        shape = RoundedCornerShape(12.dp),
-                        textStyle = TextStyle(color = Color.Black, fontSize = 16.sp),
-                        singleLine = true,
-                        keyboardOptions = KeyboardOptions.Default.copy(
-                            keyboardType = KeyboardType.Email,
-                            imeAction = ImeAction.Next
-                        ),
-                        keyboardActions = KeyboardActions(
-                            onNext = { passwordFocusRequester.requestFocus() }
-                        )
-                    )
-
-                    // Contraseña
-                    OutlinedTextField(
-                        value = state.password,
-                        onValueChange = viewModel::onPasswordChanged,
-                        label = { Text("Contraseña") },
-                        placeholder = { Text("••••••••") },
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .focusRequester(passwordFocusRequester),
-                        shape = RoundedCornerShape(12.dp),
-                        textStyle = TextStyle(color = Color.Black, fontSize = 16.sp),
-                        visualTransformation = if (state.isPasswordVisible)
-                            VisualTransformation.None
-                        else
-                            PasswordVisualTransformation(),
-                        trailingIcon = {
-                            IconButton(onClick = viewModel::togglePasswordVisibility) {
-                                Icon(
-                                    imageVector = if (state.isPasswordVisible)
-                                        Icons.Filled.Visibility
-                                    else
-                                        Icons.Filled.VisibilityOff,
-                                    contentDescription = null
-                                )
-                            }
-                        },
-                        singleLine = true,
-                        keyboardOptions = KeyboardOptions.Default.copy(
-                            keyboardType = KeyboardType.Password,
-                            imeAction = ImeAction.Done
-                        ),
-                        keyboardActions = KeyboardActions(
-                            onDone = {
-                                focusManager.clearFocus()
-                                viewModel.onLoginClicked()
-                            }
-                        )
-                    )
-
-                    // Recordarme
-                    Row(
-                        verticalAlignment = Alignment.CenterVertically,
-                        horizontalArrangement = Arrangement.spacedBy(8.dp)
-                    ) {
-                        Checkbox(
-                            checked = rememberMe,
-                            onCheckedChange = { rememberMe = it }
-                        )
-                        Text(
-                            "Recordarme",
-                            fontSize = 14.sp,
-                            color = Color(0xFF555555)
-                        )
-                    }
-
-                    // Botón INICIAR SESIÓN
-                    Button(
-                        onClick = viewModel::onLoginClicked,
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .height(48.dp),
-                        shape = RoundedCornerShape(12.dp),
-                        colors = ButtonDefaults.buttonColors(containerColor = Color(0xCCBC6154))
-                    ) {
-                        if (state.isLoading) {
-                            CircularProgressIndicator(
-                                modifier = Modifier.size(24.dp),
-                                strokeWidth = 2.dp,
-                                color = Color.White
+                    item {
+                        // Alias
+                        OutlinedTextField(
+                            value = state.alias,
+                            onValueChange = viewModel::onAliasChanged,
+                            label = { Text("Alias") },
+                            placeholder = { Text("Tu alias") },
+                            modifier = Modifier
+                                .fillMaxWidth(),
+                            shape = RoundedCornerShape(12.dp),
+                            textStyle = TextStyle(color = Color.Black, fontSize = 16.sp),
+                            singleLine = true,
+                            keyboardOptions = KeyboardOptions.Default.copy(
+                                imeAction = ImeAction.Next
+                            ),
+                            keyboardActions = KeyboardActions(
+                                onNext = { emailFocusRequester.requestFocus() }
                             )
-                        } else {
-                            Text(
-                                "INICIAR SESIÓN",
-                                color = Color.White,
-                                fontFamily = Sen
-                            )
-                        }
+                        )
                     }
-                    Button(
-                        onClick = {
-                            scope.launch {
-                                SessionManager.setVisitante(context)
-                                onVisitor()
-                            }
-                        },
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .height(48.dp)
-                            .offset(y = (-6).dp),     // <-- esto lo sube 4dp
-                        shape = RoundedCornerShape(12.dp),
-                        colors = ButtonDefaults.buttonColors(containerColor = Color.Gray))
-                    {
-                        Text("INGRESAR COMO VISITANTE", color = Color.White, fontFamily = Sen)
-                    }
-
-                    // — Enlaces pequeños debajo —
-                    Column(modifier = Modifier.fillMaxWidth()) {
-                        Text(
-                            "¿Olvidaste la contraseña?",
-                            fontSize = 14.sp,
-                            color = Color(0xFFBC6154),
-                            textAlign = TextAlign.Center,
+                    item {
+                        // Email
+                        OutlinedTextField(
+                            value = state.email,
+                            onValueChange = viewModel::onEmailChanged,
+                            label = { Text("Email") },
+                            placeholder = { Text("example@gmail.com") },
                             modifier = Modifier
                                 .fillMaxWidth()
-                                .clickable(onClick = onForgot)
-                                .padding(vertical = 2.dp)
+                                .focusRequester(emailFocusRequester),
+                            shape = RoundedCornerShape(12.dp),
+                            textStyle = TextStyle(color = Color.Black, fontSize = 16.sp),
+                            singleLine = true,
+                            keyboardOptions = KeyboardOptions.Default.copy(
+                                keyboardType = KeyboardType.Email,
+                                imeAction = ImeAction.Next
+                            ),
+                            keyboardActions = KeyboardActions(
+                                onNext = { passwordFocusRequester.requestFocus() }
+                            )
                         )
+                    }
+                    item {
+                        // Contraseña
+                        OutlinedTextField(
+                            value = state.password,
+                            onValueChange = viewModel::onPasswordChanged,
+                            label = { Text("Contraseña") },
+                            placeholder = { Text("••••••••") },
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .focusRequester(passwordFocusRequester),
+                            shape = RoundedCornerShape(12.dp),
+                            textStyle = TextStyle(color = Color.Black, fontSize = 16.sp),
+                            visualTransformation = if (state.isPasswordVisible)
+                                VisualTransformation.None
+                            else
+                                PasswordVisualTransformation(),
+                            trailingIcon = {
+                                IconButton(onClick = viewModel::togglePasswordVisibility) {
+                                    Icon(
+                                        imageVector = if (state.isPasswordVisible)
+                                            Icons.Filled.Visibility
+                                        else
+                                            Icons.Filled.VisibilityOff,
+                                        contentDescription = null
+                                    )
+                                }
+                            },
+                            singleLine = true,
+                            keyboardOptions = KeyboardOptions.Default.copy(
+                                keyboardType = KeyboardType.Password,
+                                imeAction = ImeAction.Done
+                            ),
+                            keyboardActions = KeyboardActions(
+                                onDone = {
+                                    focusManager.clearFocus()
+                                    viewModel.onLoginClicked()
+                                }
+                            )
+                        )
+                    }
+                    item {
+
+                        // Recordarme
                         Row(
-                            modifier = Modifier.fillMaxWidth(),
-                            horizontalArrangement = Arrangement.Center
+                            verticalAlignment = Alignment.CenterVertically,
+                            horizontalArrangement = Arrangement.spacedBy(8.dp)
                         ) {
+                            Checkbox(
+                                checked = rememberMe,
+                                onCheckedChange = { rememberMe = it }
+                            )
                             Text(
-                                "¿No tenés una cuenta? ",
+                                "Recordarme",
                                 fontSize = 14.sp,
                                 color = Color(0xFF555555)
                             )
-                            Text(
-                                "REGÍSTRATE",
-                                fontSize = 12.sp,
-                                fontWeight = FontWeight.Bold,
-                                color = Color(0xCCBC6154),
-                                modifier = Modifier.clickable {
-                                    val url = "https://eu.login.vorwerk.com/ciam/register?ui_locales=es-ES&requestId=582214e7-6368-4e43-b346-832c9b1b414e&view_type=register&market=es"
-                                    val intent = Intent(Intent.ACTION_VIEW, Uri.parse(url))
-                                    context.startActivity(intent)
+                        }
+
+                        // Botón INICIAR SESIÓN
+                        Button(
+                            onClick = viewModel::onLoginClicked,
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .height(48.dp),
+                            shape = RoundedCornerShape(12.dp),
+                            colors = ButtonDefaults.buttonColors(containerColor = Color(0xCCBC6154))
+                        ) {
+                            if (state.isLoading) {
+                                CircularProgressIndicator(
+                                    modifier = Modifier.size(24.dp),
+                                    strokeWidth = 2.dp,
+                                    color = Color.White
+                                )
+                            } else {
+                                Text(
+                                    "INICIAR SESIÓN",
+                                    color = Color.White,
+                                    fontFamily = Sen
+                                )
+                            }
+                        }
+                        Spacer(modifier = Modifier.height(16.dp))
+                        Button(
+                            onClick = {
+                                scope.launch {
+                                    SessionManager.setVisitante(context)
+                                    onVisitor()
                                 }
+                            },
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .height(48.dp)
+                                .offset(y = (-6).dp),     // <-- esto lo sube 4dp
+                            shape = RoundedCornerShape(12.dp),
+                            colors = ButtonDefaults.buttonColors(containerColor = Color.Gray))
+                        {
+                            Text("INGRESAR COMO VISITANTE", color = Color.White, fontFamily = Sen)
+                        }
+
+
+                        // — Enlaces pequeños debajo —
+                        Column(modifier = Modifier.fillMaxWidth()) {
+                            Text(
+                                "¿Olvidaste la contraseña?",
+                                fontSize = 14.sp,
+                                color = Color(0xFFBC6154),
+                                textAlign = TextAlign.Center,
+                                modifier = Modifier
+                                    .fillMaxWidth()
+                                    .clickable(onClick = onForgot)
+                                    .padding(vertical = 2.dp)
                             )
+                            Row(
+                                modifier = Modifier.fillMaxWidth(),
+                                horizontalArrangement = Arrangement.Center
+                            ) {
+                                Text(
+                                    "¿No tenés una cuenta? ",
+                                    fontSize = 14.sp,
+                                    color = Color(0xFF555555)
+                                )
+                                Text(
+                                    "REGÍSTRATE",
+                                    fontSize = 12.sp,
+                                    fontWeight = FontWeight.Bold,
+                                    color = Color(0xCCBC6154),
+                                    modifier = Modifier.clickable {
+                                        val url = "https://eu.login.vorwerk.com/ciam/register?ui_locales=es-ES&requestId=582214e7-6368-4e43-b346-832c9b1b414e&view_type=register&market=es"
+                                        val intent = Intent(Intent.ACTION_VIEW, Uri.parse(url))
+                                        context.startActivity(intent)
+                                    }
+                                )
+                            }
                         }
                     }
                 }

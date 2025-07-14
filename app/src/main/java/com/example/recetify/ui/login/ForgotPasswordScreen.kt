@@ -35,6 +35,7 @@ import androidx.lifecycle.viewmodel.compose.viewModel
 import com.example.recetify.R
 import android.content.Intent
 import android.net.Uri
+import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.text.KeyboardActions
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
@@ -124,118 +125,129 @@ fun ForgotPasswordScreen(
             color = Color.White,
             shape = RoundedCornerShape(topStart = 24.dp, topEnd = 24.dp)
         ) {
-            Column(
+            LazyColumn(
                 modifier = Modifier
                     .fillMaxSize()
-                    .padding(24.dp)
+                    .imePadding()
+                    .padding(24.dp),
+                verticalArrangement = Arrangement.spacedBy(16.dp)
             ) {
-                // Campo de email (single line para que no "brinque" al escribir)
-                OutlinedTextField(
-                    value = state.email,
-                    onValueChange = viewModel::onEmailChange,
-                    singleLine = true,
-                    label = { Text("Mail", fontFamily = Sen) },
-                    placeholder = {
-                        Text(
-                            text = "example@gmail.com",
-                            color = Color.Black.copy(alpha = 0.5f),
-                            fontFamily = Sen
+                item {
+                    // Campo de email
+                    OutlinedTextField(
+                        value = state.email,
+                        onValueChange = viewModel::onEmailChange,
+                        singleLine = true,
+                        label = { Text("Mail", fontFamily = Sen) },
+                        placeholder = {
+                            Text(
+                                text = "example@gmail.com",
+                                color = Color.Black.copy(alpha = 0.5f),
+                                fontFamily = Sen
+                            )
+                        },
+                        leadingIcon = {
+                            Icon(
+                                Icons.Default.MailOutline,
+                                contentDescription = null,
+                                tint = Color.Black.copy(alpha = 0.6f)
+                            )
+                        },
+                        modifier = Modifier.fillMaxWidth(),
+                        shape = RoundedCornerShape(12.dp),
+                        keyboardOptions = KeyboardOptions(
+                            keyboardType = KeyboardType.Email,
+                            imeAction = ImeAction.Done
+                        ),
+                        keyboardActions = KeyboardActions(
+                            onDone = {
+                                focusManager.clearFocus()
+                                viewModel.requestReset(onNext)
+                            }
+                        ),
+                        textStyle = TextStyle(
+                            color = Color.Black,
+                            fontFamily = Sen,
+                            fontSize = 16.sp
                         )
-                    },
-                    leadingIcon = {
-                        Icon(
-                            Icons.Default.MailOutline,
-                            contentDescription = null,
-                            tint = Color.Black.copy(alpha = 0.6f)
-                        )
-                    },
-                    modifier = Modifier.fillMaxWidth(),
-                    shape = RoundedCornerShape(12.dp),
-                    keyboardOptions = KeyboardOptions(
-                        keyboardType = KeyboardType.Email,
-                        imeAction = ImeAction.Done
-                    ),
-                    keyboardActions = KeyboardActions(
-                        onDone = {
-                            focusManager.clearFocus()
-                            viewModel.requestReset(onNext)
-                        }
-                    ),
-                    textStyle = TextStyle(
-                        color = Color.Black,
-                        fontFamily = Sen,
-                        fontSize = 16.sp
-                    )
-                )
-
-                // Mostrar mensaje de error personalizado si hay error
-                if (state.error != null) {
-                    Text(
-                        text = "El mail ingresado está mal escrito o no existe",
-                        color = Color.Red,
-                        fontFamily = Sen,
-                        fontSize = 14.sp,
-                        modifier = Modifier.align(Alignment.Start).padding(top = 4.dp)
                     )
                 }
 
-                // empujamos el botón hacia abajo
-                Spacer(modifier = Modifier.weight(0.6f))
-
-                // Botón "ENVIAR CÓDIGO"
-                Button(
-                    onClick = { viewModel.requestReset(onNext) },
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .height(48.dp),
-                    shape = RoundedCornerShape(12.dp),
-                    colors = ButtonDefaults.buttonColors(containerColor = Color(0xCCBC6154))
-                ) {
-                    if (state.isLoading) {
-                        CircularProgressIndicator(
-                            modifier = Modifier.size(24.dp),
-                            color = Color.White,
-                            strokeWidth = 2.dp
-                        )
-                    } else {
+                // Mostrar mensaje de error personalizado si hay error
+                if (state.error != null) {
+                    item {
                         Text(
-                            text = "ENVIAR CÓDIGO",
-                            color = Color.White,
-                            fontFamily = Sen
+                            text = "El mail ingresado está mal escrito o no existe",
+                            color = Color.Red,
+                            fontFamily = Sen,
+                            fontSize = 14.sp,
+                            modifier = Modifier
+                                .padding(top = 4.dp)
                         )
                     }
                 }
 
-                // un pequeño espacio antes del texto de registro
-                Spacer(modifier = Modifier.height(8.dp))
+                // empujamos el botón hacia abajo
+                item {Spacer(modifier = Modifier.weight(0.6f))}
 
-                // Texto "¿No tenés una cuenta? REGISTRATE"
-                Row(
-                    modifier = Modifier.fillMaxWidth(),
-                    horizontalArrangement = Arrangement.Center
-                ) {
-                    Text(
-                        text = "¿No tenés una cuenta? ",
-                        fontFamily = Sen,
-                        fontSize = 14.sp,
-                        color = Color(0xFF555555)
-                    )
-                    Text(
-                        text = "REGISTRATE",
-                        fontFamily = Sen,
-                        fontSize = 14.sp,
-                        fontWeight = FontWeight.Bold,
-                        color = Color(0xCCBC6154),
-                        modifier = Modifier.clickable {
-                            val url = "https://eu.login.vorwerk.com/ciam/register?ui_locales=es-ES&requestId=582214e7-6368-4e43-b346-832c9b1b414e&view_type=register&market=es"
-                            val intent = Intent(Intent.ACTION_VIEW, Uri.parse(url))
-                            context.startActivity(intent)
+                // Botón "ENVIAR CÓDIGO"
+                item {
+                    Button(
+                        onClick = { viewModel.requestReset(onNext) },
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .height(48.dp),
+                        shape = RoundedCornerShape(12.dp),
+                        colors = ButtonDefaults.buttonColors(containerColor = Color(0xCCBC6154))
+                    ) {
+                        if (state.isLoading) {
+                            CircularProgressIndicator(
+                                modifier = Modifier.size(24.dp),
+                                color = Color.White,
+                                strokeWidth = 2.dp
+                            )
+                        } else {
+                            Text(
+                                text = "ENVIAR CÓDIGO",
+                                color = Color.White,
+                                fontFamily = Sen
+                            )
                         }
-                    )
+                    }
+                }
+                item {
+                    // un pequeño espacio antes del texto de registro
+                    Spacer(modifier = Modifier.height(8.dp))
+
+                    // Texto "¿No tenés una cuenta? REGISTRATE"
+                    Row(
+                        modifier = Modifier.fillMaxWidth(),
+                        horizontalArrangement = Arrangement.Center
+                    ) {
+                        Text(
+                            text = "¿No tenés una cuenta? ",
+                            fontFamily = Sen,
+                            fontSize = 14.sp,
+                            color = Color(0xFF555555)
+                        )
+                        Text(
+                            text = "REGISTRATE",
+                            fontFamily = Sen,
+                            fontSize = 14.sp,
+                            fontWeight = FontWeight.Bold,
+                            color = Color(0xCCBC6154),
+                            modifier = Modifier.clickable {
+                                val url =
+                                    "https://eu.login.vorwerk.com/ciam/register?ui_locales=es-ES&requestId=582214e7-6368-4e43-b346-832c9b1b414e&view_type=register&market=es"
+                                val intent = Intent(Intent.ACTION_VIEW, Uri.parse(url))
+                                context.startActivity(intent)
+                            }
+                        )
+                    }
                 }
 
                 // y algo de padding final para que no quede pegado al borde
-                Spacer(modifier = Modifier.height(90.dp))
+                item {Spacer(modifier = Modifier.height(90.dp))}
             }
         }
     }
