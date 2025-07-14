@@ -89,6 +89,7 @@ import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.unit.IntOffset
 import androidx.core.net.toUri
 import kotlinx.coroutines.launch
+import java.util.UUID
 
 
 private val Accent = Color(0xFFBC6154)
@@ -857,36 +858,45 @@ fun CreateRecipeScreen(
                         )
                     }
                     steps.forEachIndexed { idx, step ->
-                        StepCard(
-                            stepNumber    = step.numeroPaso,
-                            title         = step.titulo.orEmpty(),
-                            description   = step.descripcion,
-                            mediaUrls     = step.mediaUrls ?: emptyList(),
-                            onTitleChange = { new -> steps[idx] = step.copy(titulo = new) },
-                            onDescChange  = { new -> steps[idx] = step.copy(descripcion = new) },
-                            onAddMedia    = {
-                                selectedStepIndex = idx
-                                val intent = Intent(Intent.ACTION_OPEN_DOCUMENT).apply {
-                                    type = "*/*"
-                                    putExtra(Intent.EXTRA_MIME_TYPES, arrayOf("image/*", "video/*"))
-                                    putExtra(Intent.EXTRA_ALLOW_MULTIPLE, true)
+                        key(step.id) {
+                            StepCard(
+                                stepNumber    = step.numeroPaso,
+                                title         = step.titulo.orEmpty(),
+                                description   = step.descripcion,
+                                mediaUrls     = step.mediaUrls ?: emptyList(),
+                                onTitleChange = { new ->
+                                    steps[idx] = step.copy(titulo = new)
+                                },
+                                onDescChange  = { new ->
+                                    steps[idx] = step.copy(descripcion = new)
+                                },
+                                onAddMedia    = {
+                                    selectedStepIndex = idx
+                                    val intent = Intent(Intent.ACTION_OPEN_DOCUMENT).apply {
+                                        type = "*/*"
+                                        putExtra(Intent.EXTRA_MIME_TYPES, arrayOf("image/*", "video/*"))
+                                        putExtra(Intent.EXTRA_ALLOW_MULTIPLE, true)
+                                    }
+                                    stepMediaLauncher.launch(intent)
+                                },
+                                onDelete      = {
+                                    steps.removeAt(idx)
+                                    selectedStepIndex = null
+                                    // Reajusta los números de paso
+                                    steps.forEachIndexed { i, s ->
+                                        steps[i] = s.copy(numeroPaso = i + 1)
+                                    }
+                                },
+                                onRemoveMedia = { mediaIdx ->
+                                    val currentList = step.mediaUrls?.toMutableList() ?: mutableListOf()
+                                    if (mediaIdx in currentList.indices) {
+                                        currentList.removeAt(mediaIdx)
+                                        steps[idx] = step.copy(mediaUrls = currentList)
+                                    }
                                 }
-                                stepMediaLauncher.launch(intent)
-                            },
-                            onDelete      = {
-                                steps.removeAt(idx)
-                                selectedStepIndex = null
-                                steps.forEachIndexed { i, s -> steps[i] = s.copy(numeroPaso = i + 1) }
-                            },
-                            onRemoveMedia = { mediaIdx ->
-                                val currentList = step.mediaUrls?.toMutableList() ?: mutableListOf()
-                                if (mediaIdx in currentList.indices) {
-                                    currentList.removeAt(mediaIdx)
-                                    steps[idx] = step.copy(mediaUrls = currentList)
-                                }
-                            }
-                        )
-                        Spacer(Modifier.height(8.dp))
+                            )
+                            Spacer(Modifier.height(8.dp))
+                        }
                     }
                     if (pasosError) {
                         Text("Agrega al menos un paso", color = Color.Red, fontSize = 12.sp)
@@ -910,7 +920,8 @@ fun CreateRecipeScreen(
                                     numeroPaso  = steps.size + 1,
                                     titulo      = "",
                                     descripcion = "",
-                                    mediaUrls   = emptyList()
+                                    mediaUrls   = emptyList(),
+                                    id = UUID.randomUUID().toString() // Asegurarse de que el nuevo paso también tenga un id
                                 )
                                 // 2) marca ese índice como “en edición”
                                 selectedStepIndex = steps.lastIndex
@@ -1024,7 +1035,7 @@ fun CreateRecipeScreen(
                                         )
 
                                         // 3️⃣ Llamar al ViewModel para guardar borrador
-                                        viewModel.saveDraftWithMedia(request, localMediaUri)
+                                        viewModel.uploadStepMediaAndSaveDraft(request, localMediaUri)
                                     },
                                     enabled = !viewModel.submitting.collectAsState().value,
                                     modifier = Modifier
@@ -1075,16 +1086,22 @@ fun CreateRecipeScreen(
                                         showFormError = nombreError || descripcionError || categoriaError || tipoError || ingredientesError || pasosError
                                         if (showFormError) return@Card
 
-                                        viewModel.createRecipe(
+                                        val request = RecipeRequest(
                                             nombre      = nombre,
                                             descripcion = descripcion,
                                             tiempo      = tiempo,
                                             porciones   = porciones,
+                                            mediaUrls   = photoUrl?.let { listOf(it) } ?: emptyList(),
                                             tipoPlato   = selectedTipo!!,
                                             categoria   = selectedCategory!!,
                                             ingredients = ingredients.toList(),
-                                            steps       = steps.toList(),
-                                            onSuccess   = onPublished
+                                            steps       = steps.toList()
+                                        )
+
+                                        viewModel.uploadStepMediaAndCreateRecipe(
+                                            request = request,
+                                            mainImageUri = localMediaUri,
+                                            onSuccess = onPublished
                                         )
                                     },
                                     enabled = !viewModel.submitting.collectAsState().value,
@@ -1282,7 +1299,8 @@ fun CreateRecipeScreen(
                             numeroPaso = steps.size + 1,
                             titulo     = stepTitle,
                             descripcion= stepDesc,
-                            mediaUrls  = null
+                            mediaUrls  = null,
+                            id = UUID.randomUUID().toString() // Y aquí también
                         )
                         showStepDialog = false
                     }) { Text("Agregar") }

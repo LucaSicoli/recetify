@@ -104,15 +104,129 @@ class CreateRecipeViewModel(
         }
     }
 
+    /**
+     * Sube todos los medios (portada y pasos) y luego guarda el borrador.
+     * Esta es la nueva función para el botón "GUARDAR".
+     */
+    fun uploadStepMediaAndSaveDraft(
+        request: RecipeRequest,
+        mainImageUri: Uri?
+    ) = viewModelScope.launch {
+        _submitting.value = true
+        _error.value      = null
+        try {
+            // 1. Subir imagen principal si es una URI local nueva
+            val finalHeaderUrls = mainImageUri?.takeIf { it.scheme == "content" }?.let { uri ->
+                val file = FileUtil.from(getApplication(), uri)
+                listOf(repo.uploadPhoto(file))
+            } ?: request.mediaUrls // Mantener las URLs existentes si no hay nueva URI
+
+            // 2. Subir imágenes/videos de los pasos
+            val updatedSteps = request.steps.map { step ->
+                val uploadedMediaUrls = step.mediaUrls?.map { url ->
+                    if (url.startsWith("content://")) {
+                        try {
+                            val file = FileUtil.from(getApplication(), Uri.parse(url))
+                            repo.uploadPhoto(file)
+                        } catch (e: Exception) {
+                            // Si falla la subida de un archivo, podemos decidir si continuar o no.
+                            // Aquí lo omitimos y mostramos el error.
+                            _error.value = "Error subiendo archivo del paso: ${e.message}"
+                            url // Mantenemos la URL local para que el usuario pueda reintentar
+                        }
+                    } else {
+                        url // Es una URL remota, la mantenemos
+                    }
+                }
+                step.copy(mediaUrls = uploadedMediaUrls)
+            }
+
+            // 3. Construir la request final con todas las URLs actualizadas
+            val finalRequest = request.copy(
+                mediaUrls = finalHeaderUrls,
+                steps = updatedSteps
+            )
+
+            // 4. Guardar el borrador
+            val response = repo.saveDraft(finalRequest)
+            _draftSaved.value = Result.success(response)
+
+        } catch (t: Throwable) {
+            _error.value = "Error guardando el borrador: ${t.localizedMessage}"
+            _draftSaved.value = Result.failure(t)
+        } finally {
+            _submitting.value = false
+        }
+    }
+
+    /**
+     * Sube todos los medios y luego crea (publica) la receta.
+     * Esta es la nueva función para el botón "PUBLICAR".
+     */
+    fun uploadStepMediaAndCreateRecipe(
+        request: RecipeRequest,
+        mainImageUri: Uri?,
+        onSuccess: () -> Unit
+    ) = viewModelScope.launch {
+        _submitting.value = true
+        _error.value      = null
+        try {
+            // 1. Subir imagen principal si es una URI local nueva
+            val finalHeaderUrls = mainImageUri?.takeIf { it.scheme == "content" }?.let { uri ->
+                val file = FileUtil.from(getApplication(), uri)
+                listOf(repo.uploadPhoto(file))
+            } ?: _photoUrl.value?.let { listOf(it) } ?: emptyList()
+
+
+            // 2. Subir imágenes/videos de los pasos
+            val updatedSteps = request.steps.map { step ->
+                val uploadedMediaUrls = step.mediaUrls?.map { url ->
+                    if (url.startsWith("content://")) {
+                        try {
+                            val file = FileUtil.from(getApplication(), Uri.parse(url))
+                            repo.uploadPhoto(file)
+                        } catch (e: Exception) {
+                            _error.value = "Error subiendo archivo del paso: ${e.message}"
+                            url
+                        }
+                    } else {
+                        url
+                    }
+                }
+                step.copy(mediaUrls = uploadedMediaUrls)
+            }
+
+            // 3. Construir la request final
+            val finalRequest = request.copy(
+                mediaUrls = finalHeaderUrls,
+                steps = updatedSteps
+            )
+
+            // 4. Crear (publicar) la receta
+            val result = repo.createRecipe(finalRequest)
+            _publishResult.value = Result.success(result)
+            onSuccess()
+
+        } catch (t: Throwable) {
+            _error.value = "Error publicando la receta: ${t.localizedMessage}"
+            _publishResult.value = Result.failure(t)
+        } finally {
+            _submitting.value = false
+        }
+    }
+
+    // --- Funciones antiguas que se pueden eliminar o dejar como privadas si se usan en otro lugar ---
+    // Por seguridad, las dejamos pero no se usarán desde CreateRecipeScreen
+
     /** Guarda un borrador SIN gestionar subida de media */
-    fun saveDraft(request: RecipeRequest) = viewModelScope.launch {
+    private fun saveDraft(request: RecipeRequest) = viewModelScope.launch {
         runCatching { repo.saveDraft(request) }
             .onSuccess { _draftSaved.value = Result.success(it) }
             .onFailure { _draftSaved.value = Result.failure(it) }
     }
 
     /** Guarda un borrador con subida de portada y media de pasos */
-    fun saveDraftWithMedia(
+    private fun saveDraftWithMedia(
         request: RecipeRequest,
         localMediaUri: Uri?
     ) = viewModelScope.launch {
@@ -278,7 +392,7 @@ class CreateRecipeViewModel(
     }
 
     /** Crea una receta y envía a publicar */
-    fun createRecipe(
+    private fun createRecipe(
         nombre: String,
         descripcion: String,
         tiempo: Int,
