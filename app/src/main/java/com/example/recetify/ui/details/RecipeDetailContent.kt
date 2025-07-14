@@ -600,19 +600,54 @@ fun RecipeDetailContent(
                 tonalElevation = 0.dp
             ) {
                 Column(Modifier.padding(24.dp)) {
-                    // Título y descripción de la receta
-                    Box(modifier = Modifier.fillMaxWidth()) {
-                        Text(
-                            text = receta.nombre,
-                            style = MaterialTheme.typography.headlineSmall.copy(fontWeight = FontWeight.Bold),
-                            color = Color(0xFF042628),
-                            fontFamily = Destacado,
-                            maxLines = 3,
-                            overflow = TextOverflow.Clip,
-                            modifier = Modifier
-                                .align(Alignment.TopStart)
-                                .padding(end = 48.dp) // deja espacio para el lápiz
-                        )
+                    // Título + Etiquetas + Personalizar
+                    Row(modifier = Modifier.fillMaxWidth()) {
+                        Column(modifier = Modifier.weight(1f)) {
+                            Text(
+                                text = receta.nombre,
+                                style = MaterialTheme.typography.headlineSmall.copy(fontWeight = FontWeight.Bold),
+                                color = Color(0xFF042628),
+                                fontFamily = Destacado,
+                                maxLines = 3,
+                                overflow = TextOverflow.Clip
+                            )
+                            Spacer(Modifier.height(4.dp))
+
+                            Row(
+                                horizontalArrangement = Arrangement.spacedBy(8.dp),
+                                verticalAlignment = Alignment.CenterVertically
+                            ) {
+                                receta.tipoPlato?.takeIf { it.isNotBlank() }?.let { tipo ->
+                                    Surface(
+                                        color = Color(0xFFE89B93),
+                                        shape = RoundedCornerShape(8.dp),
+                                        shadowElevation = 1.dp
+                                    ) {
+                                        Text(
+                                            text = tipo,
+                                            modifier = Modifier.padding(horizontal = 12.dp, vertical = 4.dp),
+                                            style = MaterialTheme.typography.labelSmall,
+                                            color = Color.White
+                                        )
+                                    }
+                                }
+
+                                receta.categoria?.takeIf { it.isNotBlank() }?.let { categoria ->
+                                    Surface(
+                                        color = Color(0xFFC48E88),
+                                        shape = RoundedCornerShape(8.dp),
+                                        shadowElevation = 1.dp
+                                    ) {
+                                        Text(
+                                            text = categoria,
+                                            modifier = Modifier.padding(horizontal = 12.dp, vertical = 4.dp),
+                                            style = MaterialTheme.typography.labelSmall,
+                                            color = Color.White
+                                        )
+                                    }
+                                }
+                            }
+                        }
                         IconButton(
                             onClick = {
                                 if (!isAlumno) {
@@ -630,8 +665,9 @@ fun RecipeDetailContent(
                                 }
                             },
                             modifier = Modifier
-                                .align(Alignment.TopEnd)
-                                .offset(x = baritaShakeOffset.value.dp)
+                                .padding(start = 8.dp)
+                                .align(Alignment.Top)
+
                         ) {
                             Icon(
                                 imageVector = Icons.Default.AutoFixHigh,
@@ -640,6 +676,7 @@ fun RecipeDetailContent(
                             )
                         }
                     }
+                    // Descripcion
                     Spacer(Modifier.height(4.dp))
                     Text(
                         text = receta.descripcion ?: "",
