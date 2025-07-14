@@ -47,6 +47,7 @@ import com.example.recetify.R
 import com.example.recetify.data.db.RecipeEntity
 import com.example.recetify.data.remote.RetrofitClient
 import com.example.recetify.data.remote.model.SessionManager
+import com.example.recetify.ui.common.LogoutDialog
 import kotlinx.coroutines.launch
 import java.net.URI
 import com.example.recetify.ui.common.LoopingVideoPlayer
@@ -172,34 +173,25 @@ fun HomeScreen(
         }
     }
 
-    // ── Diálogo de “Cerrar sesión” ───────────────────────
+    // ── Diálogo de "Cerrar sesión" ───────────────────────
     if (showLogoutDialog) {
-        AlertDialog(
-            onDismissRequest = { showLogoutDialog = false },
-            title           = { Text("Cerrar sesión") },
-            text            = { Text("¿Estás seguro de que querés cerrar la sesión y volver al login?") },
-            confirmButton   = {
-                TextButton(onClick = {
-                    showLogoutDialog = false
-                    scope.launch {
-                        // marcamos como visitante
-                        SessionManager.setVisitante(context)
-                        // navegamos a "login" y borramos TODO el stack
-                        navController.navigate("login") {
-                            popUpTo(navController.graph.id) { // <-- acá borramos todo
-                                inclusive = true
-                            }
-                            launchSingleTop = true
+        LogoutDialog(
+            onConfirm = {
+                showLogoutDialog = false
+                scope.launch {
+                    // marcamos como visitante
+                    SessionManager.setVisitante(context)
+                    // navegamos a "login" y borramos TODO el stack
+                    navController.navigate("login") {
+                        popUpTo(navController.graph.id) { // <-- acá borramos todo
+                            inclusive = true
                         }
+                        launchSingleTop = true
                     }
-                }) {
-                    Text("Sí")
                 }
             },
-            dismissButton   = {
-                TextButton(onClick = { showLogoutDialog = false }) {
-                    Text("No")
-                }
+            onDismiss = {
+                showLogoutDialog = false
             }
         )
     }

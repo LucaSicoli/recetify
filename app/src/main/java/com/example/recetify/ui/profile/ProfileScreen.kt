@@ -30,6 +30,7 @@ import coil.compose.AsyncImage
 import coil.request.ImageRequest
 import com.example.recetify.data.remote.RetrofitClient
 import com.example.recetify.data.remote.model.SessionManager
+import com.example.recetify.ui.common.LogoutDialog
 import kotlinx.coroutines.launch
 
 @Composable
@@ -195,27 +196,20 @@ fun ProfileScreen(
 
     // ─── DIÁLOGO CONF. LOGOUT ───────────────────
     if (showLogoutDialog) {
-        AlertDialog(
-            onDismissRequest = { showLogoutDialog = false },
-            title            = { Text("Cerrar sesión") },
-            text             = { Text("¿Estás seguro de que querés cerrar sesión?") },
-            confirmButton    = {
-                TextButton(onClick = {
-                    showLogoutDialog = false
-                    scope.launch {
-                        SessionManager.clearSession(ctx)
-                        navController.navigate("login") {
-                            // eliminamos TODO el back-stack (incluyendo “home”, “recipe”, etc.)
-                            popUpTo(navController.graph.id) { inclusive = true }
-                            launchSingleTop = true
-                        }
+        LogoutDialog(
+            onConfirm = {
+                showLogoutDialog = false
+                scope.launch {
+                    SessionManager.clearSession(ctx)
+                    navController.navigate("login") {
+                        // eliminamos TODO el back-stack (incluyendo "home", "recipe", etc.)
+                        popUpTo(navController.graph.id) { inclusive = true }
+                        launchSingleTop = true
                     }
-                }) {
-                    Text("Sí")
                 }
             },
-            dismissButton    = {
-                TextButton(onClick = { showLogoutDialog = false }) { Text("No") }
+            onDismiss = {
+                showLogoutDialog = false
             }
         )
     }

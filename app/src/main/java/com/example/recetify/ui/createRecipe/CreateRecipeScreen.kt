@@ -83,6 +83,9 @@ import androidx.compose.ui.unit.IntOffset
 import androidx.core.net.toUri
 import kotlinx.coroutines.launch
 import java.util.UUID
+import com.example.recetify.ui.common.rememberConnectionState
+import com.example.recetify.ui.common.ConnectionType
+import com.example.recetify.ui.common.MobileDataWarningDialog
 
 
 private val Accent = Color(0xFFBC6154)
@@ -156,6 +159,11 @@ fun CreateRecipeScreen(
 
     // --- Local & ViewModel state ---
 
+    // Detectar estado de conexión
+    val connectionState by rememberConnectionState()
+    var showMobileDataWarning by remember { mutableStateOf(false) }
+    var pendingAction by remember { mutableStateOf<(() -> Unit)?>(null) }
+
     var localMediaUri by remember { mutableStateOf<Uri?>(null) }
     var isVideo       by remember { mutableStateOf(false) }
     var showIngredientDialog by remember { mutableStateOf(false) }
@@ -191,6 +199,26 @@ fun CreateRecipeScreen(
 
     // Image picker
     val context  = LocalContext.current
+
+    // Función para validar conexión antes de subir
+    fun checkConnectionAndProceed(action: () -> Unit) {
+        when {
+            !connectionState.isConnected -> {
+                // Sin conexión, mostrar error
+                Toast.makeText(context, "No tienes conexión a internet", Toast.LENGTH_LONG).show()
+            }
+            connectionState.connectionType == ConnectionType.CELLULAR -> {
+                // Solo datos móviles, mostrar advertencia
+                pendingAction = action
+                showMobileDataWarning = true
+            }
+            else -> {
+                // WiFi u otra conexión, proceder directamente
+                action()
+            }
+        }
+    }
+
     val anyLauncher = rememberLauncherForActivityResult(StartActivityForResult()) { result ->
         val uri = result.data?.data ?: return@rememberLauncherForActivityResult
         // 1️⃣ convierto el URI en File y subo siempre
@@ -952,6 +980,8 @@ fun CreateRecipeScreen(
 // ——————————
 // Editor inline para nuevo paso con contador y visor de fotos
 // ——————————
+
+
                     // ——————————
 // Editor inline para nuevo paso con botones compactos
 // ——————————
@@ -1068,21 +1098,21 @@ fun CreateRecipeScreen(
                                         showFormError = nombreError || descripcionError || categoriaError || tipoError || ingredientesError || pasosError
                                         if (showFormError) return@Card
 
-                                        // 2️⃣ Construir el RecipeRequest
-                                        val request = RecipeRequest(
-                                            nombre      = nombre,
-                                            descripcion = descripcion,
-                                            tiempo      = tiempo,
-                                            porciones   = porciones,
-                                            mediaUrls   = photoUrl?.let { listOf(it) } ?: emptyList(),
-                                            tipoPlato   = selectedTipo!!,
-                                            categoria   = selectedCategory!!,
-                                            ingredients = ingredients.toList(),
-                                            steps       = steps.toList()
-                                        )
-
-                                        // 3️⃣ Llamar al ViewModel para guardar borrador
-                                        viewModel.uploadStepMediaAndSaveDraft(request, localMediaUri)
+                                        // 2️⃣ Verificar conexión antes de proceder
+                                        checkConnectionAndProceed {
+                                            val request = RecipeRequest(
+                                                nombre      = nombre,
+                                                descripcion = descripcion,
+                                                tiempo      = tiempo,
+                                                porciones   = porciones,
+                                                mediaUrls   = photoUrl?.let { listOf(it) } ?: emptyList(),
+                                                tipoPlato   = selectedTipo!!,
+                                                categoria   = selectedCategory!!,
+                                                ingredients = ingredients.toList(),
+                                                steps       = steps.toList()
+                                            )
+                                            viewModel.uploadStepMediaAndSaveDraft(request, localMediaUri)
+                                        }
                                     },
                                     enabled = !viewModel.submitting.collectAsState().value,
                                     modifier = Modifier
@@ -1133,23 +1163,26 @@ fun CreateRecipeScreen(
                                         showFormError = nombreError || descripcionError || categoriaError || tipoError || ingredientesError || pasosError
                                         if (showFormError) return@Card
 
-                                        val request = RecipeRequest(
-                                            nombre      = nombre,
-                                            descripcion = descripcion,
-                                            tiempo      = tiempo,
-                                            porciones   = porciones,
-                                            mediaUrls   = photoUrl?.let { listOf(it) } ?: emptyList(),
-                                            tipoPlato   = selectedTipo!!,
-                                            categoria   = selectedCategory!!,
-                                            ingredients = ingredients.toList(),
-                                            steps       = steps.toList()
-                                        )
+                                        // Verificar conexión antes de proceder
+                                        checkConnectionAndProceed {
+                                            val request = RecipeRequest(
+                                                nombre      = nombre,
+                                                descripcion = descripcion,
+                                                tiempo      = tiempo,
+                                                porciones   = porciones,
+                                                mediaUrls   = photoUrl?.let { listOf(it) } ?: emptyList(),
+                                                tipoPlato   = selectedTipo!!,
+                                                categoria   = selectedCategory!!,
+                                                ingredients = ingredients.toList(),
+                                                steps       = steps.toList()
+                                            )
 
-                                        viewModel.uploadStepMediaAndCreateRecipe(
-                                            request = request,
-                                            mainImageUri = localMediaUri,
-                                            onSuccess = onPublished
-                                        )
+                                            viewModel.uploadStepMediaAndCreateRecipe(
+                                                request = request,
+                                                mainImageUri = localMediaUri,
+                                                onSuccess = onPublished
+                                            )
+                                        }
                                     },
                                     enabled = !viewModel.submitting.collectAsState().value,
                                     modifier = Modifier
@@ -1354,6 +1387,22 @@ fun CreateRecipeScreen(
                 },
                 dismissButton = {
                     TextButton(onClick = { showStepDialog = false }) { Text("Cancelar") }
+                }
+            )
+        }
+
+        // Diálogo de advertencia para datos móviles
+        if (showMobileDataWarning) {
+            MobileDataWarningDialog(
+                onContinueWithMobileData = {
+                    showMobileDataWarning = false
+                    pendingAction?.invoke()
+                    pendingAction = null
+                },
+                onWaitForWifi = {
+                    showMobileDataWarning = false
+                    pendingAction = null
+                    Toast.makeText(context, "Conéctate a WiFi y vuelve a intentarlo", Toast.LENGTH_LONG).show()
                 }
             )
         }

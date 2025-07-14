@@ -39,6 +39,7 @@ import coil.request.ImageRequest
 import com.example.recetify.R
 import com.example.recetify.data.remote.RetrofitClient
 import com.example.recetify.data.remote.model.SessionManager
+import com.example.recetify.ui.common.LogoutDialog
 import kotlinx.coroutines.launch
 
 // Usando la misma paleta de colores que CreateRecipeScreen
@@ -250,60 +251,22 @@ fun ProfileInfoScreen(
             }
         }
 
-        // Diálogo de confirmación mejorado
+        // ── Diálogo de "Cerrar sesión" ───────────────────────
         if (showLogoutDialog) {
-            AlertDialog(
-                onDismissRequest = { showLogoutDialog = false },
-                icon = {
-                    Icon(
-                        Icons.Default.Logout,
-                        contentDescription = null,
-                        tint = Color(0xFFEF4444),
-                        modifier = Modifier.size(32.dp)
-                    )
-                },
-                title = {
-                    Text(
-                        "Cerrar sesión",
-                        fontFamily = Destacado,
-                        fontWeight = FontWeight.Bold
-                    )
-                },
-                text = {
-                    Text(
-                        "¿Estás seguro de que querés cerrar sesión?",
-                        style = MaterialTheme.typography.bodyLarge
-                    )
-                },
-                confirmButton = {
-                    Button(
-                        onClick = {
-                            showLogoutDialog = false
-                            scope.launch {
-                                SessionManager.clearSession(context)
-                                navController.navigate("login") {
-                                    popUpTo(0) { inclusive = true }
-                                    launchSingleTop = true
-                                }
-                            }
-                        },
-                        colors = ButtonDefaults.buttonColors(
-                            containerColor = Color(0xFFEF4444)
-                        ),
-                        shape = RoundedCornerShape(12.dp)
-                    ) {
-                        Text("Cerrar sesión", color = Color.White, fontFamily = Destacado)
+            LogoutDialog(
+                onConfirm = {
+                    showLogoutDialog = false
+                    scope.launch {
+                        SessionManager.clearSession(context)
+                        navController.navigate("login") {
+                            popUpTo(navController.graph.id) { inclusive = true }
+                            launchSingleTop = true
+                        }
                     }
                 },
-                dismissButton = {
-                    OutlinedButton(
-                        onClick = { showLogoutDialog = false },
-                        shape = RoundedCornerShape(12.dp)
-                    ) {
-                        Text("Cancelar", fontFamily = Destacado)
-                    }
-                },
-                shape = RoundedCornerShape(20.dp)
+                onDismiss = {
+                    showLogoutDialog = false
+                }
             )
         }
     }

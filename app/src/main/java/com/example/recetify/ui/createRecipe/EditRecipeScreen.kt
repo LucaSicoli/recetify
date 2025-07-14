@@ -49,6 +49,9 @@ import androidx.compose.ui.graphics.Color.Companion.Gray
 import androidx.compose.ui.graphics.Color.Companion.Green
 import androidx.compose.ui.graphics.Color.Companion.Red
 import com.example.recetify.ui.home.Destacado
+import com.example.recetify.ui.common.rememberConnectionState
+import com.example.recetify.ui.common.ConnectionType
+import com.example.recetify.ui.common.MobileDataWarningDialog
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -60,6 +63,30 @@ fun EditRecipeScreen(
     onPublished:() -> Unit,
 ) {
     val context = LocalContext.current
+
+    // Detectar estado de conexión
+    val connectionState by rememberConnectionState()
+    var showMobileDataWarning by remember { mutableStateOf(false) }
+    var pendingAction by remember { mutableStateOf<(() -> Unit)?>(null) }
+
+    // Función para validar conexión antes de subir
+    fun checkConnectionAndProceed(action: () -> Unit) {
+        when {
+            !connectionState.isConnected -> {
+                // Sin conexión, mostrar error
+                Toast.makeText(context, "No tienes conexión a internet", Toast.LENGTH_LONG).show()
+            }
+            connectionState.connectionType == ConnectionType.CELLULAR -> {
+                // Solo datos móviles, mostrar advertencia
+                pendingAction = action
+                showMobileDataWarning = true
+            }
+            else -> {
+                // WiFi u otra conexión, proceder directamente
+                action()
+            }
+        }
+    }
 
     // UI state
     var localMediaUri by remember { mutableStateOf<Uri?>(null) }
@@ -976,18 +1003,20 @@ fun EditRecipeScreen(
                                 // Botón GUARDAR (Borrador)
                                 Card(
                                     onClick = {
-                                        val req = RecipeRequest(
-                                            nombre      = nombre,
-                                            descripcion = descripcion,
-                                            tiempo      = tiempo,
-                                            porciones   = porciones,
-                                            mediaUrls   = localMediaUri?.let{ listOf(it.toString()) } ?: emptyList(),
-                                            tipoPlato   = selectedTipo!!,
-                                            categoria   = selectedCategory!!,
-                                            ingredients = ingredients.toList(),
-                                            steps       = steps.toList()
-                                        )
-                                        viewModel.syncDraftFull(recipeId, req, localMediaUri)
+                                        checkConnectionAndProceed {
+                                            val req = RecipeRequest(
+                                                nombre      = nombre,
+                                                descripcion = descripcion,
+                                                tiempo      = tiempo,
+                                                porciones   = porciones,
+                                                mediaUrls   = localMediaUri?.let{ listOf(it.toString()) } ?: emptyList(),
+                                                tipoPlato   = selectedTipo!!,
+                                                categoria   = selectedCategory!!,
+                                                ingredients = ingredients.toList(),
+                                                steps       = steps.toList()
+                                            )
+                                            viewModel.syncDraftFull(recipeId, req, localMediaUri)
+                                        }
                                     },
                                     enabled = !viewModel.submitting.collectAsState().value,
                                     modifier = Modifier
@@ -1028,18 +1057,20 @@ fun EditRecipeScreen(
                                 // Botón PUBLICAR (Principal)
                                 Card(
                                     onClick = {
-                                        val req = RecipeRequest(
-                                            nombre      = nombre,
-                                            descripcion = descripcion,
-                                            tiempo      = tiempo,
-                                            porciones   = porciones,
-                                            mediaUrls   = localMediaUri?.let{ listOf(it.toString()) } ?: emptyList(),
-                                            tipoPlato   = selectedTipo!!,
-                                            categoria   = selectedCategory!!,
-                                            ingredients = ingredients.toList(),
-                                            steps       = steps.toList()
-                                        )
-                                        viewModel.syncDraftFullAndPublish(recipeId, req, localMediaUri)
+                                        checkConnectionAndProceed {
+                                            val req = RecipeRequest(
+                                                nombre      = nombre,
+                                                descripcion = descripcion,
+                                                tiempo      = tiempo,
+                                                porciones   = porciones,
+                                                mediaUrls   = localMediaUri?.let{ listOf(it.toString()) } ?: emptyList(),
+                                                tipoPlato   = selectedTipo!!,
+                                                categoria   = selectedCategory!!,
+                                                ingredients = ingredients.toList(),
+                                                steps       = steps.toList()
+                                            )
+                                            viewModel.syncDraftFullAndPublish(recipeId, req, localMediaUri)
+                                        }
                                     },
                                     enabled = !viewModel.submitting.collectAsState().value,
                                     modifier = Modifier
@@ -1226,6 +1257,22 @@ fun EditRecipeScreen(
             },
             dismissButton = {
                 TextButton(onClick = { showStepDialog = false }) { Text("Cancelar") }
+            }
+        )
+    }
+
+    // Diálogo de advertencia para datos móviles
+    if (showMobileDataWarning) {
+        MobileDataWarningDialog(
+            onContinueWithMobileData = {
+                showMobileDataWarning = false
+                pendingAction?.invoke()
+                pendingAction = null
+            },
+            onWaitForWifi = {
+                showMobileDataWarning = false
+                pendingAction = null
+                Toast.makeText(context, "Conéctate a WiFi y vuelve a intentarlo", Toast.LENGTH_LONG).show()
             }
         )
     }
