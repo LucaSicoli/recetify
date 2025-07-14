@@ -79,8 +79,11 @@ import androidx.compose.animation.core.Animatable
 import androidx.compose.animation.core.tween
 import androidx.compose.foundation.gestures.detectHorizontalDragGestures
 import androidx.compose.foundation.lazy.LazyRow
+import androidx.compose.material.icons.automirrored.filled.Send
+import androidx.compose.material.icons.filled.BookmarkBorder
 import androidx.compose.material.icons.filled.Close
 import androidx.compose.material.icons.filled.PlayArrow
+import androidx.compose.material.icons.filled.Send
 import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.unit.IntOffset
@@ -939,7 +942,6 @@ fun CreateRecipeScreen(
                     )
 
 
-
                     error?.let {
                         Spacer(Modifier.height(8.dp))
                         Text(it, color = MaterialTheme.colorScheme.error)
@@ -956,86 +958,195 @@ fun CreateRecipeScreen(
                         )
                     }
 
-                    Row(
-                        Modifier
+                    // Botones de acción mejorados
+                    Card(
+                        modifier = Modifier
                             .fillMaxWidth()
-                            .padding(horizontal = 24.dp, vertical = 16.dp),
-                        horizontalArrangement = Arrangement.spacedBy(12.dp)
+                            .padding(horizontal = 8.dp, vertical = 24.dp),
+                        shape = RoundedCornerShape(20.dp),
+                        colors = CardDefaults.cardColors(containerColor = Color(0xFFFAFAFA)),
+                        elevation = CardDefaults.cardElevation(8.dp)
                     ) {
-                        OutlinedButton(
-                            onClick = {
-                                // 1️⃣ Validar campos (puedes extraerlo a función si quieres)
-                                nombreError = nombre.isBlank()
-                                descripcionError = descripcion.isBlank()
-                                categoriaError = selectedCategory == null
-                                tipoError = selectedTipo == null
-                                ingredientesError = ingredients.isEmpty()
-                                pasosError = steps.isEmpty()
-                                showFormError = nombreError || descripcionError || categoriaError || tipoError || ingredientesError || pasosError
-                                if (showFormError) return@OutlinedButton
-                                // 2️⃣ Construir el RecipeRequest igual que en createRecipe
-                                val request = RecipeRequest(
-                                    nombre      = nombre,
-                                    descripcion = descripcion,
-                                    tiempo      = tiempo,
-                                    porciones   = porciones,
-                                    mediaUrls   = photoUrl?.let { listOf(it) } ?: emptyList(),
-                                    tipoPlato   = selectedTipo!!,
-                                    categoria   = selectedCategory!!,
-                                    ingredients = ingredients.toList(),
-                                    steps       = steps.toList()
-                                )
-
-                                // 3️⃣ Llamar al ViewModel para guardar borrador
-                                viewModel.saveDraftWithMedia(request, localMediaUri)
-                            },
-                            enabled   = !viewModel.submitting.collectAsState().value,
-                            modifier  = Modifier
-                                .weight(1f)
-                                .height(48.dp),
-                            shape     = RoundedCornerShape(24.dp),
-                            border    = BorderStroke(1.dp, Black)
+                        Column(
+                            modifier = Modifier.padding(20.dp),
+                            verticalArrangement = Arrangement.spacedBy(16.dp)
                         ) {
-                            Text("GUARDAR", color = Black, fontWeight = FontWeight.Bold)
-                        }
+                            // Título de la sección
+                            Text(
+                                text = "¿Listo para compartir tu receta?",
+                                fontSize = 18.sp,
+                                fontWeight = FontWeight.Bold,
+                                color = Color(0xFF2D3748),
+                                fontFamily = Destacado,
+                                textAlign = TextAlign.Center,
+                                modifier = Modifier.fillMaxWidth()
+                            )
 
-                        // PUBLICAR (esto es lo que dispara la petición REST)
-                        Button(
-                            onClick = {
-                                nombreError = nombre.isBlank()
-                                descripcionError = descripcion.isBlank()
-                                categoriaError = selectedCategory == null
-                                tipoError = selectedTipo == null
-                                ingredientesError = ingredients.isEmpty()
-                                pasosError = steps.isEmpty()
-                                showFormError = nombreError || descripcionError || categoriaError || tipoError || ingredientesError || pasosError
-                                if (showFormError) return@Button
-                                viewModel.createRecipe(
-                                    nombre      = nombre,
-                                    descripcion = descripcion,
-                                    tiempo      = tiempo,
-                                    porciones   = porciones,
-                                    tipoPlato   = selectedTipo!!,
-                                    categoria   = selectedCategory!!,
-                                    ingredients = ingredients.toList(),
-                                    steps       = steps.toList(),
-                                    onSuccess   = onPublished
-                                )
-                            },
-                            enabled   = !viewModel.submitting.collectAsState().value,
-                            modifier  = Modifier.weight(1f).height(48.dp),
-                            shape     = RoundedCornerShape(24.dp),
-                            colors    = ButtonDefaults.buttonColors(containerColor = Black)
-                        ) {
-                            val submitting = viewModel.submitting.collectAsState().value
-                            if (submitting) {
-                                CircularProgressIndicator(
-                                    modifier   = Modifier.size(20.dp),
-                                    color      = Color.White,
-                                    strokeWidth = 2.dp
-                                )
-                            } else {
-                                Text("PUBLICAR", color = Color.White, fontWeight = FontWeight.Bold)
+                            Text(
+                                text = "Guarda como borrador o publícala para que otros la vean",
+                                fontSize = 14.sp,
+                                color = Color(0xFF718096),
+                                fontFamily = Destacado,
+                                textAlign = TextAlign.Center,
+                                modifier = Modifier.fillMaxWidth()
+                            )
+
+                            Spacer(modifier = Modifier.height(8.dp))
+
+                            Row(
+                                Modifier.fillMaxWidth(),
+                                horizontalArrangement = Arrangement.spacedBy(12.dp)
+                            ) {
+                                // Botón GUARDAR (Borrador)
+                                Card(
+                                    onClick = {
+                                        // 1️⃣ Validar campos
+                                        nombreError = nombre.isBlank()
+                                        descripcionError = descripcion.isBlank()
+                                        categoriaError = selectedCategory == null
+                                        tipoError = selectedTipo == null
+                                        ingredientesError = ingredients.isEmpty()
+                                        pasosError = steps.isEmpty()
+                                        showFormError = nombreError || descripcionError || categoriaError || tipoError || ingredientesError || pasosError
+                                        if (showFormError) return@Card
+
+                                        // 2️⃣ Construir el RecipeRequest
+                                        val request = RecipeRequest(
+                                            nombre      = nombre,
+                                            descripcion = descripcion,
+                                            tiempo      = tiempo,
+                                            porciones   = porciones,
+                                            mediaUrls   = photoUrl?.let { listOf(it) } ?: emptyList(),
+                                            tipoPlato   = selectedTipo!!,
+                                            categoria   = selectedCategory!!,
+                                            ingredients = ingredients.toList(),
+                                            steps       = steps.toList()
+                                        )
+
+                                        // 3️⃣ Llamar al ViewModel para guardar borrador
+                                        viewModel.saveDraftWithMedia(request, localMediaUri)
+                                    },
+                                    enabled = !viewModel.submitting.collectAsState().value,
+                                    modifier = Modifier
+                                        .weight(1f)
+                                        .height(64.dp), // Aumentar altura
+                                    shape = RoundedCornerShape(16.dp),
+                                    colors = CardDefaults.cardColors(
+                                        containerColor = Color.White,
+                                        disabledContainerColor = Color(0xFFF7F7F7)
+                                    ),
+                                    elevation = CardDefaults.cardElevation(6.dp),
+                                    border = BorderStroke(2.dp, Color(0xFFE2E8F0))
+                                ) {
+                                    Column( // Cambiar a Column para mejor layout vertical
+                                        modifier = Modifier
+                                            .fillMaxSize()
+                                            .padding(horizontal = 12.dp, vertical = 8.dp),
+                                        horizontalAlignment = Alignment.CenterHorizontally,
+                                        verticalArrangement = Arrangement.Center
+                                    ) {
+                                        Icon(
+                                            Icons.Default.BookmarkBorder,
+                                            contentDescription = null,
+                                            tint = Color(0xFF4A5568),
+                                            modifier = Modifier.size(18.dp)
+                                        )
+                                        Spacer(Modifier.height(4.dp))
+                                        Text(
+                                            "GUARDAR",
+                                            color = Color(0xFF4A5568),
+                                            fontWeight = FontWeight.Bold,
+                                            fontSize = 14.sp, // Reducir ligeramente el tamaño
+                                            fontFamily = Destacado,
+                                            textAlign = TextAlign.Center
+                                        )
+                                    }
+                                }
+
+                                // Botón PUBLICAR (Principal)
+                                Card(
+                                    onClick = {
+                                        nombreError = nombre.isBlank()
+                                        descripcionError = descripcion.isBlank()
+                                        categoriaError = selectedCategory == null
+                                        tipoError = selectedTipo == null
+                                        ingredientesError = ingredients.isEmpty()
+                                        pasosError = steps.isEmpty()
+                                        showFormError = nombreError || descripcionError || categoriaError || tipoError || ingredientesError || pasosError
+                                        if (showFormError) return@Card
+
+                                        viewModel.createRecipe(
+                                            nombre      = nombre,
+                                            descripcion = descripcion,
+                                            tiempo      = tiempo,
+                                            porciones   = porciones,
+                                            tipoPlato   = selectedTipo!!,
+                                            categoria   = selectedCategory!!,
+                                            ingredients = ingredients.toList(),
+                                            steps       = steps.toList(),
+                                            onSuccess   = onPublished
+                                        )
+                                    },
+                                    enabled = !viewModel.submitting.collectAsState().value,
+                                    modifier = Modifier
+                                        .weight(1f)
+                                        .height(64.dp), // Misma altura
+                                    shape = RoundedCornerShape(16.dp),
+                                    colors = CardDefaults.cardColors(
+                                        containerColor = Accent,
+                                        disabledContainerColor = Color(0xFFE2E8F0)
+                                    ),
+                                    elevation = CardDefaults.cardElevation(8.dp)
+                                ) {
+                                    Box(
+                                        modifier = Modifier.fillMaxSize(),
+                                        contentAlignment = Alignment.Center
+                                    ) {
+                                        val submitting = viewModel.submitting.collectAsState().value
+                                        if (submitting) {
+                                            Column(
+                                                horizontalAlignment = Alignment.CenterHorizontally,
+                                                verticalArrangement = Arrangement.Center
+                                            ) {
+                                                CircularProgressIndicator(
+                                                    modifier = Modifier.size(18.dp),
+                                                    color = Color.White,
+                                                    strokeWidth = 2.dp
+                                                )
+                                                Spacer(Modifier.height(4.dp))
+                                                Text(
+                                                    "ENVIANDO...",
+                                                    color = Color.White,
+                                                    fontWeight = FontWeight.Bold,
+                                                    fontSize = 12.sp,
+                                                    fontFamily = Destacado,
+                                                    textAlign = TextAlign.Center
+                                                )
+                                            }
+                                        } else {
+                                            Column(
+                                                horizontalAlignment = Alignment.CenterHorizontally,
+                                                verticalArrangement = Arrangement.Center
+                                            ) {
+                                                Icon(
+                                                    Icons.Default.Send,
+                                                    contentDescription = null,
+                                                    tint = Color.White,
+                                                    modifier = Modifier.size(18.dp)
+                                                )
+                                                Spacer(Modifier.height(4.dp))
+                                                Text(
+                                                    "PUBLICAR",
+                                                    color = Color.White,
+                                                    fontWeight = FontWeight.Bold,
+                                                    fontSize = 14.sp,
+                                                    fontFamily = Destacado,
+                                                    textAlign = TextAlign.Center
+                                                )
+                                            }
+                                        }
+                                    }
+                                }
                             }
                         }
                     }
