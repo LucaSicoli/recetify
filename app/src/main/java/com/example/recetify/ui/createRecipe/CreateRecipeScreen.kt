@@ -3,7 +3,6 @@ package com.example.recetify.ui.createRecipe
 
 import android.net.Uri
 import androidx.activity.compose.rememberLauncherForActivityResult
-import androidx.activity.result.contract.ActivityResultContracts.GetContent
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.background
 import androidx.compose.material.icons.filled.RamenDining
@@ -30,7 +29,6 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalContext
-import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
@@ -43,7 +41,8 @@ import com.example.recetify.util.FileUtil
 import com.example.recetify.util.obtenerEmoji
 import com.example.recetify.util.TheMealDBImages
 import androidx.compose.foundation.text.KeyboardOptions
-import androidx.compose.material.icons.filled.ArrowBack
+import androidx.compose.material.icons.automirrored.filled.ArrowBack
+import androidx.compose.material.icons.automirrored.filled.ArrowForward
 import androidx.compose.ui.graphics.Color.Companion.Black
 import androidx.compose.ui.graphics.Color.Companion.DarkGray
 import androidx.compose.ui.graphics.Color.Companion.Gray
@@ -57,33 +56,27 @@ import com.example.recetify.util.listaIngredientesConEmoji
 import android.content.Intent
 import android.widget.Toast
 import androidx.activity.result.contract.ActivityResultContracts.StartActivityForResult
-import androidx.compose.foundation.horizontalScroll
 import androidx.compose.material.icons.filled.Delete
 import androidx.compose.ui.viewinterop.AndroidView
 import com.example.recetify.data.remote.model.RecipeRequest
+import com.google.android.exoplayer2.ExoPlayer
 import com.google.android.exoplayer2.MediaItem
-import com.google.android.exoplayer2.SimpleExoPlayer
-import com.google.android.exoplayer2.ui.PlayerView
-import androidx.compose.foundation.lazy.grid.GridCells
-import androidx.compose.foundation.lazy.grid.LazyVerticalGrid
-import androidx.compose.foundation.lazy.grid.items
+import com.google.android.exoplayer2.ui.StyledPlayerView
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.unit.TextUnit
 import androidx.compose.ui.layout.onGloballyPositioned
-import androidx.compose.ui.platform.LocalDensity
-import androidx.compose.ui.geometry.Size
 import androidx.compose.ui.text.rememberTextMeasurer
 import androidx.compose.ui.unit.TextUnitType
 import androidx.compose.animation.core.Animatable
 import androidx.compose.animation.core.tween
 import androidx.compose.foundation.gestures.detectHorizontalDragGestures
 import androidx.compose.foundation.lazy.LazyRow
-import androidx.compose.material.icons.automirrored.filled.Send
 import androidx.compose.material.icons.filled.BookmarkBorder
 import androidx.compose.material.icons.filled.Close
 import androidx.compose.material.icons.filled.PlayArrow
-import androidx.compose.material.icons.filled.Send
+import androidx.compose.material.icons.automirrored.filled.Send
+import androidx.compose.material.icons.filled.ArrowBack
 import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.unit.IntOffset
@@ -161,20 +154,16 @@ fun CreateRecipeScreen(
     onPublished:() -> Unit,
 ) {
 
-
     // --- Local & ViewModel state ---
 
     var localMediaUri by remember { mutableStateOf<Uri?>(null) }
     var isVideo       by remember { mutableStateOf(false) }
     var showIngredientDialog by remember { mutableStateOf(false) }
     var showStepDialog       by remember { mutableStateOf(false) }
-    var editingStep by remember { mutableStateOf<RecipeStepRequest?>(null) }
     var nombre      by rememberSaveable { mutableStateOf("") }
     var descripcion by rememberSaveable { mutableStateOf("") }
     var porciones   by rememberSaveable { mutableStateOf(1) }
     var tiempo      by rememberSaveable { mutableStateOf(15) }
-
-
 
     // justo junto a tus `var porciones by rememberSaveable…` y `var tiempo by rememberSaveable…`
 
@@ -182,13 +171,10 @@ fun CreateRecipeScreen(
     var tiempoText    by rememberSaveable { mutableStateOf(tiempo.toString()) }
     val ingredients = remember { mutableStateListOf<RecipeIngredientRequest>() }
     var selectedStepIndex by remember { mutableStateOf<Int?>(null) }
-    var editingStepIndex by remember { mutableStateOf<Int?>(null) }
     val categories = listOf("DESAYUNO","ALMUERZO","MERIENDA","CENA","SNACK","POSTRE")
     val tiposPlato = listOf("FIDEOS","PIZZA","HAMBURGUESA","ENSALADA","SOPA","PASTA","ARROZ","PESCADO","CARNE","POLLO","VEGETARIANO","VEGANO","SIN_TACC","RAPIDO","SALUDABLE")
     var selectedCategory by rememberSaveable { mutableStateOf<String?>(null) }
-    var expandedCategory  by remember { mutableStateOf(false) }
     var selectedTipo by rememberSaveable { mutableStateOf<String?>(null) }
-    var expandedTipo by remember { mutableStateOf(false) }
     val steps       = remember { mutableStateListOf<RecipeStepRequest>() }
     val photoUrl   by viewModel.photoUrl.collectAsState(initial = null)
     val uploading  by viewModel.uploading.collectAsState(initial = false)
@@ -377,7 +363,7 @@ fun CreateRecipeScreen(
                         isError = nombreError
                     )
                     if (nombreError) {
-                        Text("Campo obligatorio", color = Color.Red, fontSize = 12.sp)
+                        Text("Campo obligatorio", color = Red, fontSize = 12.sp)
                     }
                     // Descripción
                     OutlinedTextField(
@@ -397,10 +383,10 @@ fun CreateRecipeScreen(
                         isError = descripcionError
                     )
                     if (descripcionError) {
-                        Text("Campo obligatorio", color = Color.Red, fontSize = 12.sp)
+                        Text("Campo obligatorio", color = Red, fontSize = 12.sp)
                     }
 
-                    Divider(
+                    HorizontalDivider(
                         color = Color(0xFFE0E0E0),
                         thickness = 2.dp,
                         modifier = Modifier
@@ -470,12 +456,12 @@ fun CreateRecipeScreen(
                                             singleLine      = true,
                                             keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
                                             textStyle       = LocalTextStyle.current.copy(
-                                                color      = Color.Black,
+                                                color      = Black,
                                                 fontSize   = 18.sp,
                                                 fontWeight = FontWeight.Bold,
                                                 textAlign  = TextAlign.Center
                                             ),
-                                            cursorBrush     = SolidColor(Color.Black),
+                                            cursorBrush     = SolidColor(Black),
                                             decorationBox   = { inner ->
                                                 Box(Modifier.fillMaxSize(), contentAlignment = Alignment.Center) { inner() }
                                             }
@@ -549,12 +535,12 @@ fun CreateRecipeScreen(
                                             singleLine      = true,
                                             keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
                                             textStyle       = LocalTextStyle.current.copy(
-                                                color      = Color.Black,
+                                                color      = Black,
                                                 fontSize   = 18.sp,
                                                 fontWeight = FontWeight.Bold,
                                                 textAlign  = TextAlign.Center
                                             ),
-                                            cursorBrush     = SolidColor(Color.Black),
+                                            cursorBrush     = SolidColor(Black),
                                             decorationBox   = { inner ->
                                                 Box(Modifier.fillMaxSize(), contentAlignment = Alignment.Center) { inner() }
                                             }
@@ -576,7 +562,7 @@ fun CreateRecipeScreen(
                         }
 
                         // Divider antes de las categorías
-                        Divider(
+                        HorizontalDivider(
                             color = Color(0xFFE0E0E0),
                             thickness = 2.dp,
                             modifier = Modifier
@@ -615,10 +601,10 @@ fun CreateRecipeScreen(
                                     OutlinedButton(
                                         onClick = { selectedCategory = cat },
                                         shape = RoundedCornerShape(50),
-                                        border = BorderStroke(1.dp, Color.Black),
+                                        border = BorderStroke(1.dp, Black),
                                         colors = ButtonDefaults.outlinedButtonColors(
                                             containerColor = if (selected) Ladrillo else Color.White,
-                                            contentColor = if (selected) Color.White else Color.Black
+                                            contentColor = if (selected) Color.White else Black
                                         ),
                                         modifier = Modifier
                                             .weight(1f)
@@ -643,11 +629,11 @@ fun CreateRecipeScreen(
                             }
                         }
                         if (categoriaError) {
-                            Text("Selecciona una categoría", color = Color.Red, fontSize = 12.sp)
+                            Text("Selecciona una categoría", color = Red, fontSize = 12.sp)
                         }
 
                         // Divider entre categoría y tipo de plato
-                        Divider(
+                        HorizontalDivider(
                             color = Color(0xFFE0E0E0),
                             thickness = 2.dp,
                             modifier = Modifier
@@ -686,10 +672,10 @@ fun CreateRecipeScreen(
                                     OutlinedButton(
                                         onClick = { selectedTipo = tipo },
                                         shape = RoundedCornerShape(50),
-                                        border = BorderStroke(1.dp, Color.Black),
+                                        border = BorderStroke(1.dp, Black),
                                         colors = ButtonDefaults.outlinedButtonColors(
                                             containerColor = if (selected) Ladrillo else Color.White,
-                                            contentColor = if (selected) Color.White else Color.Black
+                                            contentColor = if (selected) Color.White else Black
                                         ),
                                         modifier = Modifier
                                             .weight(1f)
@@ -714,11 +700,11 @@ fun CreateRecipeScreen(
                             }
                         }
                         if (tipoError) {
-                            Text("Selecciona un tipo de plato", color = Color.Red, fontSize = 12.sp)
+                            Text("Selecciona un tipo de plato", color = Red, fontSize = 12.sp)
                         }
                     }
 // ── Divider justo después de todos los steppers ─────────────────
-                    Divider(
+                    HorizontalDivider(
                         color = Color(0xFFE0E0E0),
                         thickness = 2.dp,
                         modifier = Modifier
@@ -802,7 +788,7 @@ fun CreateRecipeScreen(
                         }
                     }
                     if (ingredientesError) {
-                        Text("Agrega al menos un ingrediente", color = Color.Red, fontSize = 12.sp)
+                        Text("Agrega al menos un ingrediente", color = Red, fontSize = 12.sp)
                     }
                     // Agregar ingrediente
                     Card(
@@ -828,7 +814,7 @@ fun CreateRecipeScreen(
                         }
                     }
 
-                    Divider(
+                    HorizontalDivider(
                         color = Color(0xFFE0E0E0),
                         thickness = 2.dp,
                         modifier = Modifier
@@ -836,8 +822,6 @@ fun CreateRecipeScreen(
                             .padding(vertical = 8.dp)
                     )
 
-
-                    // Instrucciones header
                     // Instrucciones header (nuevo estilo)
                     Box(
                         modifier = Modifier
@@ -857,21 +841,78 @@ fun CreateRecipeScreen(
 
                         )
                     }
-                    steps.forEachIndexed { idx, step ->
-                        key(step.id) {
+
+                    // Carrusel de pasos - mostrar uno a la vez
+                    if (steps.isNotEmpty()) {
+                        var currentStepIndex by remember { mutableStateOf(0) }
+
+                        // Efecto para cambiar automáticamente al último paso cuando se agrega uno nuevo
+                        LaunchedEffect(steps.size) {
+                            if (steps.isNotEmpty()) {
+                                currentStepIndex = steps.size - 1
+                            }
+                        }
+
+                        Column(
+                            modifier = Modifier.fillMaxWidth(),
+                            verticalArrangement = Arrangement.spacedBy(8.dp)
+                        ) {
+                            // Indicador de página
+                            Row(
+                                modifier = Modifier.fillMaxWidth(),
+                                horizontalArrangement = Arrangement.Center,
+                                verticalAlignment = Alignment.CenterVertically
+                            ) {
+                                IconButton(
+                                    onClick = {
+                                        if (currentStepIndex > 0) currentStepIndex--
+                                    },
+                                    enabled = currentStepIndex > 0
+                                ) {
+                                    Icon(
+                                        Icons.AutoMirrored.Filled.ArrowBack,
+                                        contentDescription = "Paso anterior",
+                                        tint = if (currentStepIndex > 0) Color(0xFFBC6154) else Gray
+                                    )
+                                }
+
+                                Text(
+                                    "Paso ${currentStepIndex + 1} de ${steps.size}",
+                                    color = DarkGray,
+                                    fontWeight = FontWeight.Medium,
+                                    fontFamily = Destacado,
+                                    modifier = Modifier.padding(horizontal = 16.dp)
+                                )
+
+                                IconButton(
+                                    onClick = {
+                                        if (currentStepIndex < steps.size - 1) currentStepIndex++
+                                    },
+                                    enabled = currentStepIndex < steps.size - 1
+                                ) {
+                                    Icon(
+                                        Icons.AutoMirrored.Filled.ArrowForward,
+                                        contentDescription = "Paso siguiente",
+                                        tint = if (currentStepIndex < steps.size - 1) Color(0xFFBC6154) else Gray
+                                    )
+                                }
+                            }
+
+                            // Mostrar solo el paso actual
+                            val currentStep = steps[currentStepIndex]
                             StepCard(
-                                stepNumber    = step.numeroPaso,
-                                title         = step.titulo.orEmpty(),
-                                description   = step.descripcion,
-                                mediaUrls     = step.mediaUrls ?: emptyList(),
+                                stepNumber = currentStep.numeroPaso,
+                                title = currentStep.titulo.orEmpty(),
+                                description = currentStep.descripcion,
+                                mediaUrls = currentStep.mediaUrls ?: emptyList(),
                                 onTitleChange = { new ->
-                                    steps[idx] = step.copy(titulo = new)
+                                    steps[currentStepIndex] = currentStep.copy(titulo = new)
                                 },
-                                onDescChange  = { new ->
-                                    steps[idx] = step.copy(descripcion = new)
+                                onDescChange = { new ->
+                                    steps[currentStepIndex] = currentStep.copy(descripcion = new)
                                 },
-                                onAddMedia    = {
-                                    selectedStepIndex = idx
+                                onAddMedia = {
+                                    selectedStepIndex = currentStepIndex
                                     val intent = Intent(Intent.ACTION_OPEN_DOCUMENT).apply {
                                         type = "*/*"
                                         putExtra(Intent.EXTRA_MIME_TYPES, arrayOf("image/*", "video/*"))
@@ -879,27 +920,33 @@ fun CreateRecipeScreen(
                                     }
                                     stepMediaLauncher.launch(intent)
                                 },
-                                onDelete      = {
-                                    steps.removeAt(idx)
+                                onDelete = {
+                                    steps.removeAt(currentStepIndex)
                                     selectedStepIndex = null
                                     // Reajusta los números de paso
                                     steps.forEachIndexed { i, s ->
                                         steps[i] = s.copy(numeroPaso = i + 1)
                                     }
+                                    // Ajustar índice currentStepIndex si es necesario
+                                    if (currentStepIndex >= steps.size && steps.isNotEmpty()) {
+                                        currentStepIndex = steps.size - 1
+                                    } else if (steps.isEmpty()) {
+                                        currentStepIndex = 0
+                                    }
                                 },
                                 onRemoveMedia = { mediaIdx ->
-                                    val currentList = step.mediaUrls?.toMutableList() ?: mutableListOf()
+                                    val currentList = currentStep.mediaUrls?.toMutableList() ?: mutableListOf()
                                     if (mediaIdx in currentList.indices) {
                                         currentList.removeAt(mediaIdx)
-                                        steps[idx] = step.copy(mediaUrls = currentList)
+                                        steps[currentStepIndex] = currentStep.copy(mediaUrls = currentList)
                                     }
                                 }
                             )
-                            Spacer(Modifier.height(8.dp))
                         }
                     }
+
                     if (pasosError) {
-                        Text("Agrega al menos un paso", color = Color.Red, fontSize = 12.sp)
+                        Text("Agrega al menos un paso", color = Red, fontSize = 12.sp)
                     }
 
 // ——————————
@@ -944,7 +991,7 @@ fun CreateRecipeScreen(
                         }
                     }
 
-                    Divider(
+                    HorizontalDivider(
                         color = Color(0xFFE0E0E0),
                         thickness = 2.dp,
                         modifier = Modifier
@@ -962,7 +1009,7 @@ fun CreateRecipeScreen(
                     if (showFormError && (nombreError || descripcionError || categoriaError || tipoError || ingredientesError || pasosError)) {
                         Text(
                             "Por favor, completá todos los campos obligatorios",
-                            color = Color.Red,
+                            color = Red,
                             fontWeight = FontWeight.Bold,
                             fontSize = 15.sp,
                             modifier = Modifier.padding(vertical = 8.dp)
@@ -1146,7 +1193,7 @@ fun CreateRecipeScreen(
                                                 verticalArrangement = Arrangement.Center
                                             ) {
                                                 Icon(
-                                                    Icons.Default.Send,
+                                                    Icons.AutoMirrored.Filled.Send,
                                                     contentDescription = null,
                                                     tint = Color.White,
                                                     modifier = Modifier.size(18.dp)
@@ -1190,7 +1237,7 @@ fun CreateRecipeScreen(
                 title = {
                     Text(
                         "Seleccionar ingrediente",
-                        color = Color.Black,
+                        color = Black,
                         fontFamily = Destacado,
                         fontWeight = FontWeight.SemiBold
                     )
@@ -1253,7 +1300,7 @@ fun CreateRecipeScreen(
                                     Text(
                                         ing,
                                         fontSize = 16.sp,
-                                        color = Color.Black,
+                                        color = Black,
                                         fontFamily = Destacado
                                     )
                                 }
@@ -1533,7 +1580,7 @@ internal fun StepCard(
                                                 .align(Alignment.Center)
                                                 .size(32.dp)
                                                 .background(
-                                                    Color.Black.copy(alpha = 0.6f),
+                                                    Black.copy(alpha = 0.6f),
                                                     CircleShape
                                                 ),
                                             contentAlignment = Alignment.Center
@@ -1563,7 +1610,7 @@ internal fun StepCard(
                                             .size(28.dp),
                                         shape = CircleShape,
                                         colors = CardDefaults.cardColors(
-                                            containerColor = Color.Black.copy(alpha = 0.7f)
+                                            containerColor = Black.copy(alpha = 0.7f)
                                         ),
                                         elevation = CardDefaults.cardElevation(2.dp)
                                     ) {
@@ -1663,8 +1710,8 @@ fun VideoPlayer(uri: Uri) {
     AndroidView(
         factory = { ctx ->
             // se llama sólo la primera vez
-            PlayerView(ctx).apply {
-                player = SimpleExoPlayer.Builder(ctx).build().also { exo ->
+            StyledPlayerView(ctx).apply {
+                player = ExoPlayer.Builder(ctx).build().also { exo ->
                     exo.setMediaItem(MediaItem.fromUri(uri))
                     exo.prepare()
                     exo.playWhenReady = false
@@ -1744,7 +1791,7 @@ internal fun IngredientRow(
                     text = ingredient.nombre.orEmpty(),
                     fontSize = 16.sp,
                     fontWeight = FontWeight.SemiBold,
-                    color = Color.Black,
+                    color = Black,
                     fontFamily = Destacado,
                     maxLines = 1,
                     overflow = TextOverflow.Ellipsis,
@@ -1795,7 +1842,7 @@ internal fun IngredientRow(
                             singleLine = true,
                             keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
                             textStyle = LocalTextStyle.current.copy(
-                                color = Color.Black,
+                                color = Black,
                                 fontSize = 14.sp,
                                 fontWeight = FontWeight.Medium,
                                 textAlign = TextAlign.Center,
@@ -1841,7 +1888,7 @@ internal fun IngredientRow(
                         ) {
                             Text(
                                 unidad,
-                                color = Color.Black,
+                                color = Black,
                                 fontFamily = Destacado,
                                 fontSize = 12.sp,
                                 fontWeight = FontWeight.Medium
@@ -1857,7 +1904,7 @@ internal fun IngredientRow(
                                         text = {
                                             Text(
                                                 u,
-                                                color = Color.Black,
+                                                color = Black,
                                                 fontFamily = Destacado,
                                                 fontSize = 12.sp
                                             )

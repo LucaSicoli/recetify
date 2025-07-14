@@ -782,6 +782,13 @@ fun EditRecipeScreen(
                     if (steps.isNotEmpty()) {
                         var currentStepIndex by remember { mutableStateOf(0) }
 
+                        // Efecto para cambiar automáticamente al último paso cuando se agrega uno nuevo
+                        LaunchedEffect(steps.size) {
+                            if (steps.isNotEmpty()) {
+                                currentStepIndex = steps.size - 1
+                            }
+                        }
+
                         Column(
                             modifier = Modifier.fillMaxWidth(),
                             verticalArrangement = Arrangement.spacedBy(8.dp)
@@ -1223,4 +1230,3 @@ fun EditRecipeScreen(
         )
     }
 }
-
