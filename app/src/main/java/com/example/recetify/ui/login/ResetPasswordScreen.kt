@@ -1,9 +1,12 @@
 package com.example.recetify.ui.login
 
+import androidx.activity.compose.BackHandler
+import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.text.KeyboardActions
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material.icons.Icons
@@ -22,6 +25,7 @@ import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.text.input.PasswordVisualTransformation
+import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.lifecycle.viewmodel.compose.viewModel
@@ -51,11 +55,12 @@ fun ResetPasswordScreen(
 ) {
     val state by viewModel.state.collectAsState()
     var showSuccessMessage by remember { mutableStateOf(false) }
+    var showExitDialog by remember { mutableStateOf(false) }
     val errorIsMismatch = state.error == "Las contraseñas no coinciden"
     val borderColor = if (errorIsMismatch) Color.Red else Color(0xFFBC6154)
     val borderWidth = if (errorIsMismatch) 2.dp else 1.dp
-    val focusColor = if (errorIsMismatch) Color.Red else Color(0xFFBC6154)
-    val unfocusColor = if (errorIsMismatch) Color.Red else Color(0xFFBC6154)
+    val focusColor = if (errorIsMismatch) Color(0xFF60A5FA) else Color(0xFFBC6154)  // Celeste suave
+    val unfocusColor = if (errorIsMismatch) Color(0xFF60A5FA) else Color(0xFFBC6154)  // Celeste suave
     val successColor = Color(0xFF4CAF50)
     val passwordsMatch = state.newPassword == state.confirmPassword && state.confirmPassword.isNotEmpty()
     val allValid = state.isLengthValid && state.hasUppercase && state.hasNumber && state.hasSpecialChar && passwordsMatch
@@ -86,13 +91,9 @@ fun ResetPasswordScreen(
                 .background(Color(0xFF0D0B1F)),
             contentAlignment = Alignment.Center
         ) {
-            // FLECHA DE RETROCESO
+            // FLECHA DE RETROCESO con diálogo de confirmación
             IconButton(
-                onClick = {
-                    navController?.navigate("forgot") {
-                        popUpTo("forgot") { inclusive = true }
-                    }
-                },
+                onClick = { showExitDialog = true },
                 modifier = Modifier
                     .padding(16.dp)
                     .size(40.dp)
@@ -170,9 +171,12 @@ fun ResetPasswordScreen(
                         color      = Color.Black
                     ),
                     colors = OutlinedTextFieldDefaults.colors(
-                        focusedBorderColor = focusColor,
-                        unfocusedBorderColor = unfocusColor,
-                        errorBorderColor = Color.Red
+                        focusedBorderColor = if (errorIsMismatch) Color(0xFF60A5FA) else MaterialTheme.colorScheme.primary,
+                        unfocusedBorderColor = if (errorIsMismatch) Color(0xFF60A5FA) else MaterialTheme.colorScheme.outline,
+                        focusedLabelColor = if (errorIsMismatch) Color(0xFF60A5FA) else MaterialTheme.colorScheme.primary,
+                        unfocusedLabelColor = if (errorIsMismatch) Color(0xFF60A5FA) else MaterialTheme.colorScheme.onSurfaceVariant,
+                        errorBorderColor = Color(0xFF60A5FA),
+                        errorLabelColor = Color(0xFF60A5FA)
                     ),
                     isError = errorIsMismatch,
                     singleLine = true
@@ -216,9 +220,12 @@ fun ResetPasswordScreen(
                         color      = Color.Black
                     ),
                     colors = OutlinedTextFieldDefaults.colors(
-                        focusedBorderColor = focusColor,
-                        unfocusedBorderColor = unfocusColor,
-                        errorBorderColor = Color.Red
+                        focusedBorderColor = if (errorIsMismatch) Color(0xFF60A5FA) else MaterialTheme.colorScheme.primary,
+                        unfocusedBorderColor = if (errorIsMismatch) Color(0xFF60A5FA) else MaterialTheme.colorScheme.outline,
+                        focusedLabelColor = if (errorIsMismatch) Color(0xFF60A5FA) else MaterialTheme.colorScheme.primary,
+                        unfocusedLabelColor = if (errorIsMismatch) Color(0xFF60A5FA) else MaterialTheme.colorScheme.onSurfaceVariant,
+                        errorBorderColor = Color(0xFF60A5FA),
+                        errorLabelColor = Color(0xFF60A5FA)
                     ),
                     isError = errorIsMismatch,
                     singleLine = true
@@ -298,6 +305,129 @@ fun ResetPasswordScreen(
                     )
                 }
             }
+        }
+    }
+
+    // Diálogo de confirmación para salir - Diseño mejorado
+    if (showExitDialog) {
+        AlertDialog(
+            onDismissRequest = { showExitDialog = false },
+            title = {
+                Column(
+                    horizontalAlignment = Alignment.CenterHorizontally,
+                    modifier = Modifier.fillMaxWidth()
+                ) {
+                    // Icono con fondo circular
+                    Box(
+                        modifier = Modifier
+                            .size(64.dp)
+                            .background(
+                                Color(0xFFFEF2F2),
+                                shape = CircleShape
+                            ),
+                        contentAlignment = Alignment.Center
+                    ) {
+                        Icon(
+                            imageVector = Icons.Default.ArrowBack,
+                            contentDescription = null,
+                            tint = Color(0xFFEF4444),
+                            modifier = Modifier.size(28.dp)
+                        )
+                    }
+
+                    Spacer(modifier = Modifier.height(16.dp))
+
+                    Text(
+                        text = "¿Salir del proceso?",
+                        fontFamily = Sen,
+                        fontWeight = FontWeight.Bold,
+                        fontSize = 20.sp,
+                        color = Color(0xFF1F2937),
+                        textAlign = TextAlign.Center
+                    )
+                }
+            },
+            text = {
+                Text(
+                    text = "Si salís ahora, perderás el progreso y tendrás que empezar de nuevo el proceso de cambio de contraseña.",
+                    style = MaterialTheme.typography.bodyLarge.copy(
+                        fontFamily = Sen,
+                        fontSize = 16.sp,
+                        lineHeight = 24.sp,
+                        color = Color(0xFF6B7280)
+                    ),
+                    textAlign = TextAlign.Center,
+                    modifier = Modifier.fillMaxWidth()
+                )
+            },
+            confirmButton = {
+                Column(
+                    modifier = Modifier.fillMaxWidth(),
+                    verticalArrangement = Arrangement.spacedBy(12.dp)
+                ) {
+                    // Botón primario - Salir
+                    Button(
+                        onClick = {
+                            showExitDialog = false
+                            navController?.navigate("login") {
+                                popUpTo("forgot") { inclusive = true }
+                            }
+                        },
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .height(48.dp),
+                        colors = ButtonDefaults.buttonColors(
+                            containerColor = Color(0xFFEF4444)
+                        ),
+                        shape = RoundedCornerShape(24.dp),
+                        elevation = ButtonDefaults.buttonElevation(
+                            defaultElevation = 0.dp,
+                            pressedElevation = 2.dp
+                        )
+                    ) {
+                        Text(
+                            "Sí, salir",
+                            color = Color.White,
+                            fontFamily = Sen,
+                            fontWeight = FontWeight.SemiBold,
+                            fontSize = 16.sp
+                        )
+                    }
+
+                    // Botón secundario - Continuar
+                    OutlinedButton(
+                        onClick = { showExitDialog = false },
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .height(48.dp),
+                        shape = RoundedCornerShape(24.dp),
+                        border = BorderStroke(2.dp, Color(0xFFBC6154)),
+                        colors = ButtonDefaults.outlinedButtonColors(
+                            contentColor = Color(0xFFBC6154)
+                        )
+                    ) {
+                        Text(
+                            "Continuar aquí",
+                            fontFamily = Sen,
+                            fontWeight = FontWeight.SemiBold,
+                            fontSize = 16.sp
+                        )
+                    }
+                }
+            },
+            dismissButton = null, // Removemos el dismissButton ya que usamos una estructura custom
+            shape = RoundedCornerShape(28.dp),
+            containerColor = Color.White,
+            modifier = Modifier.padding(16.dp)
+        )
+    }
+
+    // Manejo del botón de retroceso del sistema
+    BackHandler {
+        if (showExitDialog) {
+            showExitDialog = false
+        } else {
+            showExitDialog = true
         }
     }
 }
