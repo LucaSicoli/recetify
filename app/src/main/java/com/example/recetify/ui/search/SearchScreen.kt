@@ -338,15 +338,22 @@ private fun SearchResultCard(
     isSaved: Boolean,
     onToggleSave: () -> Unit
 ) {
-    val firstMedia = summary.mediaUrls?.firstOrNull().orEmpty()
-    val isVideo    = firstMedia.endsWith(".mp4", true) || firstMedia.endsWith(".webm", true)
+    // Procesar URLs de la misma manera que en SavedRecipesScreen y HomeScreen
+    val base = RetrofitClient.BASE_URL.trimEnd('/')
+    val original = summary.mediaUrls?.firstOrNull().orEmpty()
+    val pathOnly = runCatching {
+        val uri = URI(original)
+        uri.rawPath + (uri.rawQuery?.let { "?$it" } ?: "")
+    }.getOrNull() ?: original
+    val finalUrl = if (pathOnly.startsWith("/")) "$base$pathOnly" else pathOnly
+    val isVideo = finalUrl.endsWith(".mp4", true) || finalUrl.endsWith(".webm", true)
 
     val profileUrl = summary.usuarioFotoPerfil?.let { raw ->
-        runCatching {
+        val pPath = runCatching {
             val uri = URI(raw)
-            val path = uri.rawPath + (uri.rawQuery?.let { "?$it" } ?: "")
-            if (path.startsWith("/")) RetrofitClient.BASE_URL.trimEnd('/') + path else raw
-        }.getOrNull() ?: raw
+            uri.rawPath + (uri.rawQuery?.let { "?$it" } ?: "")
+        }.getOrDefault(raw)
+        if (pPath.startsWith("/")) "$base$pPath" else raw
     }
 
     Card(
@@ -371,32 +378,36 @@ private fun SearchResultCard(
                 verticalAlignment = Alignment.CenterVertically
             ) {
                 Box {
-                    if (isVideo) {
-                        LoopingVideoPlayer(
-                            uri      = firstMedia.toUri(),
-                            modifier = Modifier.size(80.dp).clip(RoundedCornerShape(12.dp))
-                        )
-                    } else if (firstMedia.isBlank()) {
-                        // Si no hay foto principal, mostrar texto centrado
-                        Box(
-                            modifier = Modifier.size(80.dp).clip(RoundedCornerShape(12.dp)).background(Color(0xFFE0E0E0)),
-                            contentAlignment = Alignment.Center
-                        ) {
-                            Text(
-                                text = "Receta sin foto principal",
-                                color = Color.DarkGray,
-                                style = MaterialTheme.typography.bodySmall,
-                                fontWeight = FontWeight.Bold,
-                                textAlign = TextAlign.Center
+                    when {
+                        isVideo && finalUrl.isNotBlank() -> {
+                            LoopingVideoPlayer(
+                                uri = finalUrl.toUri(),
+                                modifier = Modifier.size(80.dp).clip(RoundedCornerShape(12.dp))
                             )
                         }
-                    } else {
-                        AsyncImage(
-                            model              = firstMedia,
-                            contentDescription = summary.nombre,
-                            contentScale       = ContentScale.Crop,
-                            modifier           = Modifier.size(80.dp).clip(RoundedCornerShape(12.dp))
-                        )
+                        finalUrl.isNotBlank() && original.isNotBlank() -> {
+                            AsyncImage(
+                                model              = finalUrl,
+                                contentDescription = summary.nombre,
+                                contentScale       = ContentScale.Crop,
+                                modifier           = Modifier.size(80.dp).clip(RoundedCornerShape(12.dp))
+                            )
+                        }
+                        else -> {
+                            // Si no hay foto principal, mostrar texto centrado
+                            Box(
+                                modifier = Modifier.size(80.dp).clip(RoundedCornerShape(12.dp)).background(Color(0xFFE0E0E0)),
+                                contentAlignment = Alignment.Center
+                            ) {
+                                Text(
+                                    text = "Receta sin foto principal",
+                                    color = Color.DarkGray,
+                                    style = MaterialTheme.typography.bodySmall,
+                                    fontWeight = FontWeight.Bold,
+                                    textAlign = TextAlign.Center
+                                )
+                            }
+                        }
                     }
                     Box(
                         Modifier

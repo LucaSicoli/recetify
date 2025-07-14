@@ -40,6 +40,7 @@ import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.compose.ui.zIndex
+import androidx.core.net.toUri
 import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.navigation.NavController
 import coil.compose.AsyncImage
@@ -48,11 +49,9 @@ import com.example.recetify.data.db.RecipeEntity
 import com.example.recetify.data.remote.RetrofitClient
 import com.example.recetify.data.remote.model.SessionManager
 import com.example.recetify.ui.common.LogoutDialog
-import com.example.recetify.util.ImageUrlUtils
 import kotlinx.coroutines.launch
-import java.net.URI
 import com.example.recetify.ui.common.LoopingVideoPlayer
-import androidx.core.net.toUri
+import java.net.URI
 
 // Fuentes
 internal val Sen = FontFamily(
@@ -276,9 +275,24 @@ private fun RecipeCard(
     profileUrl: String?,
     modifier: Modifier = Modifier
 ) {
-    // Usar la utilidad centralizada para normalizar URLs
-    val finalUrl = ImageUrlUtils.getFirstMediaUrl(recipe.mediaUrls)
-    val finalProfileUrl = ImageUrlUtils.normalizeProfileUrl(profileUrl)
+    // Procesar URLs de la misma manera que en SavedRecipesScreen
+    val base = RetrofitClient.BASE_URL.trimEnd('/')
+    val original = recipe.mediaUrls?.firstOrNull().orEmpty()
+    val pathOnly = runCatching {
+        val uri = URI(original)
+        uri.rawPath + (uri.rawQuery?.let { "?$it" } ?: "")
+    }.getOrNull() ?: original
+    val finalUrl = if (pathOnly.startsWith("/")) "$base$pathOnly" else pathOnly
+    val isVideo = finalUrl.endsWith(".mp4", true) || finalUrl.endsWith(".webm", true)
+
+    // Procesar URL de perfil de la misma manera
+    val finalProfileUrl = profileUrl?.let { raw ->
+        val pPath = runCatching {
+            val uri = URI(raw)
+            uri.rawPath + (uri.rawQuery?.let { "?$it" } ?: "")
+        }.getOrDefault(raw)
+        if (pPath.startsWith("/")) "$base$pPath" else raw
+    }
 
     Card(
         modifier = modifier
@@ -296,13 +310,13 @@ private fun RecipeCard(
                 .clip(RoundedCornerShape(topStart = 8.dp, topEnd = 8.dp))
 
             when {
-                finalUrl != null && (finalUrl.endsWith(".mp4", true) || finalUrl.endsWith(".webm", true)) -> {
+                isVideo && finalUrl.isNotBlank() -> {
                     LoopingVideoPlayer(
                         uri = finalUrl.toUri(),
                         modifier = mediaModifier
                     )
                 }
-                finalUrl != null -> {
+                finalUrl.isNotBlank() && original.isNotBlank() -> {
                     AsyncImage(
                         model = finalUrl,
                         contentDescription = recipe.nombre,
