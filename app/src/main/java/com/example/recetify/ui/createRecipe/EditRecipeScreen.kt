@@ -48,6 +48,7 @@ import androidx.compose.ui.graphics.Color.Companion.DarkGray
 import androidx.compose.ui.graphics.Color.Companion.Gray
 import androidx.compose.ui.graphics.Color.Companion.Green
 import androidx.compose.ui.graphics.Color.Companion.Red
+import com.example.recetify.ui.home.Destacado
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -286,7 +287,7 @@ fun EditRecipeScreen(
                         shape         = RoundedCornerShape(12.dp)
                     )
 
-                    Divider(color = Color(0xFFE0E0E0), thickness = 4.dp)
+                    Divider(color = Color(0xFFE0E0E0), thickness = 2.dp)
 
                     // Steppers usando los componentes de CreateRecipeScreen
                     Column(
@@ -582,7 +583,7 @@ fun EditRecipeScreen(
                         }
                     }
 
-                    Divider(color = Color(0xFFE0E0E0), thickness = 4.dp)
+                    Divider(color = Color(0xFFE0E0E0), thickness = 2.dp)
 
                     // Ingredientes usando IngredientRow de CreateRecipeScreen
                     Box(
@@ -678,12 +679,12 @@ fun EditRecipeScreen(
                             ) {
                                 Icon(Icons.Default.Add, contentDescription = null, tint = Color(0xFF006400))
                                 Spacer(Modifier.width(8.dp))
-                                Text("Agregar ingrediente", color = Color(0xFF006400))
+                                Text("Agregar ingrediente", color = Color(0xFF006400), fontWeight = FontWeight.Medium, fontFamily = Destacado)
                             }
                         }
                     }
 
-                    Divider(color = Color(0xFFE0E0E0), thickness = 4.dp)
+                    Divider(color = Color(0xFFE0E0E0), thickness = 2.dp)
 
                     // Instrucciones usando StepCard de CreateRecipeScreen
                     Box(
@@ -756,7 +757,7 @@ fun EditRecipeScreen(
                             ) {
                                 Icon(Icons.Default.Add, contentDescription = null, tint = Color(0xFF006400))
                                 Spacer(Modifier.width(8.dp))
-                                Text("Agregar paso", color = Color(0xFF006400))
+                                Text("Agregar paso", color = Color(0xFF006400), fontFamily = Destacado)
                             }
                         }
                     }
