@@ -83,6 +83,6 @@ private fun RecipeEntity.toSummaryResponse() = RecipeSummaryResponse(
     usuarioCreadorAlias = usuarioCreadorAlias,
     usuarioFotoPerfil   = null,
     promedioRating      = promedioRating,
-    estadoAprobacion    = estadoAprobacion,
-    estadoPublicacion   = estadoPublicacion.orEmpty()
+    estadoPublicacion   = estadoPublicacion.orEmpty(),
+    estado              = estadoAprobacion  // Corregido: mapear estadoAprobacion -> estado
 )

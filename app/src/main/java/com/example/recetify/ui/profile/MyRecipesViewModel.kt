@@ -19,13 +19,13 @@ class MyRecipesViewModel(app: Application) : AndroidViewModel(app) {
         loadMyRecipes()
     }
 
-    /** Trae las recetas PUBLICADAS del usuario autenticado */
+    /** Trae TODAS las recetas del usuario autenticado (excepto borradores) */
     fun loadMyRecipes() {
         viewModelScope.launch {
             try {
-                // Usamos RetrofitClient.api, que es tu ApiService
-                val fetched = RetrofitClient.api.getMyPublishedRecipes()
-                _recipes.value = fetched
+                // Traemos todas las recetas del usuario (aprobadas, pendientes y rechazadas)
+                val allRecipes = RetrofitClient.api.getMyPublishedRecipes() // O cambia a getAllMyRecipes() si renombras el endpoint
+                _recipes.value = allRecipes
             } catch (e: Exception) {
                 // Si falla, dejamos la lista vacía (y podrías loguear)
                 _recipes.value = emptyList()

@@ -85,7 +85,7 @@ fun RecipeSummaryResponse.toEntity(): RecipeEntity =
         categoria           = this.categoria,
         usuarioCreadorAlias = this.usuarioCreadorAlias,
         promedioRating      = this.promedioRating,
-        estadoAprobacion    = this.estadoAprobacion,
+        estadoAprobacion    = this.estado,          // Corregido: mapear estado -> estadoAprobacion
         estadoPublicacion   = this.estadoPublicacion
     )
 

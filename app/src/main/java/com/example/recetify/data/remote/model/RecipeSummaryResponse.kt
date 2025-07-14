@@ -17,6 +17,6 @@ data class RecipeSummaryResponse(
     @SerializedName("usuarioFotoPerfil")
     val usuarioFotoPerfil: String?,  // ← Aquí
     val promedioRating: Double?,
-    val estadoAprobacion: String,
-    val estadoPublicacion: String
+    val estadoPublicacion: String,   // PENÚLTIMO (coincide con backend)
+    val estado: String               // ÚLTIMO (este es el estado de aprobación)
 )

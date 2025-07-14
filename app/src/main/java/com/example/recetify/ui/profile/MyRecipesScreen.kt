@@ -131,6 +131,25 @@ private fun PublishedRecipeCard(
     val finalUrl = if (pathOnly.startsWith("/")) "$base$pathOnly" else "$base/$pathOnly"
     val isVideo  = finalUrl.endsWith(".mp4", true) || finalUrl.endsWith(".webm", true)
 
+    // Determinar el estado para mostrar en el badge
+    val (badgeText, badgeColor) = when {
+        // PRIMERO: Si está rechazado, mostrar "RECHAZADA" en rojo
+        recipe.estado.equals("RECHAZADO", ignoreCase = true) ->
+            "RECHAZADA" to Color(0xFFD32F2F)
+        // SEGUNDO: Si está aprobado, mostrar "APROBADA" en verde
+        recipe.estado.equals("APROBADO", ignoreCase = true) ->
+            "APROBADA" to Color(0xFF2E7D32)
+        // TERCERO: Si está pendiente, mostrar "PENDIENTE DE APROBACIÓN" en naranja
+        recipe.estado.equals("PENDIENTE", ignoreCase = true) ->
+            "PENDIENTE DE APROBACIÓN" to Color(0xFFFF9800)
+        // CUARTO: Si está publicado pero no es ninguno de los anteriores, mostrar pendiente
+        recipe.estadoPublicacion.equals("PUBLICADO", ignoreCase = true) ->
+            "PENDIENTE DE APROBACIÓN" to Color(0xFFFF9800)
+        // Fallback - debería mostrar como publicada
+        else ->
+            "PUBLICADA" to Color(0xFF2E7D32)
+    }
+
     Box(
         Modifier
             .fillMaxWidth()
@@ -195,18 +214,18 @@ private fun PublishedRecipeCard(
             }
         }
 
-        // Badge "PUBLICADA"
+        // Badge dinámico según el estado
         Box(
             Modifier
                 .align(Alignment.TopStart)
                 .background(
-                    color = Color(0xFF2E7D32), // SOLO verde oscuro
+                    color = badgeColor,
                     shape = RoundedCornerShape(topStart = 8.dp, bottomEnd = 8.dp)
                 )
                 .padding(horizontal = 12.dp, vertical = 6.dp)
         ) {
             Text(
-                text = "PUBLICADA",
+                text = badgeText,
                 style = MaterialTheme.typography.labelSmall.copy(
                     color      = Color.White,
                     fontWeight = FontWeight.Bold
