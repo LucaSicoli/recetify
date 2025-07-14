@@ -40,6 +40,7 @@ import com.example.recetify.R
 import com.example.recetify.data.remote.RetrofitClient
 import com.example.recetify.data.remote.model.SessionManager
 import com.example.recetify.ui.common.LogoutDialog
+import com.example.recetify.util.ImageUrlUtils
 import kotlinx.coroutines.launch
 
 // Usando la misma paleta de colores que CreateRecipeScreen
@@ -134,7 +135,7 @@ fun ProfileInfoScreen(
                             horizontalAlignment = Alignment.CenterHorizontally,
                             verticalArrangement = Arrangement.spacedBy(16.dp)
                         ) {
-                            // Avatar mejorado
+                            // Avatar mejorado usando la utilidad centralizada
                             Box(
                                 modifier = Modifier
                                     .size(120.dp)
@@ -143,15 +144,9 @@ fun ProfileInfoScreen(
                                     .border(3.dp, Color.White, CircleShape),
                                 contentAlignment = Alignment.Center
                             ) {
-                                val remote = user.urlFotoPerfil
-                                if (!remote.isNullOrBlank()) {
-                                    val base = RetrofitClient.BASE_URL.trimEnd('/')
-                                    val path = runCatching {
-                                        val uri = URI(remote)
-                                        uri.rawPath + (uri.rawQuery?.let { "?$it" } ?: "")
-                                    }.getOrDefault(remote)
-                                    val finalUrl = if (path.startsWith("/")) "$base$path" else remote
+                                val finalUrl = ImageUrlUtils.normalizeProfileUrl(user.urlFotoPerfil)
 
+                                if (finalUrl != null) {
                                     AsyncImage(
                                         model = ImageRequest.Builder(context)
                                             .data(finalUrl)

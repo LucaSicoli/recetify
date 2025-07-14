@@ -31,6 +31,7 @@ import coil.request.ImageRequest
 import com.example.recetify.data.remote.RetrofitClient
 import com.example.recetify.data.remote.model.SessionManager
 import com.example.recetify.ui.common.LogoutDialog
+import com.example.recetify.util.ImageUrlUtils
 import kotlinx.coroutines.launch
 
 @Composable
@@ -75,29 +76,34 @@ fun ProfileScreen(
                 horizontalArrangement = Arrangement.Center,
                 verticalAlignment     = Alignment.CenterVertically
             ) {
-                // Avatar dinámico
+                // Avatar dinámico usando la utilidad centralizada
                 if (user != null && !user.urlFotoPerfil.isNullOrBlank()) {
-                    // Normalizar URL igual que en HomeScreen
-                    val base   = RetrofitClient.BASE_URL.trimEnd('/')
-                    val remote = user.urlFotoPerfil!!
-                    val path   = runCatching {
-                        val uri = URI(remote)
-                        uri.rawPath + (uri.rawQuery?.let { "?$it" } ?: "")
-                    }.getOrDefault(remote)
-                    val finalUrl = if (path.startsWith("/")) "$base$path" else remote
+                    val finalUrl = ImageUrlUtils.normalizeProfileUrl(user.urlFotoPerfil)
 
-                    AsyncImage(
-                        model = ImageRequest.Builder(ctx)
-                            .data(finalUrl)
-                            .crossfade(true)
-                            .build(),
-                        contentDescription = "Avatar",
-                        contentScale = ContentScale.Crop,
-                        modifier = Modifier
-                            .size(88.dp)
-                            .clip(CircleShape)
-                            .border(3.dp, Color(0xFF2E3A59), CircleShape)
-                    )
+                    if (finalUrl != null) {
+                        AsyncImage(
+                            model = ImageRequest.Builder(ctx)
+                                .data(finalUrl)
+                                .crossfade(true)
+                                .build(),
+                            contentDescription = "Avatar",
+                            contentScale = ContentScale.Crop,
+                            modifier = Modifier
+                                .size(88.dp)
+                                .clip(CircleShape)
+                                .border(3.dp, Color(0xFF2E3A59), CircleShape)
+                        )
+                    } else {
+                        Icon(
+                            imageVector        = Icons.Default.AccountCircle,
+                            contentDescription = "Avatar",
+                            modifier = Modifier
+                                .size(88.dp)
+                                .clip(CircleShape)
+                                .border(3.dp, Color(0xFF2E3A59), CircleShape),
+                            tint = Color.Gray.copy(alpha = 0.4f)
+                        )
+                    }
                 } else {
                     Icon(
                         imageVector        = Icons.Default.AccountCircle,

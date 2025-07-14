@@ -48,6 +48,7 @@ import com.example.recetify.data.db.RecipeEntity
 import com.example.recetify.data.remote.RetrofitClient
 import com.example.recetify.data.remote.model.SessionManager
 import com.example.recetify.ui.common.LogoutDialog
+import com.example.recetify.util.ImageUrlUtils
 import kotlinx.coroutines.launch
 import java.net.URI
 import com.example.recetify.ui.common.LoopingVideoPlayer
@@ -275,24 +276,9 @@ private fun RecipeCard(
     profileUrl: String?,
     modifier: Modifier = Modifier
 ) {
-    val base = RetrofitClient.BASE_URL.trimEnd('/')
-
-    // Normalizar URL de media
-    val original = recipe.mediaUrls?.firstOrNull().orEmpty()
-    val pathOnly = runCatching {
-        val uri = URI(original)
-        uri.rawPath + uri.rawQuery?.let { "?$it" }.orEmpty()
-    }.getOrDefault(original)
-    val finalUrl = if (pathOnly.startsWith("/")) "$base$pathOnly" else original
-
-    // Normalizar URL de perfil
-    val finalProfileUrl = profileUrl?.let { remote ->
-        val pPath = runCatching {
-            val uri = URI(remote)
-            uri.rawPath + uri.rawQuery?.let { "?$it" }.orEmpty()
-        }.getOrDefault(remote)
-        if (pPath.startsWith("/")) "$base$pPath" else remote
-    }
+    // Usar la utilidad centralizada para normalizar URLs
+    val finalUrl = ImageUrlUtils.getFirstMediaUrl(recipe.mediaUrls)
+    val finalProfileUrl = ImageUrlUtils.normalizeProfileUrl(profileUrl)
 
     Card(
         modifier = modifier
@@ -309,31 +295,35 @@ private fun RecipeCard(
                 .aspectRatio(16f / 9f)
                 .clip(RoundedCornerShape(topStart = 8.dp, topEnd = 8.dp))
 
-            if (finalUrl.endsWith(".mp4", true) || finalUrl.endsWith(".webm", true)) {
-                LoopingVideoPlayer(
-                    uri = finalUrl.toUri(),
-                    modifier = mediaModifier
-                )
-            } else if (finalUrl.isBlank()) {
-                // Si no hay foto principal, mostrar texto centrado
-                Box(
-                    modifier = mediaModifier.background(Color(0xFFE0E0E0)),
-                    contentAlignment = Alignment.Center
-                ) {
-                    Text(
-                        text = "Receta sin foto principal",
-                        color = Color.DarkGray,
-                        style = MaterialTheme.typography.bodyMedium,
-                        fontWeight = FontWeight.Bold
+            when {
+                finalUrl != null && (finalUrl.endsWith(".mp4", true) || finalUrl.endsWith(".webm", true)) -> {
+                    LoopingVideoPlayer(
+                        uri = finalUrl.toUri(),
+                        modifier = mediaModifier
                     )
                 }
-            } else {
-                AsyncImage(
-                    model = finalUrl,
-                    contentDescription = recipe.nombre,
-                    contentScale = ContentScale.Crop,
-                    modifier = mediaModifier
-                )
+                finalUrl != null -> {
+                    AsyncImage(
+                        model = finalUrl,
+                        contentDescription = recipe.nombre,
+                        contentScale = ContentScale.Crop,
+                        modifier = mediaModifier
+                    )
+                }
+                else -> {
+                    // Si no hay foto principal, mostrar texto centrado
+                    Box(
+                        modifier = mediaModifier.background(Color(0xFFE0E0E0)),
+                        contentAlignment = Alignment.Center
+                    ) {
+                        Text(
+                            text = "Receta sin foto principal",
+                            color = Color.DarkGray,
+                            style = MaterialTheme.typography.bodyMedium,
+                            fontWeight = FontWeight.Bold
+                        )
+                    }
+                }
             }
 
             Spacer(Modifier.height(8.dp))
