@@ -151,7 +151,7 @@ fun MobileDataWarningDialog(
                         onClick = onContinueWithMobileData,
                         modifier = Modifier
                             .fillMaxWidth()
-                            .height(50.dp),
+                            .height(56.dp),
                         shape = RoundedCornerShape(12.dp),
                         colors = ButtonDefaults.outlinedButtonColors(
                             contentColor = Color(0xFFBC6154)
@@ -159,13 +159,16 @@ fun MobileDataWarningDialog(
                         border = androidx.compose.foundation.BorderStroke(
                             2.dp,
                             Color(0xFFBC6154)
-                        )
+                        ),
+                        contentPadding = PaddingValues(horizontal = 12.dp, vertical = 8.dp)
                     ) {
                         Text(
                             text = "Continuar con datos móviles",
                             fontFamily = Sen,
                             fontWeight = FontWeight.Medium,
-                            fontSize = 16.sp
+                            fontSize = 14.sp,
+                            textAlign = TextAlign.Center,
+                            maxLines = 1
                         )
                     }
                 }
