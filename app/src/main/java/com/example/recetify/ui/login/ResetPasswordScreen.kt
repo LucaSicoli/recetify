@@ -47,7 +47,7 @@ private val Sen = FontFamily(
 fun ResetPasswordScreen(
     viewModel: PasswordResetViewModel = viewModel(),
     onFinish: () -> Unit,
-    navController: NavController? = null // <-- Permitir pasar NavController
+    navController: NavController? = null
 ) {
     val state by viewModel.state.collectAsState()
     var showSuccessMessage by remember { mutableStateOf(false) }
@@ -58,20 +58,22 @@ fun ResetPasswordScreen(
     val unfocusColor = if (errorIsMismatch) Color.Red else Color(0xFFBC6154)
     val successColor = Color(0xFF4CAF50)
     val passwordsMatch = state.newPassword == state.confirmPassword && state.confirmPassword.isNotEmpty()
-    val allValid = state.isLengthValid && state.hasUppercase && state.hasNumberOrSymbol && passwordsMatch
+    val allValid = state.isLengthValid && state.hasUppercase && state.hasNumber && state.hasSpecialChar && passwordsMatch
     val focusManager = LocalFocusManager.current
     val keyboardController = LocalSoftwareKeyboardController.current
     val newPassFocusRequester = remember { FocusRequester() }
     val confirmPassFocusRequester = remember { FocusRequester() }
 
+    // Limpiar el estado al entrar a la pantalla
+    LaunchedEffect(Unit) {
+        viewModel.clearResetState()
+        showSuccessMessage = false
+    }
 
-
-
-    LaunchedEffect(state.error) {
-        if (state.error == null && !state.isLoading && state.newPassword.isNotEmpty() && state.confirmPassword.isNotEmpty()) {
-            showSuccessMessage = true
-            kotlinx.coroutines.delay(1500)
-            showSuccessMessage = false
+    // Observar cuando el botón de cambiar es presionado exitosamente
+    LaunchedEffect(showSuccessMessage) {
+        if (showSuccessMessage) {
+            delay(1500)
             onFinish()
         }
     }
@@ -201,7 +203,11 @@ fun ResetPasswordScreen(
                         onDone = {
                             keyboardController?.hide()
                             focusManager.clearFocus()
-                            if (allValid) viewModel.resetPassword(onFinish)
+                            if (allValid) {
+                                viewModel.resetPassword {
+                                    showSuccessMessage = true
+                                }
+                            }
                         }
                     ),
                     textStyle = TextStyle(
@@ -219,17 +225,42 @@ fun ResetPasswordScreen(
 
                 )
 
-                Column(verticalArrangement = Arrangement.spacedBy(4.dp)) {
-                    ValidationRow("Mínimo 8 caracteres", state.isLengthValid)
-                    ValidationRow("Al menos una mayúscula", state.hasUppercase)
-                    ValidationRow("Número o símbolo", state.hasNumberOrSymbol)
-                    ValidationRow("Las contraseñas coinciden", passwordsMatch)
+                // Sección de validaciones con estilo mejorado
+                Card(
+                    modifier = Modifier.fillMaxWidth(),
+                    shape = RoundedCornerShape(16.dp),
+                    colors = CardDefaults.cardColors(containerColor = Color(0xFFFAFAFA)),
+                    elevation = CardDefaults.cardElevation(4.dp)
+                ) {
+                    Column(
+                        modifier = Modifier.padding(20.dp),
+                        verticalArrangement = Arrangement.spacedBy(12.dp)
+                    ) {
+                        Text(
+                            text = "Requisitos de la contraseña",
+                            fontSize = 16.sp,
+                            fontWeight = FontWeight.Bold,
+                            color = Color(0xFF2D3748),
+                            fontFamily = Sen,
+                            modifier = Modifier.padding(bottom = 8.dp)
+                        )
 
+                        ValidationRow("Mínimo 8 caracteres", state.isLengthValid)
+                        ValidationRow("Al menos una mayúscula", state.hasUppercase)
+                        ValidationRow("Al menos un número", state.hasNumber)
+                        ValidationRow("Al menos un carácter especial", state.hasSpecialChar)
+                        ValidationRow("Las contraseñas coinciden", passwordsMatch)
+                    }
                 }
 
 
                 Button(
-                    onClick = { viewModel.resetPassword(onFinish) },
+                    onClick = {
+                        viewModel.resetPassword {
+                            // Cuando la API responde exitosamente, mostrar mensaje de éxito
+                            showSuccessMessage = true
+                        }
+                    },
                     enabled = allValid,
                     modifier = Modifier
                         .fillMaxWidth()
@@ -293,4 +324,3 @@ fun ValidationRow(text: String, isValid: Boolean) {
         )
     }
 }
-

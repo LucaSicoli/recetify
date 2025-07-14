@@ -27,7 +27,8 @@ class PasswordResetViewModel : ViewModel() {
                 newPassword = p,
                 isLengthValid = p.length >= 8,
                 hasUppercase = p.any { it.isUpperCase() },
-                hasNumberOrSymbol = p.any { it.isDigit() || !it.isLetterOrDigit() },
+                hasNumber = p.any { it.isDigit() },
+                hasSpecialChar = p.any { !it.isLetterOrDigit() },
                 error = null
             )
         }
@@ -93,5 +94,19 @@ class PasswordResetViewModel : ViewModel() {
 
     fun clearError() {
         _state.update { it.copy(error = null) }
+    }
+
+    fun clearResetState() {
+        _state.update {
+            it.copy(
+                newPassword = "",
+                confirmPassword = "",
+                isLengthValid = false,
+                hasUppercase = false,
+                hasNumber = false,
+                hasSpecialChar = false,
+                error = null
+            )
+        }
     }
 }

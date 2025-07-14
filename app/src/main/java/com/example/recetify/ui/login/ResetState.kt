@@ -12,5 +12,6 @@ data class ResetState(
     // Validaciones de contraseña
     val isLengthValid: Boolean = false,
     val hasUppercase: Boolean = false,
-    val hasNumberOrSymbol: Boolean = false
+    val hasNumber: Boolean = false,
+    val hasSpecialChar: Boolean = false
 )
