@@ -76,7 +76,6 @@ import androidx.compose.material.icons.filled.BookmarkBorder
 import androidx.compose.material.icons.filled.Close
 import androidx.compose.material.icons.filled.PlayArrow
 import androidx.compose.material.icons.automirrored.filled.Send
-import androidx.compose.material.icons.filled.ArrowBack
 import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.unit.IntOffset
@@ -89,7 +88,6 @@ import com.example.recetify.ui.common.MobileDataWarningDialog
 
 
 private val Accent = Color(0xFFBC6154)
-private val GrayBg  = Color(0xFFF8F8F8)
 private val Ladrillo = Color(0xFFBC6154) // Nuevo color para el chip seleccionado
 
 private val Destacado = FontFamily(
@@ -155,6 +153,7 @@ fun CreateRecipeScreen(
     onClose:    () -> Unit,
     onSaved:    () -> Unit,
     onPublished:() -> Unit,
+    onEditExisting: (Long) -> Unit = {}, // Nuevo parámetro para navegar a editar receta existente
 ) {
 
     // --- Local & ViewModel state ---
@@ -196,6 +195,35 @@ fun CreateRecipeScreen(
     var ingredientesError by remember { mutableStateOf(false) }
     var pasosError by remember { mutableStateOf(false) }
 
+    // --- Estados para validación de nombre y diálogo de conflicto ---
+    var showNameConflictDialog by remember { mutableStateOf(false) }
+    var nameConflictRecipeId by remember { mutableStateOf<Long?>(null) }
+    var nameConflictMessage by remember { mutableStateOf("") }
+
+    // --- Función para manejar guardar/publicar con validación de nombre ---
+    suspend fun handleSaveOrPublish(
+        request: RecipeRequest,
+        mainImageUri: Uri?,
+        isPublish: Boolean,
+        onSuccess: () -> Unit = {}
+    ) {
+        val check = viewModel.checkRecipeName(request.nombre)
+        // Acceso directo a las propiedades de la data class
+        if (check != null && check.exists && check.existingRecipe != null) {
+            nameConflictRecipeId = check.existingRecipe.id
+            nameConflictMessage = check.message.ifEmpty { "Ya existe una receta con ese nombre." }
+            showNameConflictDialog = true
+        } else {
+            if (isPublish) {
+                viewModel.uploadStepMediaAndCreateRecipe(request, mainImageUri, onSuccess)
+            } else {
+                viewModel.uploadStepMediaAndSaveDraft(request, mainImageUri)
+            }
+        }
+    }
+
+    // Agregar el scope que faltaba
+    val scope = rememberCoroutineScope()
 
     // Image picker
     val context  = LocalContext.current
@@ -360,7 +388,7 @@ fun CreateRecipeScreen(
                         .align(Alignment.TopStart)
                 ) {
                     Icon(
-                        imageVector = Icons.Default.ArrowBack,
+                        imageVector = Icons.AutoMirrored.Filled.ArrowBack,
                         contentDescription = "Volver",
                         tint = Color.White
                     )
@@ -805,12 +833,16 @@ fun CreateRecipeScreen(
                                     Modifier
                                         .offset { IntOffset(offsetX.value.toInt(), 0) }
                                 ) {
-                                    IngredientRow(idx, ing, onUpdate = { newIng ->
-                                        ingredients[idx] = newIng
-                                    }, onDelete = {
+                                    IngredientRow(
+                                        idx = idx,
+                                        ingredient = ing,
+                                        onUpdate = { newIng ->
+                                            ingredients[idx] = newIng
+                                        }
+                                    ) {
                                         dismissed = true
                                         ingredients.removeAt(idx)
-                                    })
+                                    }
                                 }
                             }
                         }
@@ -1111,7 +1143,7 @@ fun CreateRecipeScreen(
                                                 ingredients = ingredients.toList(),
                                                 steps       = steps.toList()
                                             )
-                                            viewModel.uploadStepMediaAndSaveDraft(request, localMediaUri)
+                                            scope.launch { handleSaveOrPublish(request, localMediaUri, false) }
                                         }
                                     },
                                     enabled = !viewModel.submitting.collectAsState().value,
@@ -1176,12 +1208,7 @@ fun CreateRecipeScreen(
                                                 ingredients = ingredients.toList(),
                                                 steps       = steps.toList()
                                             )
-
-                                            viewModel.uploadStepMediaAndCreateRecipe(
-                                                request = request,
-                                                mainImageUri = localMediaUri,
-                                                onSuccess = onPublished
-                                            )
+                                            scope.launch { handleSaveOrPublish(request, localMediaUri, true, onPublished) }
                                         }
                                     },
                                     enabled = !viewModel.submitting.collectAsState().value,
@@ -1403,6 +1430,30 @@ fun CreateRecipeScreen(
                     showMobileDataWarning = false
                     pendingAction = null
                     Toast.makeText(context, "Conéctate a WiFi y vuelve a intentarlo", Toast.LENGTH_LONG).show()
+                }
+            )
+        }
+
+        // --- Diálogo de conflicto de nombre ---
+        if (showNameConflictDialog && nameConflictRecipeId != null) {
+            AlertDialog(
+                onDismissRequest = { showNameConflictDialog = false },
+                title = { Text("Receta existente") },
+                text = { Text(nameConflictMessage) },
+                confirmButton = {
+                    TextButton(onClick = {
+                        // Cerrar el diálogo primero
+                        showNameConflictDialog = false
+                        // Navegar a EditRecipeScreen con la receta existente
+                        onEditExisting(nameConflictRecipeId!!)
+                        // NO llamar onClose() aquí - se manejará desde MainActivity
+                    }) { Text("Reemplazar receta existente") }
+                },
+                dismissButton = {
+                    TextButton(onClick = {
+                        // Simplemente cerrar el diálogo para que el usuario cambie el nombre
+                        showNameConflictDialog = false
+                    }) { Text("Elegir otro nombre") }
                 }
             )
         }
@@ -1782,7 +1833,7 @@ fun VideoPlayer(uri: Uri) {
 
 @Composable
 internal fun IngredientRow(
-    index: Int,
+    idx: Int,
     ingredient: RecipeIngredientRequest,
     onUpdate: (RecipeIngredientRequest) -> Unit,
     onDelete: () -> Unit
@@ -1856,10 +1907,11 @@ internal fun IngredientRow(
                     // Botón decrementar
                     IconButton(
                         onClick = {
-                            val current = cantidadText.toIntOrNull() ?: 1
-                            if (current > 1) {
-                                cantidadText = (current - 1).toString()
-                                onUpdate(ingredient.copy(cantidad = (current - 1).toDouble(), unidadMedida = unidad))
+                            val current = cantidadText.toDoubleOrNull() ?: 1.0
+                            if (current > 0.1) {
+                                val newValue = (current - 1).coerceAtLeast(0.1)
+                                cantidadText = newValue.toString()
+                                onUpdate(ingredient.copy(cantidad = newValue, unidadMedida = unidad))
                             }
                         },
                         modifier = Modifier.size(28.dp)
@@ -1882,14 +1934,16 @@ internal fun IngredientRow(
                         BasicTextField(
                             value = cantidadText,
                             onValueChange = { new ->
-                                if (new.all { it.isDigit() } || new.isEmpty()) {
-                                    cantidadText = new
-                                    val parsed = new.toIntOrNull() ?: 0
-                                    onUpdate(ingredient.copy(cantidad = parsed.toDouble(), unidadMedida = unidad))
+                                // Permitir números decimales con punto o coma
+                                val normalized = new.replace(',', '.')
+                                if (normalized.matches(Regex("^\\d*\\.?\\d*") ) || normalized.isEmpty()) {
+                                    cantidadText = normalized
+                                    val parsed = normalized.toDoubleOrNull() ?: 0.0
+                                    onUpdate(ingredient.copy(cantidad = parsed, unidadMedida = unidad))
                                 }
                             },
                             singleLine = true,
-                            keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
+                            keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Decimal),
                             textStyle = LocalTextStyle.current.copy(
                                 color = Black,
                                 fontSize = 14.sp,
@@ -1907,9 +1961,10 @@ internal fun IngredientRow(
                     // Botón incrementar
                     IconButton(
                         onClick = {
-                            val current = cantidadText.toIntOrNull() ?: 0
-                            cantidadText = (current + 1).toString()
-                            onUpdate(ingredient.copy(cantidad = (current + 1).toDouble(), unidadMedida = unidad))
+                            val current = cantidadText.toDoubleOrNull() ?: 0.0
+                            val newValue = current + 1
+                            cantidadText = newValue.toString()
+                            onUpdate(ingredient.copy(cantidad = newValue, unidadMedida = unidad))
                         },
                         modifier = Modifier.size(28.dp)
                     ) {
@@ -1961,8 +2016,8 @@ internal fun IngredientRow(
                                         onClick = {
                                             unidad = u
                                             expanded = false
-                                            val qty = cantidadText.toIntOrNull() ?: 0
-                                            onUpdate(ingredient.copy(cantidad = qty.toDouble(), unidadMedida = unidad))
+                                            val qty = cantidadText.toDoubleOrNull() ?: 0.0
+                                            onUpdate(ingredient.copy(cantidad = qty, unidadMedida = unidad))
                                         },
                                         contentPadding = PaddingValues(horizontal = 8.dp, vertical = 4.dp)
                                     )

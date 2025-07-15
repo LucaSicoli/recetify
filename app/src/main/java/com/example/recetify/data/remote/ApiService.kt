@@ -14,6 +14,7 @@ import com.example.recetify.data.remote.model.RecipeSummaryResponse
 import com.example.recetify.data.remote.model.ResetDTO
 import com.example.recetify.data.remote.model.RecipeStepRequest
 import com.example.recetify.data.remote.model.RecipeIngredientRequest
+import com.example.recetify.data.remote.model.RecipeNameCheckResponse
 import com.example.recetify.data.remote.model.UserResponse
 import com.example.recetify.data.remote.model.UserSavedRecipeDTO
 import okhttp3.MultipartBody
@@ -119,6 +120,15 @@ interface ApiService {
         @Query("userAlias") userAlias: String? = null,
         @Query("sort") sort: String? = "name"
     ): List<RecipeSummaryResponse>
+
+    @GET("recipes/check-name")
+    suspend fun checkRecipeName(@Query("nombre") nombre: String): RecipeNameCheckResponse
+
+    @PUT("recipes/{id}/replace")
+    suspend fun replaceRecipe(
+        @Path("id") id: Long,
+        @Body req: RecipeRequest
+    ): RecipeResponse
 
 
     // —— Subida de imágenes ——

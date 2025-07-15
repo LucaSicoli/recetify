@@ -7,6 +7,7 @@ import com.example.recetify.data.db.DatabaseProvider
 import com.example.recetify.data.db.RecipeEntity
 import com.example.recetify.data.remote.ApiService
 import com.example.recetify.data.remote.model.RecipeIngredientRequest
+import com.example.recetify.data.remote.model.RecipeNameCheckResponse
 import com.example.recetify.data.remote.model.RecipeRequest
 import com.example.recetify.data.remote.model.RecipeResponse
 import com.example.recetify.data.remote.model.RecipeStepRequest
@@ -165,4 +166,14 @@ class RecipeRepository(
         }
         emitAll(dao.getAll())
     }.flowOn(Dispatchers.IO)
+
+    suspend fun checkRecipeName(nombre: String): RecipeNameCheckResponse = withContext(Dispatchers.IO) {
+        check(connectivity.activeNetwork != null) { "Sin conexión" }
+        api.checkRecipeName(nombre)
+    }
+
+    suspend fun replaceRecipe(id: Long, req: RecipeRequest): RecipeResponse = withContext(Dispatchers.IO) {
+        check(connectivity.activeNetwork != null) { "Sin conexión" }
+        api.replaceRecipe(id, req)
+    }
 }

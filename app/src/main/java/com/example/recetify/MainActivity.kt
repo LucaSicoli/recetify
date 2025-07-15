@@ -185,7 +185,14 @@ fun AppNavGraph() {
                     viewModel   = vm,
                     onClose     = { navController.popBackStack() },
                     onSaved     = { navController.navigate("drafts") },
-                    onPublished = { navController.navigate("myRecipes") }
+                    onPublished = { navController.navigate("myRecipes") },
+                    onEditExisting = { existingRecipeId ->
+                        // Navegar a EditRecipeScreen con la receta existente
+                        navController.navigate("editRecipe/$existingRecipeId") {
+                            // Limpiar el stack para evitar volver a crear receta
+                            popUpTo("createRecipe") { inclusive = true }
+                        }
+                    }
                 )
             }
             composable("editRecipe/{recipeId}") { backStack ->

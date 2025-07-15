@@ -10,6 +10,7 @@ import com.example.recetify.data.RecipeRepository
 import com.example.recetify.data.db.DatabaseProvider
 import com.example.recetify.data.remote.RetrofitClient
 import com.example.recetify.data.remote.model.RecipeIngredientRequest
+import com.example.recetify.data.remote.model.RecipeNameCheckResponse
 import com.example.recetify.data.remote.model.RecipeRequest
 import com.example.recetify.data.remote.model.RecipeResponse
 import com.example.recetify.data.remote.model.RecipeStepRequest
@@ -74,6 +75,10 @@ class CreateRecipeViewModel(
 
     private val _draftDetail   = MutableStateFlow<RecipeResponse?>(null)
     val draftDetail: StateFlow<RecipeResponse?> = _draftDetail.asStateFlow()
+
+    // --- Validación de nombre de receta y reemplazo ---
+    private val _nameCheckResult = MutableStateFlow<RecipeNameCheckResponse?>(null)
+    val nameCheckResult: StateFlow<RecipeNameCheckResponse?> = _nameCheckResult.asStateFlow()
 
     /** Sube foto o vídeo y guarda su URL en `_photoUrl` */
     fun uploadPhoto(file: File) = viewModelScope.launch {
@@ -449,6 +454,26 @@ class CreateRecipeViewModel(
             _publishResult.value = Result.failure(t)
         } finally {
             _submitting.value = false
+        }
+    }
+
+    suspend fun checkRecipeName(nombre: String): RecipeNameCheckResponse? {
+        return try {
+            val result = repo.checkRecipeName(nombre)
+            _nameCheckResult.value = result
+            result
+        } catch (e: Exception) {
+            _error.value = "Error verificando nombre: ${e.localizedMessage}"
+            null
+        }
+    }
+
+    suspend fun replaceRecipe(id: Long, req: RecipeRequest): RecipeResponse? {
+        return try {
+            repo.replaceRecipe(id, req)
+        } catch (e: Exception) {
+            _error.value = "Error reemplazando receta: ${e.localizedMessage}"
+            null
         }
     }
 }
