@@ -1438,23 +1438,145 @@ fun CreateRecipeScreen(
         if (showNameConflictDialog && nameConflictRecipeId != null) {
             AlertDialog(
                 onDismissRequest = { showNameConflictDialog = false },
-                title = { Text("Receta existente") },
-                text = { Text(nameConflictMessage) },
-                confirmButton = {
-                    TextButton(onClick = {
-                        // Cerrar el diálogo primero
-                        showNameConflictDialog = false
-                        // Navegar a EditRecipeScreen con la receta existente
-                        onEditExisting(nameConflictRecipeId!!)
-                        // NO llamar onClose() aquí - se manejará desde MainActivity
-                    }) { Text("Reemplazar receta existente") }
+                title = {
+                    Column(
+                        horizontalAlignment = Alignment.CenterHorizontally,
+                        modifier = Modifier.fillMaxWidth()
+                    ) {
+                        // Icono con fondo circular
+                        Box(
+                            modifier = Modifier
+                                .size(64.dp)
+                                .background(
+                                    Color(0xFFFEF2F2),
+                                    shape = CircleShape
+                                ),
+                            contentAlignment = Alignment.Center
+                        ) {
+                            Icon(
+                                imageVector = Icons.Filled.RamenDining,
+                                contentDescription = null,
+                                tint = Accent,
+                                modifier = Modifier.size(28.dp)
+                            )
+                        }
+
+                        Spacer(modifier = Modifier.height(16.dp))
+
+                        Text(
+                            text = "Receta existente",
+                            fontFamily = Destacado,
+                            fontWeight = FontWeight.Bold,
+                            fontSize = 20.sp,
+                            color = Color(0xFF1F2937),
+                            textAlign = TextAlign.Center
+                        )
+                    }
                 },
-                dismissButton = {
-                    TextButton(onClick = {
-                        // Simplemente cerrar el diálogo para que el usuario cambie el nombre
-                        showNameConflictDialog = false
-                    }) { Text("Elegir otro nombre") }
-                }
+                text = {
+                    Text(
+                        text = nameConflictMessage,
+                        style = MaterialTheme.typography.bodyLarge.copy(
+                            fontFamily = Destacado,
+                            fontSize = 16.sp,
+                            lineHeight = 24.sp,
+                            color = Color(0xFF6B7280)
+                        ),
+                        textAlign = TextAlign.Center,
+                        modifier = Modifier.fillMaxWidth()
+                    )
+                },
+                confirmButton = {
+                    Column(
+                        modifier = Modifier.fillMaxWidth(),
+                        verticalArrangement = Arrangement.spacedBy(12.dp)
+                    ) {
+                        // Botón primario - Reemplazar receta existente
+                        Button(
+                            onClick = {
+                                // Cerrar el diálogo primero
+                                showNameConflictDialog = false
+
+                                // Precargar los datos actuales del formulario en la receta existente
+                                scope.launch {
+                                    try {
+                                        // Crear el request con los datos actuales del formulario
+                                        val currentFormData = RecipeRequest(
+                                            nombre      = nombre,
+                                            descripcion = descripcion,
+                                            tiempo      = tiempo,
+                                            porciones   = porciones,
+                                            mediaUrls   = photoUrl?.let { listOf(it) } ?: localMediaUri?.let { listOf(it.toString()) } ?: emptyList(),
+                                            tipoPlato   = selectedTipo ?: "",
+                                            categoria   = selectedCategory ?: "",
+                                            ingredients = ingredients.toList(),
+                                            steps       = steps.toList()
+                                        )
+
+                                        // Reemplazar la receta existente con los datos del formulario actual
+                                        val replacedRecipe = viewModel.replaceRecipe(nameConflictRecipeId!!, currentFormData)
+
+                                        if (replacedRecipe != null) {
+                                            Toast.makeText(context, "Receta reemplazada exitosamente", Toast.LENGTH_SHORT).show()
+                                            // Navegar a EditRecipeScreen con la receta actualizada
+                                            onEditExisting(nameConflictRecipeId!!)
+                                        } else {
+                                            Toast.makeText(context, "Error reemplazando la receta", Toast.LENGTH_SHORT).show()
+                                        }
+                                    } catch (e: Exception) {
+                                        Toast.makeText(context, "Error: ${e.message}", Toast.LENGTH_SHORT).show()
+                                    }
+                                }
+                            },
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .height(48.dp),
+                            colors = ButtonDefaults.buttonColors(
+                                containerColor = Accent
+                            ),
+                            shape = RoundedCornerShape(24.dp),
+                            elevation = ButtonDefaults.buttonElevation(
+                                defaultElevation = 0.dp,
+                                pressedElevation = 2.dp
+                            )
+                        ) {
+                            Text(
+                                "Reemplazar receta existente",
+                                color = Color.White,
+                                fontFamily = Destacado,
+                                fontWeight = FontWeight.SemiBold,
+                                fontSize = 16.sp
+                            )
+                        }
+
+                        // Botón secundario - Elegir otro nombre
+                        OutlinedButton(
+                            onClick = {
+                                // Simplemente cerrar el diálogo para que el usuario cambie el nombre
+                                showNameConflictDialog = false
+                            },
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .height(48.dp),
+                            shape = RoundedCornerShape(24.dp),
+                            border = BorderStroke(2.dp, Accent),
+                            colors = ButtonDefaults.outlinedButtonColors(
+                                contentColor = Accent
+                            )
+                        ) {
+                            Text(
+                                "Elegir otro nombre",
+                                fontFamily = Destacado,
+                                fontWeight = FontWeight.SemiBold,
+                                fontSize = 16.sp
+                            )
+                        }
+                    }
+                },
+                dismissButton = null, // Removemos el dismissButton ya que usamos una estructura custom
+                shape = RoundedCornerShape(28.dp),
+                containerColor = Color.White,
+                modifier = Modifier.padding(16.dp)
             )
         }
     }
