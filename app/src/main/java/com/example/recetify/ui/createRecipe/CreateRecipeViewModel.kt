@@ -21,6 +21,12 @@ import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.launch
 import java.io.File
 
+// Enum para las acciones pendientes después de reemplazar receta
+enum class PendingAction {
+    SAVE_DRAFT,
+    PUBLISH
+}
+
 object RecipeRepositoryProvider {
     fun get(context: Application): RecipeRepository {
         val db = DatabaseProvider.getInstance(context)
@@ -79,6 +85,18 @@ class CreateRecipeViewModel(
     // --- Validación de nombre de receta y reemplazo ---
     private val _nameCheckResult = MutableStateFlow<RecipeNameCheckResponse?>(null)
     val nameCheckResult: StateFlow<RecipeNameCheckResponse?> = _nameCheckResult.asStateFlow()
+
+    // Estado para la acción pendiente después de reemplazar receta
+    private val _pendingAction = MutableStateFlow<PendingAction?>(null)
+    val pendingAction: StateFlow<PendingAction?> = _pendingAction.asStateFlow()
+
+    // Estado para los datos del formulario que se deben precargar
+    private val _pendingFormData = MutableStateFlow<RecipeRequest?>(null)
+    val pendingFormData: StateFlow<RecipeRequest?> = _pendingFormData.asStateFlow()
+
+    // Estado para la URI de media que se debe precargar
+    private val _pendingMediaUri = MutableStateFlow<Uri?>(null)
+    val pendingMediaUri: StateFlow<Uri?> = _pendingMediaUri.asStateFlow()
 
     /** Sube foto o vídeo y guarda su URL en `_photoUrl` */
     fun uploadPhoto(file: File) = viewModelScope.launch {
@@ -473,6 +491,69 @@ class CreateRecipeViewModel(
             repo.replaceRecipe(id, req)
         } catch (e: Exception) {
             _error.value = "Error reemplazando receta: ${e.localizedMessage}"
+            null
+        }
+    }
+
+    /**
+     * Establece una acción pendiente y los datos del formulario para ejecutar después de reemplazar una receta
+     */
+    fun setPendingAction(action: PendingAction, formData: RecipeRequest, mediaUri: Uri?) {
+        _pendingAction.value = action
+        _pendingFormData.value = formData
+        _pendingMediaUri.value = mediaUri
+    }
+
+    /**
+     * Ejecuta la acción pendiente en EditRecipeScreen
+     */
+    fun executePendingAction(recipeId: Long) = viewModelScope.launch {
+        val action = _pendingAction.value
+        val formData = _pendingFormData.value
+        val mediaUri = _pendingMediaUri.value
+
+        if (action != null && formData != null) {
+            when (action) {
+                PendingAction.SAVE_DRAFT -> {
+                    syncDraftFull(recipeId, formData, mediaUri)
+                }
+                PendingAction.PUBLISH -> {
+                    syncDraftFullAndPublish(recipeId, formData, mediaUri)
+                }
+            }
+            // Limpiar los datos pendientes después de ejecutar
+            clearPendingAction()
+        }
+    }
+
+    /**
+     * Limpia los datos de la acción pendiente
+     */
+    fun clearPendingAction() {
+        _pendingAction.value = null
+        _pendingFormData.value = null
+        _pendingMediaUri.value = null
+    }
+
+    /**
+     * Reemplaza una receta con los datos del formulario actual y establece una acción pendiente
+     */
+    suspend fun replaceRecipeWithPendingAction(
+        conflictRecipeId: Long,
+        currentFormData: RecipeRequest,
+        pendingAction: PendingAction,
+        mediaUri: Uri?
+    ): RecipeResponse? {
+        return try {
+            // Establecer la acción pendiente antes de reemplazar
+            setPendingAction(pendingAction, currentFormData, mediaUri)
+
+            // Reemplazar la receta con los datos actuales del formulario
+            val replacedRecipe = repo.replaceRecipe(conflictRecipeId, currentFormData)
+            replacedRecipe
+        } catch (e: Exception) {
+            _error.value = "Error reemplazando receta: ${e.localizedMessage}"
+            clearPendingAction() // Limpiar en caso de error
             null
         }
     }

@@ -199,6 +199,8 @@ fun CreateRecipeScreen(
     var showNameConflictDialog by remember { mutableStateOf(false) }
     var nameConflictRecipeId by remember { mutableStateOf<Long?>(null) }
     var nameConflictMessage by remember { mutableStateOf("") }
+    // Variable para rastrear qué acción se quería realizar originalmente
+    var pendingActionType by remember { mutableStateOf<PendingAction?>(null) }
 
     // --- Función para manejar guardar/publicar con validación de nombre ---
     suspend fun handleSaveOrPublish(
@@ -212,6 +214,8 @@ fun CreateRecipeScreen(
         if (check != null && check.exists && check.existingRecipe != null) {
             nameConflictRecipeId = check.existingRecipe.id
             nameConflictMessage = check.message.ifEmpty { "Ya existe una receta con ese nombre." }
+            // Guardar qué acción se quería realizar originalmente
+            pendingActionType = if (isPublish) PendingAction.PUBLISH else PendingAction.SAVE_DRAFT
             showNameConflictDialog = true
         } else {
             if (isPublish) {
@@ -1497,7 +1501,7 @@ fun CreateRecipeScreen(
                                 // Cerrar el diálogo primero
                                 showNameConflictDialog = false
 
-                                // Precargar los datos actuales del formulario en la receta existente
+                                // SOLO reemplazar datos y redirigir, SIN ejecutar acciones
                                 scope.launch {
                                     try {
                                         // Crear el request con los datos actuales del formulario
@@ -1513,15 +1517,15 @@ fun CreateRecipeScreen(
                                             steps       = steps.toList()
                                         )
 
-                                        // Reemplazar la receta existente con los datos del formulario actual
+                                        // SOLO reemplazar los datos sin ejecutar acciones adicionales
                                         val replacedRecipe = viewModel.replaceRecipe(nameConflictRecipeId!!, currentFormData)
 
                                         if (replacedRecipe != null) {
-                                            Toast.makeText(context, "Receta reemplazada exitosamente", Toast.LENGTH_SHORT).show()
-                                            // Navegar a EditRecipeScreen con la receta actualizada
+                                            Toast.makeText(context, "Datos precargados en la receta", Toast.LENGTH_SHORT).show()
+                                            // SOLO navegar a EditRecipeScreen sin ejecutar acciones pendientes
                                             onEditExisting(nameConflictRecipeId!!)
                                         } else {
-                                            Toast.makeText(context, "Error reemplazando la receta", Toast.LENGTH_SHORT).show()
+                                            Toast.makeText(context, "Error precargando datos", Toast.LENGTH_SHORT).show()
                                         }
                                     } catch (e: Exception) {
                                         Toast.makeText(context, "Error: ${e.message}", Toast.LENGTH_SHORT).show()
