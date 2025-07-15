@@ -1491,7 +1491,7 @@ fun CreateRecipeScreen(
                         modifier = Modifier.fillMaxWidth(),
                         verticalArrangement = Arrangement.spacedBy(12.dp)
                     ) {
-                        // Botón primario - Reemplazar receta existente
+                        // Botón 1 - Reemplazar receta
                         Button(
                             onClick = {
                                 // Cerrar el diálogo primero
@@ -1541,7 +1541,7 @@ fun CreateRecipeScreen(
                             )
                         ) {
                             Text(
-                                "Reemplazar receta existente",
+                                "Reemplazar receta",
                                 color = Color.White,
                                 fontFamily = Destacado,
                                 fontWeight = FontWeight.SemiBold,
@@ -1549,11 +1549,12 @@ fun CreateRecipeScreen(
                             )
                         }
 
-                        // Botón secundario - Elegir otro nombre
+                        // Botón 2 - Editar receta existente
                         OutlinedButton(
                             onClick = {
-                                // Simplemente cerrar el diálogo para que el usuario cambie el nombre
+                                // Cerrar el diálogo y navegar directamente a editar la receta existente
                                 showNameConflictDialog = false
+                                onEditExisting(nameConflictRecipeId!!)
                             },
                             modifier = Modifier
                                 .fillMaxWidth()
@@ -1565,9 +1566,32 @@ fun CreateRecipeScreen(
                             )
                         ) {
                             Text(
-                                "Elegir otro nombre",
+                                "Editar receta",
                                 fontFamily = Destacado,
                                 fontWeight = FontWeight.SemiBold,
+                                fontSize = 16.sp
+                            )
+                        }
+
+                        // Botón 3 - Cambiar nombre
+                        OutlinedButton(
+                            onClick = {
+                                // Simplemente cerrar el diálogo para que el usuario cambie el nombre
+                                showNameConflictDialog = false
+                            },
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .height(48.dp),
+                            shape = RoundedCornerShape(24.dp),
+                            border = BorderStroke(1.dp, Color(0xFF9CA3AF)),
+                            colors = ButtonDefaults.outlinedButtonColors(
+                                contentColor = Color(0xFF6B7280)
+                            )
+                        ) {
+                            Text(
+                                "Cambiar nombre",
+                                fontFamily = Destacado,
+                                fontWeight = FontWeight.Medium,
                                 fontSize = 16.sp
                             )
                         }
