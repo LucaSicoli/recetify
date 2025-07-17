@@ -20,6 +20,8 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.text.font.Font
+import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.Dp
@@ -31,6 +33,7 @@ import coil.request.ImageRequest
 import com.example.recetify.data.remote.RetrofitClient
 import com.example.recetify.data.remote.model.SessionManager
 import com.example.recetify.ui.common.LogoutDialog
+import com.example.recetify.ui.home.Destacado
 import com.example.recetify.util.ImageUrlUtils
 import kotlinx.coroutines.launch
 
@@ -195,7 +198,7 @@ fun ProfileScreen(
                 shape  = RoundedCornerShape(8.dp),
                 colors = ButtonDefaults.buttonColors(containerColor = Color.Black)
             ) {
-                Text("Cerrar sesión", color = Color.White)
+                Text("Cerrar sesión", color = Color.White, fontFamily = Destacado)
             }
         }
     }
@@ -229,13 +232,15 @@ private fun StatItem(count: Int, label: String, modifier: Modifier = Modifier) {
     ) {
         Text(
             text  = count.toString(),
-            style = MaterialTheme.typography.titleLarge.copy(fontWeight = FontWeight.Bold)
+            style = MaterialTheme.typography.titleLarge.copy(fontWeight = FontWeight.Bold),
+            fontFamily = Destacado
         )
         Text(
             text      = label,
             style     = MaterialTheme.typography.bodySmall,
             maxLines  = 2,
-            textAlign = TextAlign.Center
+            textAlign = TextAlign.Center,
+            fontFamily = Destacado
         )
     }
 }
@@ -285,8 +290,9 @@ private fun OptionRow(
             Spacer(Modifier.width(16.dp))
             Text(
                 text     = title,
-                style    = MaterialTheme.typography.titleMedium,
-                modifier = Modifier.weight(1f)
+                style    = MaterialTheme.typography.titleMedium.copy(fontWeight = FontWeight.Medium),
+                fontFamily = Destacado,
+                modifier = Modifier.weight(0.5f)
             )
             Icon(
                 imageVector        = Icons.Default.ArrowForwardIos,

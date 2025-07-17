@@ -116,7 +116,8 @@ fun SavedRecipesScreen(
                             Text(
                                 title,
                                 style = MaterialTheme.typography.bodyMedium.copy(fontWeight = FontWeight.Medium),
-                                color = if (selectedTab == i) Color(0xFFCC3366) else Color.Gray
+                                color = if (selectedTab == i) Color(0xFFCC3366) else Color.Gray,
+                                fontFamily = Destacado
                             )
                         }
                     )
@@ -258,7 +259,8 @@ private fun SavedRecipeCard(
                         text     = item.recipeNombre,
                         style    = MaterialTheme.typography.titleLarge,
                         maxLines = 1,
-                        overflow = TextOverflow.Ellipsis
+                        overflow = TextOverflow.Ellipsis,
+                        fontFamily = Destacado
                     )
                     Spacer(Modifier.height(4.dp))
                     Text(

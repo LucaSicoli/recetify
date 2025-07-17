@@ -201,7 +201,8 @@ private fun PublishedRecipeCard(
                         text     = recipe.nombre,
                         style    = MaterialTheme.typography.titleLarge,
                         maxLines = 1,
-                        overflow = TextOverflow.Ellipsis
+                        overflow = TextOverflow.Ellipsis,
+                        fontFamily = Destacado
                     )
                     Spacer(Modifier.height(4.dp))
                     Text(
@@ -228,7 +229,8 @@ private fun PublishedRecipeCard(
                 text = badgeText,
                 style = MaterialTheme.typography.labelSmall.copy(
                     color      = Color.White,
-                    fontWeight = FontWeight.Bold
+                    fontWeight = FontWeight.Bold,
+                    fontFamily = Destacado
                 )
             )
         }

@@ -178,6 +178,7 @@ private fun DraftRecipeCard(
                             maxLines = 1,
                             overflow = TextOverflow.Ellipsis,
                             color    = Color.Black,
+                            fontFamily = Destacado,
                             modifier = Modifier.weight(1f)
                         )
                         IconButton(
@@ -219,7 +220,8 @@ private fun DraftRecipeCard(
                 text = "BORRADOR",
                 style = MaterialTheme.typography.labelSmall.copy(
                     color      = Color.White,
-                    fontWeight = FontWeight.Bold
+                    fontWeight = FontWeight.Bold,
+                    fontFamily = Destacado
                 )
             )
         }
