@@ -206,42 +206,43 @@ fun ReviewsAndCommentSection(
     ) {
         Spacer(Modifier.height(24.dp))
 
-        // ── Encabezado con “Reseñas” + promedio + total ───────────────────────
         Row(
             modifier = Modifier
-                .align(Alignment.CenterHorizontally)
                 .fillMaxWidth()
-                .height(40.dp) // Alto igual a las otras cabeceras
                 .background(
                     color = Color(0xFFF0F0F0),
                     shape = RoundedCornerShape(8.dp)
                 )
-                .padding(horizontal = 16.dp), // Solo padding horizontal, el alto lo da height
+                .defaultMinSize(minHeight = 64.dp)     // al menos 56dp de alto
+                .padding(horizontal = 16.dp),           // sólo padding horizontal
             horizontalArrangement = Arrangement.SpaceBetween,
-            verticalAlignment = Alignment.CenterVertically
+            verticalAlignment   = Alignment.CenterVertically
         ) {
             Text(
                 text = "Reseñas",
                 style = MaterialTheme.typography.titleMedium.copy(
                     fontWeight = FontWeight.Bold,
-                    fontSize = 18.sp
+                    fontSize   = 16.sp
                 ),
-                color = Color.Black,
+                color      = Color.Black,
                 fontFamily = Destacado
             )
             Row(verticalAlignment = Alignment.CenterVertically) {
                 Text(
                     text = String.format("%.1f", averageRating),
-                    style = MaterialTheme.typography.bodyMedium.copy(fontWeight = FontWeight.SemiBold, fontSize = 16.sp),
-                    color = Color.Black,
+                    style = MaterialTheme.typography.bodyMedium.copy(
+                        fontWeight = FontWeight.SemiBold,
+                        fontSize   = 16.sp
+                    ),
+                    color      = Color.Black,
                     fontFamily = Destacado
                 )
                 Spacer(Modifier.width(4.dp))
                 Icon(
                     imageVector = Icons.Default.Star,
                     contentDescription = "Estrella Dorada",
-                    tint = Color(0xFFFFD700),
-                    modifier = Modifier.size(22.dp)
+                    tint         = Color(0xFFFFD700),
+                    modifier     = Modifier.size(22.dp)
                 )
                 Spacer(Modifier.width(4.dp))
                 Text(
@@ -466,8 +467,8 @@ fun RecipeDetailContent(
 
     val screenWidth = LocalConfiguration.current.screenWidthDp
     val pasoFontSize = when {
-        screenWidth < 340 -> 11.sp
-        screenWidth < 400 -> 12.sp
+        screenWidth < 340 -> 13.sp
+        screenWidth < 400 -> 16.sp
         else -> 14.sp
         }
 
@@ -837,7 +838,7 @@ fun RecipeDetailContent(
                                 text = "Ingredientes",
                                 style = MaterialTheme.typography.titleMedium.copy(
                                     fontWeight = FontWeight.Bold,
-                                    fontSize   = 18.sp
+                                    fontSize   = 16.sp
                                 ),
                                 color      = primaryTextColor,
                                 fontFamily = Destacado
@@ -848,7 +849,7 @@ fun RecipeDetailContent(
                                     fontWeight = FontWeight.SemiBold,
                                     fontSize   = 16.sp
                                 ),
-                                color      = primaryTextColor,
+                                color = Color.Gray,
                                 fontFamily = Destacado
                             )
                         }
