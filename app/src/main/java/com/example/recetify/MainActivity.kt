@@ -80,240 +80,256 @@ fun AppNavGraph() {
     var offline by rememberSaveable { mutableStateOf(!isOnline) }
     LaunchedEffect(isOnline) { offline = !isOnline }
 
+    var showLoading by rememberSaveable { mutableStateOf(false) }
+    var pendingRoute by rememberSaveable { mutableStateOf<String?>(null) }
+
     Box(Modifier.fillMaxSize()) {
-        NavHost(navController, startDestination = "login") {
+        if (showLoading && pendingRoute != null) {
+            com.example.recetify.ui.common.LoadingScreen()
+            LaunchedEffect(pendingRoute) {
+                kotlinx.coroutines.delay(1000) // Cambiado a 1 segundo
+                showLoading = false
+                pendingRoute?.let { navController.navigate(it) {
+                    popUpTo(navController.graph.startDestinationId)
+                    launchSingleTop = true
+                } }
+                pendingRoute = null
+            }
+        } else {
+            NavHost(navController, startDestination = "login") {
 
-            // 1) Login / Visitor
-            composable("login") {
-                LoginScreen(
-                    viewModel      = viewModel<LoginViewModel>(),
-                    onLoginSuccess = { token, email ->
-                        scope.launch {
-                            // ahora pasamos también el email:
-                            SessionManager.setAlumno(context, token, email)
-                            navController.navigate("home") {
-                                popUpTo("login") { inclusive = true }
+                // 1) Login / Visitor
+                composable("login") {
+                    LoginScreen(
+                        viewModel      = viewModel<LoginViewModel>(),
+                        onLoginSuccess = { token, email ->
+                            scope.launch {
+                                // ahora pasamos también el email:
+                                SessionManager.setAlumno(context, token, email)
+                                navController.navigate("home") {
+                                    popUpTo("login") { inclusive = true }
                             }
-                        }
-                    },
-                    onVisitor = {
-                        scope.launch {
-                            navController.navigate("home") {
-                                popUpTo("login") { inclusive = true }
                             }
-                        }
-                    },
-                    onForgot  = { navController.navigate("forgot") }
-                )
-            }
-
-            // 2) Password reset flow
-            composable("forgot") {
-                ForgotPasswordScreen(
-                    navController = navController,
-                    viewModel = passwordVm,
-                    onNext    = { navController.navigate("verify") },
-                )
-            }
-            composable("verify") {
-                VerifyCodeScreen(
-                    viewModel = passwordVm,
-                    onNext    = { navController.navigate("reset") },
-                    navController = navController
-                )
-            }
-            composable("reset") {
-                ResetPasswordScreen(
-                    viewModel = passwordVm,
-                    onFinish  = {
-                        navController.navigate("login?passwordChanged=1") {
-                            popUpTo("forgot") { inclusive = true }
-                        }
-                    },
-                    navController = navController
-                )
-            }
-
-            // 3) Home & Detail
-            composable("home") {
-                if (!isLoggedIn) {
-                    LaunchedEffect(Unit) {
-                        navController.navigate("login") {
-                            popUpTo("home") { inclusive = true }
-                        }
-                    }
-                } else {
-                    // IMPORTANTE: pasar por nombre
-                    HomeScreen(navController = navController)
-                }
-            }
-
-            composable("search") {
-                SearchScreen(navController = navController)
-            }
-
-
-            composable(
-                route = "recipe/{id}?photo={photo}",
-                arguments = listOf(
-                    navArgument("id")   { type = NavType.LongType },
-                    navArgument("photo"){ type = NavType.StringType; defaultValue = "" }
-                )
-            ) { back ->
-                val id    = back.arguments!!.getLong("id")
-                // decodificamos la URL si vino no vacía
-                val photo = back.arguments!!
-                    .getString("photo")
-                    ?.takeIf(String::isNotBlank)
-                    ?.let { java.net.URLDecoder.decode(it, "UTF-8") }
-
-                RecipeDetailScreen(
-                    recipeId        = id,
-                    profilePhotoUrl = photo,              // ← aquí le pasamos la foto
-                    navController   = navController
-                )
-            }
-
-            // 4) Create Recipe
-            composable("createRecipe") {
-                val vm: CreateRecipeViewModel = viewModel(
-                    factory = CreateRecipeViewModelFactory(
-                        context.applicationContext as Application
+                        },
+                        onVisitor = {
+                            scope.launch {
+                                navController.navigate("home") {
+                                    popUpTo("login") { inclusive = true }
+                            }
+                            }
+                        },
+                        onForgot  = { navController.navigate("forgot") }
                     )
-                )
-                CreateRecipeScreen(
-                    viewModel   = vm,
-                    onClose     = { navController.popBackStack() },
-                    onSaved     = { navController.navigate("drafts") },
-                    onPublished = { navController.navigate("myRecipes") },
-                    onEditExisting = { existingRecipeId ->
-                        // Navegar a EditRecipeScreen con la receta existente
-                        navController.navigate("editRecipe/$existingRecipeId") {
-                            // Limpiar el stack para evitar volver a crear receta
-                            popUpTo("createRecipe") { inclusive = true }
-                        }
-                    }
-                )
-            }
-            composable("editRecipe/{recipeId}") { backStack ->
-                val recipeId = backStack.arguments
-                    ?.getString("recipeId")
-                    ?.toLongOrNull() ?: return@composable
-
-                // Usamos el mismo ViewModel de creación, inyectado igual que en Create
-                val vm: CreateRecipeViewModel =
-                    viewModel(factory = CreateRecipeViewModelFactory(
-                        LocalContext.current.applicationContext as Application
-                    ))
-
-                EditRecipeScreen(
-                    recipeId    = recipeId,
-                    viewModel   = vm,
-                    onClose     = { navController.popBackStack() },
-                    onSaved     = {
-                        // 1) recarga borradores
-                        draftVm.refresh()
-                        // 2) recarga publicadas
-                        myRecipesVm.refresh()
-                        // 3) volvemos atrás
-                        navController.navigate("profile") {
-                            popUpTo("profile") { inclusive = false }
-                        }
-                    },
-                    onPublished = {
-                        draftVm.refresh()
-                        myRecipesVm.refresh()
-                        navController.navigate("profile") {
-                            popUpTo("profile") { inclusive = false }
-                        }
-                    }
-                )
-            }
-
-            // 5) Profile flow
-            composable("profile") {
-                // 1) observa la entrada actual del NavController:
-                val backStackEntry by navController.currentBackStackEntryAsState()
-                // 2) siempre que cambie (o sea, vuelvas aquí), recarga TODOS tus VMs:
-                LaunchedEffect(backStackEntry) {
-                    draftVm.refresh()
-                    favVm.loadFavourites()
-                    myRecipesVm.refresh()
-                    reviewCountVm.loadCount()
                 }
-                ProfileScreen(
-                    navController   = navController,
-                    draftVm         = draftVm,
-                    favVm           = favVm,
-                    myRecipesVm     = myRecipesVm,
-                    reviewCountVm   = reviewCountVm
-                )
-            }
-            // endpoints para tus pantallas de perfil
-            composable("drafts") {
-                DraftsScreen(
-                    draftVm = draftVm,
-                    onDraftClick = { id ->
+
+                // 2) Password reset flow
+                composable("forgot") {
+                    ForgotPasswordScreen(
+                        navController = navController,
+                        viewModel = passwordVm,
+                        onNext    = { navController.navigate("verify") },
+                    )
+                }
+                composable("verify") {
+                    VerifyCodeScreen(
+                        viewModel = passwordVm,
+                        onNext    = { navController.navigate("reset") },
+                        navController = navController
+                    )
+                }
+                composable("reset") {
+                    ResetPasswordScreen(
+                        viewModel = passwordVm,
+                        onFinish  = {
+                            navController.navigate("login?passwordChanged=1") {
+                                popUpTo("forgot") { inclusive = true }
+                            }
+                        },
+                        navController = navController
+                    )
+                }
+
+                // 3) Home & Detail
+                composable("home") {
+                    if (!isLoggedIn) {
+                        LaunchedEffect(Unit) {
+                            navController.navigate("login") {
+                                popUpTo("home") { inclusive = true }
+                            }
+                        }
+                    } else {
+                        // IMPORTANTE: pasar por nombre
+                        HomeScreen(navController = navController)
+                    }
+                }
+
+                composable("search") {
+                    SearchScreen(navController = navController)
+                }
+
+
+                composable(
+                    route = "recipe/{id}?photo={photo}",
+                    arguments = listOf(
+                        navArgument("id")   { type = NavType.LongType },
+                        navArgument("photo"){ type = NavType.StringType; defaultValue = "" }
+                    )
+                ) { back ->
+                    val id    = back.arguments!!.getLong("id")
+                    // decodificamos la URL si vino no vacía
+                    val photo = back.arguments!!
+                        .getString("photo")
+                        ?.takeIf(String::isNotBlank)
+                        ?.let { java.net.URLDecoder.decode(it, "UTF-8") }
+
+                    RecipeDetailScreen(
+                        recipeId        = id,
+                        profilePhotoUrl = photo,              // ← aquí le pasamos la foto
+                        navController   = navController
+                    )
+                }
+
+                // 4) Create Recipe
+                composable("createRecipe") {
+                    val vm: CreateRecipeViewModel = viewModel(
+                        factory = CreateRecipeViewModelFactory(
+                            context.applicationContext as Application
+                        )
+                    )
+                    CreateRecipeScreen(
+                        viewModel   = vm,
+                        onClose     = { navController.popBackStack() },
+                        onSaved     = { navController.navigate("drafts") },
+                        onPublished = { navController.navigate("myRecipes") },
+                        onEditExisting = { existingRecipeId ->
+                            // Navegar a EditRecipeScreen con la receta existente
+                            navController.navigate("editRecipe/$existingRecipeId") {
+                                // Limpiar el stack para evitar volver a crear receta
+                                popUpTo("createRecipe") { inclusive = true }
+                            }
+                        }
+                    )
+                }
+                composable("editRecipe/{recipeId}") { backStack ->
+                    val recipeId = backStack.arguments
+                        ?.getString("recipeId")
+                        ?.toLongOrNull() ?: return@composable
+
+                    // Usamos el mismo ViewModel de creación, inyectado igual que en Create
+                    val vm: CreateRecipeViewModel =
+                        viewModel(factory = CreateRecipeViewModelFactory(
+                            LocalContext.current.applicationContext as Application
+                        ))
+
+                    EditRecipeScreen(
+                        recipeId    = recipeId,
+                        viewModel   = vm,
+                        onClose     = { navController.popBackStack() },
+                        onSaved     = {
+                            // 1) recarga borradores
+                            draftVm.refresh()
+                            // 2) recarga publicadas
+                            myRecipesVm.refresh()
+                            // 3) volvemos atrás
+                            navController.navigate("profile") {
+                                popUpTo("profile") { inclusive = false }
+                            }
+                        },
+                        onPublished = {
+                            draftVm.refresh()
+                            myRecipesVm.refresh()
+                            navController.navigate("profile") {
+                                popUpTo("profile") { inclusive = false }
+                            }
+                        }
+                    )
+                }
+
+                // 5) Profile flow
+                composable("profile") {
+                    // 1) observa la entrada actual del NavController:
+                    val backStackEntry by navController.currentBackStackEntryAsState()
+                    // 2) siempre que cambie (o sea, vuelvas aquí), recarga TODOS tus VMs:
+                    LaunchedEffect(backStackEntry) {
+                        draftVm.refresh()
+                        favVm.loadFavourites()
+                        myRecipesVm.refresh()
+                        reviewCountVm.loadCount()
+                    }
+                    ProfileScreen(
+                        navController   = navController,
+                        draftVm         = draftVm,
+                        favVm           = favVm,
+                        myRecipesVm     = myRecipesVm,
+                        reviewCountVm   = reviewCountVm
+                    )
+                }
+                // endpoints para tus pantallas de perfil
+                composable("drafts") {
+                    DraftsScreen(
+                        draftVm = draftVm,
+                        onDraftClick = { id ->
+                            navController.navigate("editRecipe/$id")
+                        }
+                    )
+                }
+                composable("saved") {
+                    SavedRecipesScreen(
+                        onRecipeClick = { id ->
+                            navController.navigate("recipe/$id")
+                        },
+                        onLocalRecipeClick = { localId ->
+                            navController.navigate("localRecipe/$localId")
+                        }
+                    )
+                }
+
+                composable(
+                    "localRecipe/{id}",
+                    arguments = listOf(navArgument("id") { type = NavType.LongType })
+                ) { backStackEntry ->
+                    val id = backStackEntry.arguments?.getLong("id") ?: return@composable
+                    // Aquí faltaba el navController
+                    LocalRecipeDetailScreen(
+                        localRecipeId = id,
+                        navController = navController   // ← pásalo aquí
+                    )
+                }
+
+                composable("myRecipes") {
+                    MyRecipesScreen(onRecipeClick = { id ->
                         navController.navigate("editRecipe/$id")
-                    }
-                )
-            }
-            composable("saved") {
-                SavedRecipesScreen(
-                    onRecipeClick = { id ->
-                        navController.navigate("recipe/$id")
-                    },
-                    onLocalRecipeClick = { localId ->
-                        navController.navigate("localRecipe/$localId")
-                    }
-                )
-            }
+                    })
+                }
+                composable("profileInfo") {
+                    ProfileInfoScreen(navController = navController)
+                }
 
-            composable(
-                "localRecipe/{id}",
-                arguments = listOf(navArgument("id") { type = NavType.LongType })
-            ) { backStackEntry ->
-                val id = backStackEntry.arguments?.getLong("id") ?: return@composable
-                // Aquí faltaba el navController
-                LocalRecipeDetailScreen(
-                    localRecipeId = id,
-                    navController = navController   // ← pásalo aquí
-                )
-            }
-
-            composable("myRecipes") {
-                MyRecipesScreen(onRecipeClick = { id ->
-                    navController.navigate("editRecipe/$id")
-                })
-            }
-            composable("profileInfo") {
-                ProfileInfoScreen(navController = navController)
-            }
-
-            composable("login?passwordChanged={passwordChanged}", arguments = listOf(
-                navArgument("passwordChanged") { type = NavType.StringType; defaultValue = "0" }
-            )) { backStackEntry ->
-                val passwordChanged = backStackEntry.arguments?.getString("passwordChanged") == "1"
-                LoginScreen(
-                    viewModel      = viewModel<LoginViewModel>(),
-                    onLoginSuccess = { token, email ->
-                        scope.launch {
-                            SessionManager.setAlumno(context, token, email)
-                            navController.navigate("home") {
-                                popUpTo("login") { inclusive = true }
+                composable("login?passwordChanged={passwordChanged}", arguments = listOf(
+                    navArgument("passwordChanged") { type = NavType.StringType; defaultValue = "0" }
+                )) { backStackEntry ->
+                    val passwordChanged = backStackEntry.arguments?.getString("passwordChanged") == "1"
+                    LoginScreen(
+                        viewModel      = viewModel<LoginViewModel>(),
+                        onLoginSuccess = { token, email ->
+                            scope.launch {
+                                SessionManager.setAlumno(context, token, email)
+                                navController.navigate("home") {
+                                    popUpTo("login") { inclusive = true }
                             }
-                        }
-                    },
-                    onVisitor = {
-                        scope.launch {
-                            navController.navigate("home") {
-                                popUpTo("login") { inclusive = true }
                             }
-                        }
-                    },
-                    onForgot  = { navController.navigate("forgot") },
-                    passwordChanged = passwordChanged
-                )
+                        },
+                        onVisitor = {
+                            scope.launch {
+                                navController.navigate("home") {
+                                    popUpTo("login") { inclusive = true }
+                            }
+                            }
+                        },
+                        onForgot  = { navController.navigate("forgot") },
+                        passwordChanged = passwordChanged
+                    )
+                }
             }
         }
 
@@ -333,9 +349,17 @@ fun AppNavGraph() {
                     )
         ) {
             Box(Modifier.align(Alignment.BottomCenter)) {
-                BottomNavBar(navController, isAlumno)
+                BottomNavBar(
+                    navController = navController,
+                    isAlumno = isAlumno,
+                    onNavWithLoading = { destRoute ->
+                        showLoading = true
+                        pendingRoute = destRoute
+                    }
+                )
             }
         }
+
 
         // Overlay "Sin conexión"
         if (offline) {

@@ -21,7 +21,8 @@ import kotlinx.coroutines.launch
 @Composable
 fun BottomNavBar(
     navController: NavController,
-    isAlumno: Boolean
+    isAlumno: Boolean,
+    onNavWithLoading: ((String) -> Unit)? = null
 ) {
     val context = LocalContext.current
     val scope = rememberCoroutineScope()
@@ -77,12 +78,15 @@ fun BottomNavBar(
                         selected = currentRoute == item.route,
                         onClick = {
                             if (item == NavItem.Logout) {
-                                // Mostrar el LogoutDialog reutilizable en lugar de navegar directamente
                                 showLogoutDialog = true
                             } else if (currentRoute != item.route) {
-                                navController.navigate(item.route) {
-                                    popUpTo(navController.graph.startDestinationId)
-                                    launchSingleTop = true
+                                if (onNavWithLoading != null && item != NavItem.Logout) {
+                                    onNavWithLoading(item.route)
+                                } else {
+                                    navController.navigate(item.route) {
+                                        popUpTo(navController.graph.startDestinationId)
+                                        launchSingleTop = true
+                                    }
                                 }
                             }
                         },
@@ -98,9 +102,13 @@ fun BottomNavBar(
             FloatingActionButton(
                 onClick = {
                     if (currentRoute != NavItem.Chef.route) {
-                        navController.navigate(NavItem.Chef.route) {
-                            popUpTo(navController.graph.startDestinationId)
-                            launchSingleTop = true
+                        if (onNavWithLoading != null) {
+                            onNavWithLoading(NavItem.Chef.route)
+                        } else {
+                            navController.navigate(NavItem.Chef.route) {
+                                popUpTo(navController.graph.startDestinationId)
+                                launchSingleTop = true
+                            }
                         }
                     }
                 },
