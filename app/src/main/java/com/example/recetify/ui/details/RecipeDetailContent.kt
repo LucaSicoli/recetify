@@ -207,31 +207,34 @@ fun ReviewsAndCommentSection(
         Spacer(Modifier.height(24.dp))
 
         // ── Encabezado con “Reseñas” + promedio + total ───────────────────────
-        Box(
+        Row(
             modifier = Modifier
+                .align(Alignment.CenterHorizontally)
                 .fillMaxWidth()
+                .height(40.dp) // Alto igual a las otras cabeceras
                 .background(
-                    color = Color(0xFFF0F0F0), // gris sutil
+                    color = Color(0xFFF0F0F0),
                     shape = RoundedCornerShape(8.dp)
                 )
-                .padding(vertical = 12.dp, horizontal = 16.dp)
-                .align(Alignment.CenterHorizontally)
+                .padding(horizontal = 16.dp), // Solo padding horizontal, el alto lo da height
+            horizontalArrangement = Arrangement.SpaceBetween,
+            verticalAlignment = Alignment.CenterVertically
         ) {
-            Row(
-                modifier = Modifier.fillMaxWidth(),
-                verticalAlignment = Alignment.CenterVertically
-            ) {
-                Text(
-                    text = "Reseñas",
-                    style = MaterialTheme.typography.titleMedium.copy(fontWeight = FontWeight.Bold, fontSize = 18.sp),
-                    color = Color.Black,
-                    fontFamily = Destacado,
-                )
-                Spacer(Modifier.weight(1f))
+            Text(
+                text = "Reseñas",
+                style = MaterialTheme.typography.titleMedium.copy(
+                    fontWeight = FontWeight.Bold,
+                    fontSize = 18.sp
+                ),
+                color = Color.Black,
+                fontFamily = Destacado
+            )
+            Row(verticalAlignment = Alignment.CenterVertically) {
                 Text(
                     text = String.format("%.1f", averageRating),
                     style = MaterialTheme.typography.bodyMedium.copy(fontWeight = FontWeight.SemiBold, fontSize = 16.sp),
-                    color = Color.Black
+                    color = Color.Black,
+                    fontFamily = Destacado
                 )
                 Spacer(Modifier.width(4.dp))
                 Icon(
@@ -243,7 +246,7 @@ fun ReviewsAndCommentSection(
                 Spacer(Modifier.width(4.dp))
                 Text(
                     text = "(${ratings.size} reseñas)",
-                    style = MaterialTheme.typography.bodySmall, fontSize = 16.sp,
+                    style = MaterialTheme.typography.bodySmall.copy(fontSize = 16.sp),
                     color = Color.Gray,
                     fontFamily = Destacado
                 )
@@ -817,14 +820,16 @@ fun RecipeDetailContent(
                         Row(
                             modifier = Modifier
                                 .align(Alignment.CenterHorizontally)
-                                .fillMaxWidth(0.9f)
+                                .fillMaxWidth() // Cambiado de fillMaxWidth(0.9f) a fillMaxWidth()
                                 // 1) fondo gris claro y esquinas redondeadas
                                 .background(
                                     color = Color(0xFFF0F0F0),
                                     shape = RoundedCornerShape(8.dp)
                                 )
                                 // 2) padding interno para separar del borde
-                                .padding(horizontal = 16.dp, vertical = 8.dp),
+                                .padding(horizontal = 16.dp, vertical = 12.dp) // Cambiado vertical de 8.dp a 12.dp
+                                // Igualar altura a la cabecera de instrucciones (selector de pasos)
+                                .height(40.dp),
                             horizontalArrangement = Arrangement.SpaceBetween,
                             verticalAlignment   = Alignment.CenterVertically
                         ) {
