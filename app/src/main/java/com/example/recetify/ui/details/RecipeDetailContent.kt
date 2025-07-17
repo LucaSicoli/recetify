@@ -207,39 +207,47 @@ fun ReviewsAndCommentSection(
         Spacer(Modifier.height(24.dp))
 
         // ── Encabezado con “Reseñas” + promedio + total ───────────────────────
-        Row(
+        Box(
             modifier = Modifier
+                .fillMaxWidth()
+                .background(
+                    color = Color(0xFFF0F0F0), // gris sutil
+                    shape = RoundedCornerShape(8.dp)
+                )
+                .padding(vertical = 12.dp, horizontal = 16.dp)
                 .align(Alignment.CenterHorizontally)
-                .fillMaxWidth(0.9f)
-                .padding(top = 16.dp, bottom = 8.dp),
-            verticalAlignment = Alignment.CenterVertically
         ) {
-            Text(
-                text = "Reseñas",
-                style = MaterialTheme.typography.titleMedium.copy(fontWeight = FontWeight.Bold, fontSize = 18.sp),
-                color = Color.Black,
-                fontFamily = Destacado,
-            )
-            Spacer(Modifier.weight(1f))
-            Text(
-                text = String.format("%.1f", averageRating),
-                style = MaterialTheme.typography.bodyMedium.copy(fontWeight = FontWeight.SemiBold, fontSize = 16.sp),
-                color = Color.Black
-            )
-            Spacer(Modifier.width(4.dp))
-            Icon(
-                imageVector = Icons.Default.Star,
-                contentDescription = "Estrella Dorada",
-                tint = Color(0xFFFFD700),
-                modifier = Modifier.size(22.dp)
-            )
-            Spacer(Modifier.width(4.dp))
-            Text(
-                text = "(${ratings.size} reseñas)",
-                style = MaterialTheme.typography.bodySmall, fontSize = 16.sp,
-                color = Color.Gray,
-                fontFamily = Destacado
-            )
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+                Text(
+                    text = "Reseñas",
+                    style = MaterialTheme.typography.titleMedium.copy(fontWeight = FontWeight.Bold, fontSize = 18.sp),
+                    color = Color.Black,
+                    fontFamily = Destacado,
+                )
+                Spacer(Modifier.weight(1f))
+                Text(
+                    text = String.format("%.1f", averageRating),
+                    style = MaterialTheme.typography.bodyMedium.copy(fontWeight = FontWeight.SemiBold, fontSize = 16.sp),
+                    color = Color.Black
+                )
+                Spacer(Modifier.width(4.dp))
+                Icon(
+                    imageVector = Icons.Default.Star,
+                    contentDescription = "Estrella Dorada",
+                    tint = Color(0xFFFFD700),
+                    modifier = Modifier.size(22.dp)
+                )
+                Spacer(Modifier.width(4.dp))
+                Text(
+                    text = "(${ratings.size} reseñas)",
+                    style = MaterialTheme.typography.bodySmall, fontSize = 16.sp,
+                    color = Color.Gray,
+                    fontFamily = Destacado
+                )
+            }
         }
 
         // ── Lista de reseñas (hasta 2 si no expandido) ────────────────────────
@@ -824,7 +832,7 @@ fun RecipeDetailContent(
                                 text = "Ingredientes",
                                 style = MaterialTheme.typography.titleMedium.copy(
                                     fontWeight = FontWeight.Bold,
-                                    fontSize   = 18.sp                // mismo tamaño que en reseñas
+                                    fontSize   = 18.sp
                                 ),
                                 color      = primaryTextColor,
                                 fontFamily = Destacado
@@ -833,7 +841,7 @@ fun RecipeDetailContent(
                                 text = "(${receta.ingredients.size} Items)",
                                 style = MaterialTheme.typography.bodyMedium.copy(
                                     fontWeight = FontWeight.SemiBold,
-                                    fontSize   = 16.sp                // igual que en “(n reseñas)”
+                                    fontSize   = 16.sp
                                 ),
                                 color      = primaryTextColor,
                                 fontFamily = Destacado
