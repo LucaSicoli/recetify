@@ -467,9 +467,9 @@ fun RecipeDetailContent(
 
     val screenWidth = LocalConfiguration.current.screenWidthDp
     val pasoFontSize = when {
-        screenWidth < 340 -> 13.sp
+        screenWidth < 340 -> 16.sp
         screenWidth < 400 -> 16.sp
-        else -> 14.sp
+        else -> 16.sp
         }
 
     val snackbarHostState = remember { SnackbarHostState() }
