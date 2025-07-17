@@ -1068,7 +1068,7 @@ fun RecipeDetailContent(
                                             if (path.startsWith("/")) "$baseUrl$path" else path
                                         }
                                         val pagerState = rememberPagerState()
-                                        val coroutineScope = rememberCoroutineScope()
+                                        // val coroutineScope = rememberCoroutineScope() // Ya no se usa
                                         Box(
                                             modifier = Modifier
                                                 .fillMaxWidth()
@@ -1102,30 +1102,7 @@ fun RecipeDetailContent(
                                                 activeColor = Color(0xFFBC6154),
                                                 inactiveColor = Color.LightGray
                                             )
-                                            if (mediaList.size > 1) {
-                                                IconButton(
-                                                    onClick = {
-                                                        val prev = if (pagerState.currentPage == 0) mediaList.lastIndex else pagerState.currentPage - 1
-                                                        coroutineScope.launch {
-                                                            pagerState.animateScrollToPage(prev)
-                                                        }
-                                                    },
-                                                    modifier = Modifier.align(Alignment.CenterStart)
-                                                ) {
-                                                    Icon(Icons.Default.ArrowBack, contentDescription = "Anterior", tint = Color.Black)
-                                                }
-                                                IconButton(
-                                                    onClick = {
-                                                        val next = (pagerState.currentPage + 1) % mediaList.size
-                                                        coroutineScope.launch {
-                                                            pagerState.animateScrollToPage(next)
-                                                        }
-                                                    },
-                                                    modifier = Modifier.align(Alignment.CenterEnd)
-                                                ) {
-                                                    Icon(Icons.Default.ArrowForward, contentDescription = "Siguiente", tint = Color.Black)
-                                                }
-                                            }
+                                            // Flechas eliminadas: ya no hay IconButton para avanzar/retroceder
                                         }
                                     }
                                 }
