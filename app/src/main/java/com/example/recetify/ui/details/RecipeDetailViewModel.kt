@@ -31,6 +31,13 @@ class RecipeDetailViewModel(app: Application) : AndroidViewModel(app) {
     var loading by mutableStateOf(true)
         private set
 
+    // Estado para manejar la confirmación del comentario
+    var commentSubmitted by mutableStateOf(false)
+        private set
+
+    var commentError by mutableStateOf<String?>(null)
+        private set
+
     /** Carga la receta (y sus ratings) desde Repo (red ↔ caché) */
     fun fetchRecipe(recipeId: Long) {
         loading = true
@@ -46,9 +53,22 @@ class RecipeDetailViewModel(app: Application) : AndroidViewModel(app) {
     /** Publicar un rating y recargar detalle */
     fun postRating(recipeId: Long, comentario: String, puntos: Int) {
         viewModelScope.launch {
-            RetrofitClient.api.addRating(CreateRatingRequest(recipeId, comentario, puntos))
-            fetchRecipe(recipeId)
+            try {
+                commentError = null
+                RetrofitClient.api.addRating(CreateRatingRequest(recipeId, comentario, puntos))
+                commentSubmitted = true
+                // Recargar los datos para obtener los comentarios actualizados
+                fetchRecipe(recipeId)
+            } catch (e: Exception) {
+                commentError = "Error al enviar el comentario: ${e.message}"
+            }
         }
+    }
+
+    // Función para resetear el estado de confirmación
+    fun resetCommentSubmitted() {
+        commentSubmitted = false
+        commentError = null
     }
 
     /**

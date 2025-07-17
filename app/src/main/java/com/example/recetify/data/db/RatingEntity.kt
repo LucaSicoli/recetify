@@ -25,5 +25,6 @@ data class RatingEntity(
     val userAlias: String,
     val puntos: Int,
     val comentario: String,
-    val fecha: String
+    val fecha: String,
+    val estadoAprobacion: String = "PENDIENTE" // Nuevo campo para el estado de aprobación
 )

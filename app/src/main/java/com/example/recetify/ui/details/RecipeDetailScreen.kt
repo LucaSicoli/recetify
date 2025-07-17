@@ -17,6 +17,7 @@ import com.example.recetify.data.remote.model.toRatingResponse
 import com.example.recetify.ui.navigation.BottomNavBar
 import com.example.recetify.ui.profile.CustomTasteViewModel
 import com.example.recetify.ui.profile.FavouriteViewModel
+import kotlinx.coroutines.launch
 
 @Composable
 fun RecipeDetailScreen(
@@ -37,9 +38,42 @@ fun RecipeDetailScreen(
         .isAlumnoFlow(context)
         .collectAsState(initial = false)
 
+    // Estados del comentario
+    val commentSubmitted = viewModel.commentSubmitted
+    val commentError = viewModel.commentError
+
     // Observamos la lista de guardados y calculamos si esta receta está guardada
     val savedList by favVm.favourites.collectAsState()
     val isFav = remember(savedList) { savedList.any { it.recipeId == recipeId } }
+
+    // Snackbar para mostrar mensajes
+    val snackbarHostState = remember { SnackbarHostState() }
+    val scope = rememberCoroutineScope()
+
+    // Efectos para mostrar mensajes de confirmación
+    LaunchedEffect(commentSubmitted) {
+        if (commentSubmitted) {
+            scope.launch {
+                snackbarHostState.showSnackbar(
+                    message = "¡Comentario enviado! Será visible una vez aprobado por la empresa.",
+                    duration = SnackbarDuration.Long
+                )
+                viewModel.resetCommentSubmitted()
+            }
+        }
+    }
+
+    LaunchedEffect(commentError) {
+        commentError?.let { error ->
+            scope.launch {
+                snackbarHostState.showSnackbar(
+                    message = error,
+                    duration = SnackbarDuration.Short
+                )
+                viewModel.resetCommentSubmitted()
+            }
+        }
+    }
 
     LaunchedEffect(recipeId) {
         viewModel.fetchRecipe(recipeId)
@@ -48,7 +82,15 @@ fun RecipeDetailScreen(
 
     Scaffold(
         bottomBar = { BottomNavBar(navController, isAlumno) },
-        containerColor = Color.White
+        containerColor = Color.White,
+        snackbarHost = {
+            SnackbarHost(
+                hostState = snackbarHostState,
+                snackbar = { snackbarData ->
+                    CustomSnackbar(snackbarData = snackbarData)
+                }
+            )
+        }
     ) { padding ->
         Box(
             modifier = Modifier

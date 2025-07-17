@@ -42,7 +42,8 @@ fun RatingResponse.toEntity(recipeId: Long): RatingEntity =
         userAlias  = userAlias,
         puntos     = puntos,
         comentario = comentario,
-        fecha      = fecha
+        fecha      = fecha,
+        estadoAprobacion = estadoAprobacion ?: "PENDIENTE" // Usar valor por defecto si es null
     )
 
 // ── Room → Remoto / UI ─────────────────────────────────────────
@@ -96,7 +97,8 @@ fun RatingEntity.toRatingResponse(): RatingResponse =
         userAlias  = userAlias,
         puntos     = puntos,
         comentario = comentario,
-        fecha      = fecha
+        fecha      = fecha,
+        estadoAprobacion = estadoAprobacion // Ya no es null en RatingEntity
     )
 
 /** UserCustomRecipeDTO ➜ RecipeResponse (alias sin @) */

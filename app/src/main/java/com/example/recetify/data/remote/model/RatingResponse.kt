@@ -5,5 +5,6 @@ data class RatingResponse(
     val userAlias: String,
     val puntos: Int,
     val comentario: String,
-    val fecha: String
+    val fecha: String,
+    val estadoAprobacion: String? = "PENDIENTE" // Hacer nullable para compatibilidad con datos antiguos
 )
