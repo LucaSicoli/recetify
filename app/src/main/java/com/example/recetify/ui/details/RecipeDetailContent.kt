@@ -110,7 +110,9 @@ import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.animation.core.*
 
 import androidx.compose.foundation.layout.BoxScope
+import androidx.compose.material.icons.filled.Add
 import androidx.compose.material.icons.filled.ArrowForward
+import androidx.compose.material.icons.filled.Remove
 import androidx.compose.runtime.LaunchedEffect
 import com.google.accompanist.pager.HorizontalPager
 import com.google.accompanist.pager.rememberPagerState
@@ -806,11 +808,17 @@ fun RecipeDetailContent(
                         // Ingredientes
                         Row(
                             modifier = Modifier
-                                .align(Alignment.CenterHorizontally)    // centra todo el Row
-                                .fillMaxWidth(0.9f)                     // ocupa el 90% del ancho
-                                .padding(vertical = 8.dp),              // un poco de espacio arriba/abajo
+                                .align(Alignment.CenterHorizontally)
+                                .fillMaxWidth(0.9f)
+                                // 1) fondo gris claro y esquinas redondeadas
+                                .background(
+                                    color = Color(0xFFF0F0F0),
+                                    shape = RoundedCornerShape(8.dp)
+                                )
+                                // 2) padding interno para separar del borde
+                                .padding(horizontal = 16.dp, vertical = 8.dp),
                             horizontalArrangement = Arrangement.SpaceBetween,
-                            verticalAlignment = Alignment.CenterVertically
+                            verticalAlignment   = Alignment.CenterVertically
                         ) {
                             Text(
                                 text = "Ingredientes",
@@ -887,208 +895,223 @@ fun RecipeDetailContent(
                         }
                     } else {
                         // Instrucciones paso a paso
-                        Text(
-                            text = "Instrucciones",
-                            style = MaterialTheme.typography.titleMedium,
-                            color = primaryTextColor,
-                            fontFamily = Destacado
-                        )
-                        Spacer(Modifier.height(12.dp))
-
                         val pasos = receta.steps.sortedBy { it.numeroPaso }
                         val lastIndex = pasos.lastIndex
-
-                        // Solo mostrar navegación si hay más de un paso
                         val mostrarNavegacion = pasos.size > 1
+
+                        // Selector de pasos arriba del card, igual que en CreateRecipeScreen
+                        if (pasos.isNotEmpty()) {
+                            Row(
+                                modifier = Modifier
+                                    .fillMaxWidth()
+                                    // primero pones el fondo con esquinas redondeadas
+                                    .background(
+                                        color = Color(0xFFF0F0F0),
+                                        shape = RoundedCornerShape(8.dp)
+                                    )
+                                    // luego el padding interior
+                                    .padding(vertical = 12.dp, horizontal = 16.dp),
+                                horizontalArrangement = Arrangement.Center,
+                                verticalAlignment = Alignment.CenterVertically
+                            ) {
+                                IconButton(
+                                    onClick = { if (currentStep.value > 0) currentStep.value-- },
+                                    enabled = currentStep.value > 0,
+                                    modifier = Modifier.size(40.dp)
+                                ) {
+                                    Icon(Icons.Default.ArrowBack, contentDescription = "Anterior")
+                                }
+
+                                Spacer(Modifier.width(16.dp))
+
+                                Text(
+                                    text = "Paso ${currentStep.value + 1} de ${pasos.size}",
+                                    fontSize = pasoFontSize,
+                                    fontFamily = Destacado,
+                                    color = Color(0xFF6B7280)
+                                )
+
+                                Spacer(Modifier.width(16.dp))
+
+                                IconButton(
+                                    onClick = { if (currentStep.value < pasos.lastIndex) currentStep.value++ },
+                                    enabled = currentStep.value < pasos.lastIndex,
+                                    modifier = Modifier.size(40.dp)
+                                ) {
+                                    Icon(Icons.Default.ArrowForward, contentDescription = "Siguiente")
+                                }
+                            }
+                        }
 
                         if (currentStep.value in pasos.indices) {
                             val paso = pasos[currentStep.value]
-
+                            // --- StepCard igual que en CreateRecipeScreen ---
                             Card(
                                 modifier = Modifier
                                     .fillMaxWidth()
                                     .padding(vertical = 8.dp),
-                                shape = RoundedCornerShape(16.dp),
-                                border = BorderStroke(1.dp, Color(0xFFE0E0E0)),
+                                shape = RoundedCornerShape(20.dp),
                                 colors = CardDefaults.cardColors(containerColor = Color.White),
-                                elevation = CardDefaults.cardElevation(defaultElevation = 4.dp)
+                                elevation = CardDefaults.cardElevation(6.dp),
+                                border = BorderStroke(1.dp, Color(0xFFF0F0F0))
                             ) {
-                                Column(Modifier.padding(16.dp)) {
-                                    // Título del paso
-                                    Text(
-                                        text = "${paso.numeroPaso}. ${paso.titulo}",
-                                        fontWeight = FontWeight.Bold,
-                                        color = primaryTextColor,
-                                        fontFamily = Destacado
-                                    )
-
-                                    // Imagen del paso, con borde redondeado de 8dp
-                                    // Sólo si la lista no está vacía
-                                    if (!paso.mediaUrls.isNullOrEmpty()) {
+                                Column(
+                                    Modifier.padding(20.dp),
+                                    verticalArrangement = Arrangement.spacedBy(16.dp)
+                                ) {
+                                    // Header con número de paso y título
+                                    Row(
+                                        verticalAlignment = Alignment.Top,
+                                        modifier = Modifier.fillMaxWidth()
+                                    ) {
+                                        // Columna para el número de paso
+                                        Column(
+                                            horizontalAlignment = Alignment.CenterHorizontally
+                                        ) {
+                                            Spacer(Modifier.height(22.dp))
+                                            // Botón redondo solo con flecha, sin Card interna
+                                            Card(
+                                                modifier = Modifier.size(48.dp),
+                                                shape = CircleShape,
+                                                colors = CardDefaults.cardColors(containerColor = Color(0xFFBC6154)),
+                                                elevation = CardDefaults.cardElevation(4.dp)
+                                            ) {
+                                                Box(
+                                                    modifier = Modifier.fillMaxSize(),
+                                                    contentAlignment = Alignment.Center
+                                                ) {
+                                                    Text(
+                                                        text = "${paso.numeroPaso}",
+                                                        color = Color.White,
+                                                        fontWeight = FontWeight.Bold,
+                                                        fontSize = 18.sp,
+                                                        fontFamily = Destacado
+                                                    )
+                                                }
+                                            }
+                                        }
+                                        Spacer(Modifier.width(16.dp))
+                                        // Campo de título expandido (solo lectura)
+                                        Column(modifier = Modifier.weight(1f)) {
+                                            Text(
+                                                text = "Título del paso",
+                                                fontSize = 14.sp,
+                                                fontWeight = FontWeight.SemiBold,
+                                                color = Color(0xFF6B7280),
+                                                fontFamily = Destacado,
+                                                letterSpacing = 0.5.sp
+                                            )
+                                            Spacer(Modifier.height(8.dp))
+                                            Surface(
+                                                modifier = Modifier.fillMaxWidth(),
+                                                shape = RoundedCornerShape(12.dp),
+                                                color = Color.White,
+                                                shadowElevation = 1.dp
+                                            ) {
+                                                Text(
+                                                    text = paso.titulo ?: "",
+                                                    color = Color(0xFF1F2937),
+                                                    fontSize = 16.sp,
+                                                    fontWeight = FontWeight.SemiBold,
+                                                    fontFamily = Destacado,
+                                                    modifier = Modifier.padding(12.dp)
+                                                )
+                                            }
+                                        }
+                                    }
+                                    // Descripción con mejor diseño
+                                    Column {
+                                        Text(
+                                            text = "Instrucciones del paso",
+                                            fontSize = 14.sp,
+                                            fontWeight = FontWeight.Medium,
+                                            color = Color(0xFF6B7280),
+                                            fontFamily = Destacado,
+                                            letterSpacing = 0.5.sp
+                                        )
                                         Spacer(Modifier.height(8.dp))
-
+                                        Surface(
+                                            modifier = Modifier.fillMaxWidth(),
+                                            shape = RoundedCornerShape(12.dp),
+                                            color = Color.White,
+                                            shadowElevation = 1.dp
+                                        ) {
+                                            Text(
+                                                text = paso.descripcion ?: "",
+                                                color = Color(0xFF1F2937),
+                                                fontSize = 14.sp,
+                                                lineHeight = 20.sp,
+                                                fontFamily = Destacado,
+                                                modifier = Modifier.padding(12.dp)
+                                            )
+                                        }
+                                    }
+                                    // Sección de medios (solo imagen/video, no edición)
+                                    if (!paso.mediaUrls.isNullOrEmpty()) {
                                         val mediaList = paso.mediaUrls!!.map { url ->
                                             val path = runCatching {
-                                                val uri = URI(url)
+                                                val uri = java.net.URI(url)
                                                 uri.rawPath + uri.rawQuery?.let { "?$it" }.orEmpty()
                                             }.getOrNull() ?: url
                                             if (path.startsWith("/")) "$baseUrl$path" else path
                                         }
-
-                                        if (mediaList.size == 1) {
-                                            val stepUrl = mediaList.first()
-                                            if (stepUrl.endsWith(".mp4", ignoreCase = true) ||
-                                                stepUrl.endsWith(".webm", ignoreCase = true)
-                                            ) {
-                                                // Vídeo: loop, sin sonido y sin controles
-                                                LoopingVideoPlayer(
-                                                    uri = Uri.parse(stepUrl),
-                                                    modifier = Modifier
-                                                        .fillMaxWidth()
-                                                        .height(180.dp)
-                                                        .clip(RoundedCornerShape(8.dp))
-                                                )
-                                            } else {
-                                                // Imagen estática
-                                                AsyncImage(
-                                                    model = stepUrl,
-                                                    contentDescription = null,
-                                                    modifier = Modifier
-                                                        .fillMaxWidth()
-                                                        .height(180.dp)
-                                                        .clip(RoundedCornerShape(8.dp)),
-                                                    contentScale = ContentScale.Crop
-                                                )
-                                            }
-                                        } else {
-                                            // Carrusel si hay más de una imagen/video
-                                            val pagerState = rememberPagerState()
-                                            val coroutineScope = rememberCoroutineScope()
-                                            Box(
-                                                modifier = Modifier
-                                                    .fillMaxWidth()
-                                                    .height(180.dp)
-                                            ) {
-                                                HorizontalPager(
-                                                    count = mediaList.size,
-                                                    state = pagerState,
-                                                    modifier = Modifier.fillMaxSize()
-                                                ) { page ->
-                                                    val url = mediaList[page]
-                                                    if (url.endsWith(".mp4", ignoreCase = true) || url.endsWith(".webm", ignoreCase = true)) {
-                                                        LoopingVideoPlayer(
-                                                            uri = Uri.parse(url),
-                                                            modifier = Modifier.fillMaxSize().clip(RoundedCornerShape(8.dp))
-                                                        )
-                                                    } else {
-                                                        AsyncImage(
-                                                            model = url,
-                                                            contentDescription = null,
-                                                            modifier = Modifier.fillMaxSize().clip(RoundedCornerShape(8.dp)),
-                                                            contentScale = ContentScale.Crop
-                                                        )
-                                                    }
-                                                }
-                                                // Indicador de páginas
-                                                HorizontalPagerIndicator(
-                                                    pagerState = pagerState,
-                                                    modifier = Modifier
-                                                        .align(Alignment.BottomCenter)
-                                                        .padding(8.dp),
-                                                    activeColor = Color(0xFF042628),
-                                                    inactiveColor = Color.LightGray
-                                                )
-                                                // Flechas manuales
-                                                if (mediaList.size > 1) {
-                                                    IconButton(
-                                                        onClick = {
-                                                            val prev = if (pagerState.currentPage == 0) mediaList.lastIndex else pagerState.currentPage - 1
-                                                            coroutineScope.launch {
-                                                                pagerState.animateScrollToPage(prev)
-                                                            }
-                                                        },
-                                                        modifier = Modifier.align(Alignment.CenterStart)
-                                                    ) {
-                                                        Icon(Icons.Default.ArrowBack, contentDescription = "Anterior", tint = Color.Black)
-                                                    }
-                                                    IconButton(
-                                                        onClick = {
-                                                            val next = (pagerState.currentPage + 1) % mediaList.size
-                                                            coroutineScope.launch {
-                                                                pagerState.animateScrollToPage(next)
-                                                            }
-                                                        },
-                                                        modifier = Modifier.align(Alignment.CenterEnd)
-                                                    ) {
-                                                        Icon(Icons.Default.ArrowForward, contentDescription = "Siguiente", tint = Color.Black)
-                                                    }
-                                                }
-                                            }
-                                        }
-                                    }
-
-                                    // Descripción del paso
-                                    if (!paso.descripcion.isNullOrBlank()) {
-                                        Spacer(Modifier.height(8.dp))
-                                        Text(paso.descripcion, color = primaryTextColor)
-                                    }
-
-                                    Spacer(Modifier.height(12.dp))
-
-                                    // Navegación entre pasos solo si hay más de uno
-                                    if (mostrarNavegacion) {
-                                        Row(
+                                        val pagerState = rememberPagerState()
+                                        val coroutineScope = rememberCoroutineScope()
+                                        Box(
                                             modifier = Modifier
                                                 .fillMaxWidth()
-                                                .padding(top = 12.dp, bottom = 4.dp),
-                                            horizontalArrangement = Arrangement.Center,
-                                            verticalAlignment = Alignment.CenterVertically
+                                                .height(180.dp)
                                         ) {
-                                            if (currentStep.value > 0) {
-                                                Button(
-                                                    onClick = { currentStep.value-- },
-                                                    modifier = Modifier
-                                                        .height(40.dp)
-                                                        .defaultMinSize(minWidth = 150.dp),
-                                                    shape = RoundedCornerShape(8.dp),
-                                                    contentPadding = PaddingValues(horizontal = 4.dp),
-                                                    colors = ButtonDefaults.buttonColors(
-                                                        containerColor = Color(0xFF042628),
-                                                        contentColor = Color.White
+                                            HorizontalPager(
+                                                count = mediaList.size,
+                                                state = pagerState,
+                                                modifier = Modifier.fillMaxSize()
+                                            ) { page ->
+                                                val url = mediaList[page]
+                                                if (url.endsWith(".mp4", ignoreCase = true) || url.endsWith(".webm", ignoreCase = true)) {
+                                                    LoopingVideoPlayer(
+                                                        uri = android.net.Uri.parse(url),
+                                                        modifier = Modifier.fillMaxSize().clip(RoundedCornerShape(16.dp))
                                                     )
-                                                ) {
-                                                    Text(
-                                                        text = "Paso Anterior",
-                                                        style = MaterialTheme.typography.bodyMedium.copy(fontWeight = FontWeight.Medium),
-                                                        maxLines = 2,
-                                                        textAlign = TextAlign.Center,
-                                                        fontSize = pasoFontSize
+                                                } else {
+                                                    coil.compose.AsyncImage(
+                                                        model = url,
+                                                        contentDescription = null,
+                                                        modifier = Modifier.fillMaxSize().clip(RoundedCornerShape(16.dp)),
+                                                        contentScale = androidx.compose.ui.layout.ContentScale.Crop
                                                     )
                                                 }
                                             }
-                                            if (currentStep.value > 0 && currentStep.value < lastIndex) {
-                                                Spacer(modifier = Modifier.width(12.dp))
-                                            }
-                                            if (currentStep.value < lastIndex) {
-                                                Button(
-                                                    onClick = { currentStep.value++ },
-                                                    modifier = Modifier
-                                                        .height(40.dp)
-                                                        .defaultMinSize(minWidth = 150.dp),
-                                                    shape = RoundedCornerShape(8.dp),
-                                                    contentPadding = PaddingValues(horizontal = 4.dp),
-                                                    colors = ButtonDefaults.buttonColors(
-                                                        containerColor = Color(0xFF042628),
-                                                        contentColor = Color.White
-                                                    )
+                                            HorizontalPagerIndicator(
+                                                pagerState = pagerState,
+                                                modifier = Modifier
+                                                    .align(Alignment.BottomCenter)
+                                                    .padding(8.dp),
+                                                activeColor = Color(0xFFBC6154),
+                                                inactiveColor = Color.LightGray
+                                            )
+                                            if (mediaList.size > 1) {
+                                                IconButton(
+                                                    onClick = {
+                                                        val prev = if (pagerState.currentPage == 0) mediaList.lastIndex else pagerState.currentPage - 1
+                                                        coroutineScope.launch {
+                                                            pagerState.animateScrollToPage(prev)
+                                                        }
+                                                    },
+                                                    modifier = Modifier.align(Alignment.CenterStart)
                                                 ) {
-                                                    Text(
-                                                        text = "Paso Siguiente",
-                                                        style = MaterialTheme.typography.bodyMedium.copy(fontWeight = FontWeight.Medium),
-                                                        maxLines = 2,
-                                                        textAlign = TextAlign.Center,
-                                                        fontSize = pasoFontSize
-                                                    )
+                                                    Icon(Icons.Default.ArrowBack, contentDescription = "Anterior", tint = Color.Black)
+                                                }
+                                                IconButton(
+                                                    onClick = {
+                                                        val next = (pagerState.currentPage + 1) % mediaList.size
+                                                        coroutineScope.launch {
+                                                            pagerState.animateScrollToPage(next)
+                                                        }
+                                                    },
+                                                    modifier = Modifier.align(Alignment.CenterEnd)
+                                                ) {
+                                                    Icon(Icons.Default.ArrowForward, contentDescription = "Siguiente", tint = Color.Black)
                                                 }
                                             }
                                         }
