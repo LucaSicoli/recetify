@@ -837,7 +837,6 @@ fun RecipeDetailContent(
                                 shape = RoundedCornerShape(16.dp),
                                 colors = CardDefaults.cardColors(containerColor = ingredientCardColor),
                                 elevation = CardDefaults.cardElevation(defaultElevation = 2.dp)
-
                             ) {
                                 Row(
                                     modifier = Modifier
@@ -849,26 +848,17 @@ fun RecipeDetailContent(
                                         modifier = Modifier.weight(1f),
                                         verticalAlignment = Alignment.CenterVertically
                                     ) {
-                                        Box(
-                                            modifier = Modifier
-                                                .size(40.dp)
-                                                .clip(CircleShape)
-                                                .background(ingredientIconBackground),
-                                            contentAlignment = Alignment.Center
-                                        ) {
-                                            // Reemplazamos el emoji con la imagen de TheMealDB
-                                            val imageUrl = TheMealDBImages.getIngredientImageUrlSmart(ing.nombre)
-                                            if (imageUrl != null) {
-                                                AsyncImage(
-                                                    model = imageUrl,
-                                                    contentDescription = ing.nombre,
-                                                    modifier = Modifier.fillMaxSize(),
-                                                    contentScale = ContentScale.Crop
-                                                )
-                                            } else {
-                                                // Fallback al emoji si no hay imagen disponible
-                                                Text(obtenerEmoji(ing.nombre), fontSize = 20.sp)
-                                            }
+                                        // Solo la imagen, sin background circular
+                                        val imageUrl = TheMealDBImages.getIngredientImageUrlSmart(ing.nombre)
+                                        if (imageUrl != null) {
+                                            AsyncImage(
+                                                model = imageUrl,
+                                                contentDescription = ing.nombre,
+                                                modifier = Modifier.size(40.dp),
+                                                contentScale = ContentScale.Crop
+                                            )
+                                        } else {
+                                            Text(obtenerEmoji(ing.nombre), fontSize = 20.sp)
                                         }
                                         Spacer(Modifier.width(12.dp))
                                         Text(
