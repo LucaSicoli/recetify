@@ -229,7 +229,7 @@ fun ReviewsAndCommentSection(
             )
             Row(verticalAlignment = Alignment.CenterVertically) {
                 Text(
-                    text = String.format("%.1f", averageRating),
+                    text = averageRating.formatSmart(),
                     style = MaterialTheme.typography.bodyMedium.copy(
                         fontWeight = FontWeight.SemiBold,
                         fontSize   = 16.sp
@@ -246,7 +246,7 @@ fun ReviewsAndCommentSection(
                 )
                 Spacer(Modifier.width(4.dp))
                 Text(
-                    text = "(${ratings.size} reseñas)",
+                    text = "(${ratings.size} ${if (ratings.size == 1) "reseña" else "reseñas"})",
                     style = MaterialTheme.typography.bodySmall.copy(fontSize = 16.sp),
                     color = Color.Gray,
                     fontFamily = Destacado
@@ -709,9 +709,7 @@ fun RecipeDetailContent(
                         )
                         Spacer(Modifier.width(4.dp))
                         Text(
-                            text = receta.promedioRating?.let {
-                                if (it % 1.0 == 0.0) "${it.toInt()}" else String.format("%.1f", it)
-                            } ?: "–",
+                            text = receta.promedioRating?.formatSmart() ?: "–",
                             style = MaterialTheme.typography.bodySmall.copy(color = Color(0xFFe29587))
                         )
 
@@ -740,7 +738,7 @@ fun RecipeDetailContent(
                         )
                         Spacer(Modifier.width(4.dp))
                         Text(
-                            text = "$currentPortions porciones",
+                            text = "$currentPortions ${if (currentPortions == 1) "porción" else "porciones"}",
                             style = MaterialTheme.typography.bodySmall
                         )
                     }
@@ -844,7 +842,7 @@ fun RecipeDetailContent(
                                 fontFamily = Destacado
                             )
                             Text(
-                                text = "(${receta.ingredients.size} Items)",
+                                text = "(${receta.ingredients.size} ${if (receta.ingredients.size == 1) "item" else "items"})",
                                 style = MaterialTheme.typography.bodyMedium.copy(
                                     fontWeight = FontWeight.SemiBold,
                                     fontSize   = 16.sp
@@ -898,7 +896,7 @@ fun RecipeDetailContent(
                                         color = unitBackgroundColor
                                     ) {
                                         Text(
-                                            text = "${ing.cantidad} ${ing.unidadMedida}",
+                                            text = "${ing.cantidad.formatSmart()} ${ing.unidadMedida}",
                                             modifier = Modifier.padding(horizontal = 8.dp, vertical = 2.dp),
                                             color = unitTextColor,
                                             fontSize = 12.sp
@@ -1445,3 +1443,7 @@ fun CustomSnackbar(snackbarData: SnackbarData) {
         }
     }
 }
+
+// Función de extensión para formatear números
+fun Double.formatSmart(): String = if (this % 1.0 == 0.0) this.toInt().toString() else String.format("%.1f", this)
+fun Float.formatSmart(): String = if (this % 1.0f == 0.0f) this.toInt().toString() else String.format("%.1f", this)

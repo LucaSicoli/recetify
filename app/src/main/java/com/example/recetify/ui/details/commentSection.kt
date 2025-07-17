@@ -155,5 +155,14 @@ fun StarRow(puntos: Int) {
                     .padding(end = 2.dp)
             )
         }
+        // Mostrar el número de puntos formateado inteligentemente
+        Spacer(Modifier.width(6.dp))
+        Text(
+            text = puntos.toDouble().formatSmart(),
+            fontFamily = Destacado,
+            fontWeight = FontWeight.SemiBold,
+            fontSize = 14.sp,
+            color = Color(0xFF042628)
+        )
     }
 }
