@@ -963,7 +963,7 @@ fun RecipeDetailContent(
                                     .padding(vertical = 8.dp),
                                 shape = RoundedCornerShape(20.dp),
                                 colors = CardDefaults.cardColors(containerColor = Color.White),
-                                elevation = CardDefaults.cardElevation(6.dp),
+                                elevation = CardDefaults.cardElevation(1.dp), // Bajado de 6.dp a 5.dp
                                 border = BorderStroke(1.dp, Color(0xFFF0F0F0))
                             ) {
                                 Column(
