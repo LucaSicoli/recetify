@@ -17,6 +17,7 @@ import com.example.recetify.data.remote.model.toRatingResponse
 import com.example.recetify.ui.navigation.BottomNavBar
 import com.example.recetify.ui.profile.CustomTasteViewModel
 import com.example.recetify.ui.profile.FavouriteViewModel
+import com.example.recetify.ui.common.ReviewSubmittedDialog
 import kotlinx.coroutines.launch
 
 @Composable
@@ -38,31 +39,19 @@ fun RecipeDetailScreen(
         .isAlumnoFlow(context)
         .collectAsState(initial = false)
 
-    // Estados del comentario
-    val commentSubmitted = viewModel.commentSubmitted
+    // Estados del comentario - cambiamos por el nuevo diálogo
+    val showReviewSubmittedDialog = viewModel.showReviewSubmittedDialog
     val commentError = viewModel.commentError
 
     // Observamos la lista de guardados y calculamos si esta receta está guardada
     val savedList by favVm.favourites.collectAsState()
     val isFav = remember(savedList) { savedList.any { it.recipeId == recipeId } }
 
-    // Snackbar para mostrar mensajes
+    // Snackbar solo para errores
     val snackbarHostState = remember { SnackbarHostState() }
     val scope = rememberCoroutineScope()
 
-    // Efectos para mostrar mensajes de confirmación
-    LaunchedEffect(commentSubmitted) {
-        if (commentSubmitted) {
-            scope.launch {
-                snackbarHostState.showSnackbar(
-                    message = "¡Comentario enviado! Será visible una vez aprobado por la empresa.",
-                    duration = SnackbarDuration.Long
-                )
-                viewModel.resetCommentSubmitted()
-            }
-        }
-    }
-
+    // Efecto para mostrar errores en snackbar
     LaunchedEffect(commentError) {
         commentError?.let { error ->
             scope.launch {
@@ -70,7 +59,7 @@ fun RecipeDetailScreen(
                     message = error,
                     duration = SnackbarDuration.Short
                 )
-                viewModel.resetCommentSubmitted()
+                viewModel.resetCommentError()
             }
         }
     }
@@ -78,6 +67,13 @@ fun RecipeDetailScreen(
     LaunchedEffect(recipeId) {
         viewModel.fetchRecipe(recipeId)
         favVm.loadFavourites()
+    }
+
+    // Mostrar el diálogo de reseña enviada
+    if (showReviewSubmittedDialog) {
+        ReviewSubmittedDialog(
+            onDismiss = { viewModel.dismissReviewDialog() }
+        )
     }
 
     Scaffold(

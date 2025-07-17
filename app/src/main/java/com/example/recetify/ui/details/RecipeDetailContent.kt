@@ -277,14 +277,14 @@ fun ReviewsAndCommentSection(
         // ── Card: “Dejá tu comentario” ────────────────────────────────────────
         val screenWidth = LocalConfiguration.current.screenWidthDp
         val starSize = when {
-            screenWidth < 340 -> 16.dp
-            screenWidth < 400 -> 20.dp
-            else -> 28.dp
+            screenWidth < 340 -> 24.dp
+            screenWidth < 400 -> 28.dp
+            else -> 32.dp
         }
         val commentFontSize = when {
-            screenWidth < 340 -> 13.sp
-            screenWidth < 400 -> 14.sp
-            else -> 16.sp
+            screenWidth < 340 -> 16.sp
+            screenWidth < 400 -> 18.sp
+            else -> 20.sp
         }
         val cardPadding = when {
             screenWidth < 340 -> 8.dp
@@ -294,85 +294,83 @@ fun ReviewsAndCommentSection(
         Card(
             modifier = Modifier
                 .fillMaxWidth()
-                .padding(horizontal = 4.dp, vertical = 16.dp)
-                .offset(x = shakeOffset.value.dp),
+                .padding(horizontal = 4.dp, vertical = 16.dp),
             shape = RoundedCornerShape(12.dp),
             colors = CardDefaults.cardColors(containerColor = Color.White),
             elevation = CardDefaults.cardElevation(defaultElevation = 3.dp)
         ) {
             Column(modifier = Modifier.padding(cardPadding)) {
-                // Encabezado con “Dejá tu comentario” + estrellas
+                // 1. Título
+                Text(
+                    text = "Dejanos tu opinión",
+                    style = MaterialTheme.typography.titleMedium.copy(
+                        fontWeight = FontWeight.Bold,
+                        letterSpacing = 2.sp
+                    ),
+                    color = Color.Black,
+                    fontFamily = Destacado,
+                    fontSize = commentFontSize,
+                    maxLines = 1,
+                    overflow = TextOverflow.Ellipsis,
+                    modifier = Modifier
+                        .align(Alignment.CenterHorizontally)
+                        .padding(bottom = 10.dp) // Menos espacio debajo del título
+                )
+                // 2. Selector de estrellas
                 Row(
-                    modifier = Modifier.fillMaxWidth(),
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(horizontal = 0.dp), // Sin padding extra
+                    horizontalArrangement = Arrangement.Center, // Centrado y más compacto
                     verticalAlignment = Alignment.CenterVertically
                 ) {
-                    Text(
-                        text = "Dejá tu comentario",
-                        style = MaterialTheme.typography.titleMedium.copy(fontWeight = FontWeight.Bold),
-                        color = Color.Black,
-                        fontFamily = Destacado,
-                        fontSize = commentFontSize,
-                        maxLines = 1,
-                        overflow = TextOverflow.Ellipsis
-                    )
-                    Spacer(Modifier.weight(1f))
-                    Row(
-                        modifier = Modifier.widthIn(min = starSize * 5 + 8.dp * 4).fillMaxWidth(0.55f),
-                        horizontalArrangement = Arrangement.SpaceEvenly
-                    ) {
-                        for (i in 1..5) {
-                            IconButton(
-                                onClick = { commentStars = i },
+                    for (i in 1..5) {
+                        IconButton(
+                            onClick = { commentStars = i },
+                            modifier = Modifier.size(starSize).padding(horizontal = 2.dp) // Menos separación
+                        ) {
+                            Icon(
+                                imageVector = if (i <= commentStars) Icons.Default.Star else Icons.Outlined.StarBorder,
+                                contentDescription = if (i <= commentStars) "Estrella llena" else "Estrella vacía",
+                                tint = if (i <= commentStars) Color(0xFFFFD700) else Color.Gray,
                                 modifier = Modifier.size(starSize)
-                            ) {
-                                Icon(
-                                    imageVector = if (i <= commentStars) Icons.Default.Star else Icons.Outlined.StarBorder,
-                                    contentDescription = if (i <= commentStars) "Estrella llena" else "Estrella vacía",
-                                    tint = if (i <= commentStars) Color(0xFFFFD700) else Color.Gray,
-                                    modifier = Modifier.size(starSize)
-                                )
-                            }
+                            )
                         }
                     }
                 }
-
-                Spacer(Modifier.height(8.dp))
-
-                // Cuadro de texto con contador de caracteres
-                Box(modifier = Modifier.fillMaxWidth()) {
-                    StyledBasicField(
-                        value = textComment,
-                        onValueChange = {
-                            if (it.text.length <= maxChars) textComment = it
-                        },
-                        placeholder = { Text("Contanos qué te pareció la receta…", color = Color.Gray)},
-                        maxLines = 4,
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .height(100.dp)
-                            .border(
-                                2.dp,
-                                if (commentError) Color.Red else Color.LightGray,
-                                RoundedCornerShape(6.dp)
-                            )
-                    )
-
-                    Text(
-                        text = "${textComment.text.length}/$maxChars",
-                        style = MaterialTheme.typography.bodySmall.copy(fontSize = 12.sp),
-                        color = Color.Gray,
-                        modifier = Modifier
-                            .align(Alignment.BottomEnd)
-                            .padding(4.dp)
-                    )
+                Spacer(Modifier.height(10.dp)) // Menos espacio entre estrellas y caja de texto
+                // 3. Caja de texto más compacta
+                Box(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .height(110.dp) // Mantener altura fija
+                        .offset(x = shakeOffset.value.dp)
+                ) {
+                    Card(
+                        modifier = Modifier.fillMaxSize(),
+                        shape = RoundedCornerShape(12.dp),
+                        colors = CardDefaults.cardColors(containerColor = Color.White),
+                        elevation = CardDefaults.cardElevation(defaultElevation = 0.dp)
+                    ) {
+                        StyledBasicField(
+                            value = textComment,
+                            onValueChange = {
+                                if (it.text.length <= maxChars) textComment = it
+                            },
+                            placeholder = null,
+                            maxLines = 4, // Menos líneas
+                            modifier = Modifier
+                                .fillMaxSize()
+                                .padding(8.dp), // Menos padding
+                            fontSize = 16.sp
+                        )
+                    }
                 }
-
-                Spacer(Modifier.height(12.dp))
-
-                // Botón “Enviar” alineado a la derecha
+                Spacer(Modifier.height(12.dp)) // Menos espacio antes del botón
+                // 4. Botón centrado
                 Row(
                     modifier = Modifier.fillMaxWidth(),
-                    horizontalArrangement = Arrangement.End
+                    horizontalArrangement = Arrangement.Center
                 ) {
                     Button(
                         onClick = {
@@ -380,9 +378,17 @@ fun ReviewsAndCommentSection(
                             textComment = TextFieldValue("")
                             commentStars = 0
                         },
-                        enabled = textComment.text.isNotBlank() && commentStars > 0
+                        enabled = textComment.text.isNotBlank() && commentStars > 0,
+                        colors = ButtonDefaults.buttonColors(
+                            containerColor = Color(0xFFBC6154), // color accent
+                            contentColor = Color.White
+                        )
                     ) {
-                        Text("Enviar")
+                        Text(
+                            text = "ENVIAR RESEÑA",
+                            fontFamily    = Destacado,
+                            fontWeight    = FontWeight.Bold,
+                        )
                     }
                 }
             }

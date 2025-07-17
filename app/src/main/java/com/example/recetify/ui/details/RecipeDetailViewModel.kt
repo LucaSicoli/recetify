@@ -31,8 +31,8 @@ class RecipeDetailViewModel(app: Application) : AndroidViewModel(app) {
     var loading by mutableStateOf(true)
         private set
 
-    // Estado para manejar la confirmación del comentario
-    var commentSubmitted by mutableStateOf(false)
+    // Estado para manejar el diálogo de reseña enviada
+    var showReviewSubmittedDialog by mutableStateOf(false)
         private set
 
     var commentError by mutableStateOf<String?>(null)
@@ -56,7 +56,7 @@ class RecipeDetailViewModel(app: Application) : AndroidViewModel(app) {
             try {
                 commentError = null
                 RetrofitClient.api.addRating(CreateRatingRequest(recipeId, comentario, puntos))
-                commentSubmitted = true
+                showReviewSubmittedDialog = true // Mostrar diálogo en lugar de snackbar
                 // Recargar los datos para obtener los comentarios actualizados
                 fetchRecipe(recipeId)
             } catch (e: Exception) {
@@ -65,9 +65,13 @@ class RecipeDetailViewModel(app: Application) : AndroidViewModel(app) {
         }
     }
 
-    // Función para resetear el estado de confirmación
-    fun resetCommentSubmitted() {
-        commentSubmitted = false
+    // Función para cerrar el diálogo
+    fun dismissReviewDialog() {
+        showReviewSubmittedDialog = false
+    }
+
+    // Función para resetear errores
+    fun resetCommentError() {
         commentError = null
     }
 

@@ -54,13 +54,15 @@ fun StyledBasicField(
     onValueChange: (TextFieldValue) -> Unit,
     modifier: Modifier = Modifier,
     placeholder: @Composable (() -> Unit)? = null,
-    maxLines: Int = Int.MAX_VALUE
+    maxLines: Int = Int.MAX_VALUE,
+    fontSize: androidx.compose.ui.unit.TextUnit = 16.sp // Nuevo parámetro con valor por defecto
 ) {
     Box(
         modifier
-            .background(Color(0xFFF8F8F8), RoundedCornerShape(6.dp))
-            .border(1.dp, Color.LightGray, RoundedCornerShape(6.dp))
-            .padding(12.dp)
+            .background(Color(0xFFF8F8F8), RoundedCornerShape(12.dp))
+            .border(1.5.dp, Color(0xFFE5E7EB), RoundedCornerShape(12.dp))
+            .padding(0.dp) // sin padding aquí, lo damos al TextField
+            .height(200.dp) // más alto aún
     ) {
         if (value.text.isEmpty() && placeholder != null) {
             Box(Modifier.fillMaxSize(), contentAlignment = Alignment.TopStart) {
@@ -75,9 +77,12 @@ fun StyledBasicField(
             textStyle = LocalTextStyle.current.copy(
                 color = Color.Black,
                 fontFamily = Destacado,
-                fontSize = 14.sp
+                fontSize = fontSize // Usar el nuevo parámetro
             ),
-            modifier = Modifier.fillMaxWidth()
+            modifier = Modifier
+                .fillMaxWidth()
+                .fillMaxHeight()
+                .padding(20.dp) // padding interno grande
         )
     }
 }
@@ -88,45 +93,41 @@ fun StyledBasicField(
 @Composable
 fun CommentCard(rating: RatingResponse) {
     Card(
-        shape = RoundedCornerShape(12.dp),
-        colors = CardDefaults.cardColors(containerColor = Color.White),
-        elevation = CardDefaults.cardElevation(defaultElevation = 2.dp),
         modifier = Modifier
             .fillMaxWidth()
-            .padding(horizontal = 1.dp, vertical = 4.dp)
+            .padding(vertical = 10.dp)
+            .shadow(6.dp, RoundedCornerShape(20.dp)),
+        shape = RoundedCornerShape(20.dp),
+        colors = CardDefaults.cardColors(containerColor = Color.White),
+        border = BorderStroke(1.dp, Color(0xFFF0F0F0)),
+        elevation = CardDefaults.cardElevation(6.dp)
     ) {
-        Column(modifier = Modifier.padding(16.dp)) {
+        Column(
+            Modifier.padding(24.dp),
+            verticalArrangement = Arrangement.spacedBy(12.dp)
+        ) {
             Row(verticalAlignment = Alignment.CenterVertically) {
-                // Flechita antes del alias
                 Icon(
                     imageVector = Icons.Default.ArrowForwardIos,
                     contentDescription = null,
                     tint = Color(0xFF042628),
-                    modifier = Modifier.size(16.dp)
+                    modifier = Modifier.size(20.dp)
                 )
-                Spacer(Modifier.width(8.dp))
-
-                // Alias con la fuente Destacado
+                Spacer(Modifier.width(10.dp))
                 Text(
                     text = rating.userAlias,
                     fontFamily = Destacado,
                     style = MaterialTheme.typography.bodyLarge.copy(fontWeight = FontWeight.Bold),
                     color = Color(0xFF042628)
                 )
-
                 Spacer(Modifier.weight(1f))
-
-                // Estrellitas
                 StarRow(puntos = rating.puntos)
             }
-
-            Spacer(Modifier.height(8.dp))
-
             Text(
                 text = rating.comentario,
-                style = MaterialTheme.typography.bodyMedium,
+                style = MaterialTheme.typography.bodyLarge.copy(fontSize = 16.sp, lineHeight = 22.sp),
                 color = Color(0xFF424242),
-                lineHeight = 18.sp
+                modifier = Modifier.fillMaxWidth()
             )
         }
     }
@@ -141,7 +142,7 @@ fun StarRow(puntos: Int) {
                 contentDescription = null,
                 tint = if (i <= puntos) Color(0xFFFFC107) else Color.Gray,
                 modifier = Modifier
-                    .size(16.dp)
+                    .size(18.dp)
                     .padding(end = 2.dp)
             )
         }
