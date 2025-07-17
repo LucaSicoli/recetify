@@ -285,7 +285,8 @@ private fun SavedRecipeCard(
                 text = "GUARDADA",
                 style = MaterialTheme.typography.labelSmall.copy(
                     color      = Color.White,
-                    fontWeight = FontWeight.Bold
+                    fontWeight = FontWeight.Bold,
+                    fontFamily = Destacado
                 )
             )
         }
