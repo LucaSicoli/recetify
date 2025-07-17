@@ -95,18 +95,18 @@ fun CommentCard(rating: RatingResponse) {
     Card(
         modifier = Modifier
             .fillMaxWidth()
-            .padding(vertical = 6.dp)
+            .padding(horizontal = 0.5.dp, vertical = 6.dp) // Aumenta apenas el ancho visual
             .defaultMinSize(minHeight = 0.dp)
-            .wrapContentHeight(), // igual que ingredientes
+            .wrapContentHeight(),
         shape = RoundedCornerShape(16.dp),
         colors = CardDefaults.cardColors(containerColor = Color.White),
-        elevation = CardDefaults.cardElevation(defaultElevation = 2.dp),
+        elevation = CardDefaults.cardElevation(defaultElevation = 1.5.dp),
         border = null
     ) {
         Row(
             modifier = Modifier
                 .fillMaxWidth()
-                .padding(16.dp), // igual que ingredientes
+                .padding(16.dp),
             verticalAlignment = Alignment.CenterVertically
         ) {
             // Columna para el contenido textual
@@ -155,14 +155,6 @@ fun StarRow(puntos: Int) {
                     .padding(end = 2.dp)
             )
         }
-        // Mostrar el número de puntos formateado inteligentemente
-        Spacer(Modifier.width(6.dp))
-        Text(
-            text = puntos.toDouble().formatSmart(),
-            fontFamily = Destacado,
-            fontWeight = FontWeight.SemiBold,
-            fontSize = 14.sp,
-            color = Color(0xFF042628)
-        )
+        // Ya no mostramos el número de puntos
     }
 }

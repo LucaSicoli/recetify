@@ -260,8 +260,8 @@ fun ReviewsAndCommentSection(
                 if (index > 0) {
                     Spacer(modifier = Modifier.height(8.dp))
                 }
-                // Agrego padding externo para que la sombra no se corte
-                Box(modifier = Modifier.padding(horizontal = 8.dp, vertical = 2.dp)) {
+                // Reducimos apenas el ancho para que la sombra no se corte
+                Box(modifier = Modifier.fillMaxWidth().padding(horizontal = 2.dp)) {
                     CommentCard(rating = rating)
                 }
             }
@@ -348,7 +348,7 @@ fun ReviewsAndCommentSection(
                         ) {
                             Icon(
                                 imageVector = if (i <= commentStars) Icons.Default.Star else Icons.Outlined.StarBorder,
-                                contentDescription = if (i <= commentStars) "Estrella llena" else "Estrella vacía",
+                                contentDescription = if (i <= commentStars) "Estrella llena" else "Estrella vac��a",
                                 tint = if (i <= commentStars) Color(0xFFFFD700) else Color.Gray,
                                 modifier = Modifier.size(starSize)
                             )
@@ -500,7 +500,7 @@ fun RecipeDetailContent(
                 .padding(padding)
                 .verticalScroll(rememberScrollState())
         ) {
-            // ── Carrusel de portada y botón Volver ───────────────────────────────
+            // ── Carrusel de portada y botón Volver ────────��──────────────────────
             val mediaList = receta.mediaUrls.orEmpty().map { url ->
                 val path = runCatching {
                     val uri = URI(url)
