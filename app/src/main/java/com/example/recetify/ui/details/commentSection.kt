@@ -95,40 +95,49 @@ fun CommentCard(rating: RatingResponse) {
     Card(
         modifier = Modifier
             .fillMaxWidth()
-            .padding(vertical = 10.dp)
-            .shadow(6.dp, RoundedCornerShape(20.dp)),
-        shape = RoundedCornerShape(20.dp),
+            .padding(vertical = 6.dp)
+            .defaultMinSize(minHeight = 0.dp)
+            .wrapContentHeight(), // igual que ingredientes
+        shape = RoundedCornerShape(16.dp),
         colors = CardDefaults.cardColors(containerColor = Color.White),
-        border = BorderStroke(1.dp, Color(0xFFF0F0F0)),
-        elevation = CardDefaults.cardElevation(6.dp)
+        elevation = CardDefaults.cardElevation(defaultElevation = 2.dp),
+        border = null
     ) {
-        Column(
-            Modifier.padding(24.dp),
-            verticalArrangement = Arrangement.spacedBy(12.dp)
+        Row(
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(16.dp), // igual que ingredientes
+            verticalAlignment = Alignment.CenterVertically
         ) {
-            Row(verticalAlignment = Alignment.CenterVertically) {
-                Icon(
-                    imageVector = Icons.Default.ArrowForwardIos,
-                    contentDescription = null,
-                    tint = Color(0xFF042628),
-                    modifier = Modifier.size(20.dp)
-                )
-                Spacer(Modifier.width(10.dp))
+            // Columna para el contenido textual
+            Column(
+                modifier = Modifier.weight(1f),
+                verticalArrangement = Arrangement.spacedBy(8.dp)
+            ) {
+                Row(verticalAlignment = Alignment.CenterVertically) {
+                    Icon(
+                        imageVector = Icons.Default.ArrowForwardIos,
+                        contentDescription = null,
+                        tint = Color(0xFF042628),
+                        modifier = Modifier.size(20.dp)
+                    )
+                    Spacer(Modifier.width(10.dp))
+                    Text(
+                        text = rating.userAlias,
+                        fontFamily = Destacado,
+                        style = MaterialTheme.typography.bodyLarge.copy(fontWeight = FontWeight.Bold),
+                        color = Color(0xFF042628)
+                    )
+                    Spacer(Modifier.weight(1f))
+                    StarRow(puntos = rating.puntos)
+                }
                 Text(
-                    text = rating.userAlias,
-                    fontFamily = Destacado,
-                    style = MaterialTheme.typography.bodyLarge.copy(fontWeight = FontWeight.Bold),
-                    color = Color(0xFF042628)
+                    text = rating.comentario,
+                    style = MaterialTheme.typography.bodyLarge.copy(fontSize = 16.sp, lineHeight = 22.sp),
+                    color = Color(0xFF424242),
+                    modifier = Modifier.fillMaxWidth()
                 )
-                Spacer(Modifier.weight(1f))
-                StarRow(puntos = rating.puntos)
             }
-            Text(
-                text = rating.comentario,
-                style = MaterialTheme.typography.bodyLarge.copy(fontSize = 16.sp, lineHeight = 22.sp),
-                color = Color(0xFF424242),
-                modifier = Modifier.fillMaxWidth()
-            )
         }
     }
 }

@@ -246,7 +246,10 @@ fun ReviewsAndCommentSection(
                 if (index > 0) {
                     Spacer(modifier = Modifier.height(8.dp))
                 }
-                CommentCard(rating = rating)
+                // Agrego padding externo para que la sombra no se corte
+                Box(modifier = Modifier.padding(horizontal = 8.dp, vertical = 2.dp)) {
+                    CommentCard(rating = rating)
+                }
             }
             if (ratings.size > previewCount) {
                 Row(
