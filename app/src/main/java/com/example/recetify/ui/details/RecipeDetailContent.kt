@@ -819,15 +819,14 @@ fun RecipeDetailContent(
                         Row(
                             modifier = Modifier
                                 .align(Alignment.CenterHorizontally)
-                                .fillMaxWidth() // Cambiado de fillMaxWidth(0.9f) a fillMaxWidth()
+                                .fillMaxWidth()
                                 // 1) fondo gris claro y esquinas redondeadas
                                 .background(
                                     color = Color(0xFFF0F0F0),
                                     shape = RoundedCornerShape(8.dp)
                                 )
                                 // 2) padding interno para separar del borde
-                                .padding(horizontal = 16.dp, vertical = 12.dp) // Cambiado vertical de 8.dp a 12.dp
-                                // Igualar altura a la cabecera de instrucciones (selector de pasos)
+                                .padding(horizontal = 16.dp, vertical = 12.dp)
                                 .height(40.dp),
                             horizontalArrangement = Arrangement.SpaceBetween,
                             verticalAlignment   = Alignment.CenterVertically
@@ -851,7 +850,7 @@ fun RecipeDetailContent(
                                 fontFamily = Destacado
                             )
                         }
-                        Spacer(Modifier.height(8.dp))
+                        Spacer(Modifier.height(4.dp)) // Reducido de 8.dp a 4.dp para menor espacio
                         adjustedIngredients.forEach { ing ->
                             Card(
                                 modifier = Modifier
