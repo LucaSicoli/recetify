@@ -99,7 +99,7 @@ fun HomeScreen(
         if (isLoading) {
             // ── Mientras carga ────────────────────────────────
             Box(Modifier.fillMaxSize(), Alignment.Center) {
-                CircularProgressIndicator()
+                com.example.recetify.ui.common.LoadingScreen()
             }
         } else {
             // ── Lista de recetas ───────────────────────────────

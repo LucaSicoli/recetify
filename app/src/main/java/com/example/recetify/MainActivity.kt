@@ -353,8 +353,15 @@ fun AppNavGraph() {
                     navController = navController,
                     isAlumno = isAlumno,
                     onNavWithLoading = { destRoute ->
-                        showLoading = true
-                        pendingRoute = destRoute
+                        if (destRoute == "home") {
+                            navController.navigate("home") {
+                                popUpTo(navController.graph.startDestinationId)
+                                launchSingleTop = true
+                            }
+                        } else {
+                            showLoading = true
+                            pendingRoute = destRoute
+                        }
                     }
                 )
             }
