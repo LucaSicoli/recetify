@@ -343,7 +343,7 @@ fun ReviewsAndCommentSection(
                 Box(
                     modifier = Modifier
                         .fillMaxWidth()
-                        .height(110.dp) // Mantener altura fija
+                        .height(170.dp) // Aumenta la altura de la caja de comentario
                         .offset(x = shakeOffset.value.dp)
                 ) {
                     Card(
@@ -358,10 +358,10 @@ fun ReviewsAndCommentSection(
                                 if (it.text.length <= maxChars) textComment = it
                             },
                             placeholder = null,
-                            maxLines = 4, // Menos líneas
+                            maxLines = 8, // Permite más líneas visibles
                             modifier = Modifier
                                 .fillMaxSize()
-                                .padding(8.dp), // Menos padding
+                                .padding(8.dp),
                             fontSize = 16.sp
                         )
                     }
