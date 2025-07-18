@@ -23,7 +23,7 @@ fun LoadingScreen(modifier: Modifier = Modifier) {
         LottieAnimation(
             composition = composition,
             progress = progress,
-            modifier = Modifier.size(180.dp)
+            modifier = Modifier.size(320.dp)
         )
     }
 }
