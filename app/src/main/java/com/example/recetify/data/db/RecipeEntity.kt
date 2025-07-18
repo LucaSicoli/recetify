@@ -17,5 +17,6 @@ data class RecipeEntity(
     val usuarioCreadorAlias: String?,
     val promedioRating: Double?,
     val estadoAprobacion: String   = "",
-    val estadoPublicacion: String? = ""
+    val estadoPublicacion: String? = "",
+    val fechaCreacion: String? = null // Nuevo campo para fecha de creación
 )

@@ -18,5 +18,6 @@ data class RecipeSummaryResponse(
     val usuarioFotoPerfil: String?,  // ← Aquí
     val promedioRating: Double?,
     val estadoPublicacion: String,   // PENÚLTIMO (coincide con backend)
-    val estado: String               // ÚLTIMO (este es el estado de aprobación)
+    val estado: String,              // ÚLTIMO (este es el estado de aprobación)
+    val fechaCreacion: String?       // ← NUEVO campo
 )

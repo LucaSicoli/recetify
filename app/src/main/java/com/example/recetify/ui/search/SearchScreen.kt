@@ -76,7 +76,7 @@ fun SearchScreen(navController: NavController) {
     // Estado para tipo y dirección de orden
     var sortType by remember { mutableStateOf("Alfabéticamente") }
     var sortAsc  by remember { mutableStateOf(true) }
-    val sortOptions = listOf("Alfabéticamente", "Por usuario creador")
+    val sortOptions = listOf("Alfabéticamente", "Por usuario creador", "Más nueva primero")
     var expandedSort by remember { mutableStateOf(false) }
     var localResults by remember { mutableStateOf(results) }
 
@@ -85,6 +85,7 @@ fun SearchScreen(navController: NavController) {
         localResults = when (sortType) {
             "Alfabéticamente" -> if (sortAsc) results.sortedBy { it.nombre.lowercase() } else results.sortedByDescending { it.nombre.lowercase() }
             "Por usuario creador" -> if (sortAsc) results.sortedBy { it.usuarioCreadorAlias?.lowercase() ?: "" } else results.sortedByDescending { it.usuarioCreadorAlias?.lowercase() ?: "" }
+            "Más nueva primero" -> results.sortedByDescending { it.fechaCreacion }
             else -> results
         }
     }

@@ -12,7 +12,7 @@ import androidx.room.TypeConverters
         RatingEntity::class,
         CustomRecipeEntity::class
     ],
-    version = 13, // Incrementamos la versión para incluir el nuevo campo estadoAprobacion
+    version = 14, // Incrementamos la versión para incluir el nuevo campo estadoAprobacion
     exportSchema = false
 )
 @TypeConverters(Converters::class)
