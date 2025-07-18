@@ -230,7 +230,7 @@ fun SearchScreen(navController: NavController) {
                             expanded = expandedSort,
                             onDismissRequest = { expandedSort = false },
                             modifier = Modifier
-                                .background(Color.White, shape = RoundedCornerShape(16.dp))
+                                .background(Color.White, shape = RoundedCornerShape(0.dp)) // Fondo blanco y sin bordes redondeados
                                 .width(IntrinsicSize.Min)
                         ) {
                             sortOptions.forEach { option ->
@@ -266,7 +266,7 @@ fun SearchScreen(navController: NavController) {
                                         .fillMaxWidth()
                                         .background(
                                             if (isSelected) Ladrillo.copy(alpha = 0.08f) else Color.Transparent,
-                                            shape = RoundedCornerShape(12.dp)
+                                            shape = RoundedCornerShape(0.dp) // Elimina el borde redondeado de cada opción
                                         )
                                 )
                             }
