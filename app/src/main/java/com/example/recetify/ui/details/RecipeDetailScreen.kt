@@ -95,7 +95,7 @@ fun RecipeDetailScreen(
         ) {
             if (loading || details == null) {
                 Box(Modifier.fillMaxSize(), Alignment.Center) {
-                    CircularProgressIndicator()
+                    com.example.recetify.ui.common.LoadingScreen()
                 }
             } else {
                 val ratingResponses = details.ratings.map { it.toRatingResponse() }
