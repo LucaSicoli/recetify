@@ -1,5 +1,6 @@
 package com.example.recetify.ui.details
 
+import androidx.activity.compose.BackHandler
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.*
 import androidx.compose.material3.*
@@ -74,6 +75,16 @@ fun RecipeDetailScreen(
         ReviewSubmittedDialog(
             onDismiss = { viewModel.dismissReviewDialog() }
         )
+    }
+
+    // Interceptar el botón de volver atrás (hardware y UI)
+    BackHandler {
+        // Activar loading y navegación a home
+        navController.popBackStack("home", inclusive = false)
+        // Activar loading en MainActivity
+        navController.navigate("home") {
+            popUpTo("home") { inclusive = true }
+        }
     }
 
     Scaffold(
