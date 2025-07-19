@@ -546,7 +546,10 @@ fun RecipeDetailContent(
                     )
                     // Botón volver
                     IconButton(
-                        onClick = { navController.popBackStack() },
+                        onClick = {
+                            navController.popBackStack("home", inclusive = false)
+                            navController.navigate("home")
+                        },
                         modifier = Modifier
                             .padding(16.dp)
                             .size(40.dp)
