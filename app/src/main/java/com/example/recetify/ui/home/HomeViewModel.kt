@@ -40,7 +40,9 @@ class HomeViewModel(app: Application) : AndroidViewModel(app) {
 
     init {
         viewModelScope.launch {
-            _isLoading.value = true
+            if (_recipes.value.isEmpty()) {
+                _isLoading.value = true
+            }
             repo.getAllRecipes(app.applicationContext)
                 .collect {
                     _recipes.value = it

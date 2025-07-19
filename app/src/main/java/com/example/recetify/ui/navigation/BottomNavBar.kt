@@ -89,7 +89,15 @@ fun BottomNavBar(
                                     showLogoutDialog = true
                                 } else if (currentRoute != item.route) {
                                     if (onNavWithLoading != null && item != NavItem.Logout) {
-                                        onNavWithLoading(item.route)
+                                        // CORRECCIÓN: Si el destino es "home", navega limpiando el stack igual que el BackHandler
+                                        if (item.route == "home") {
+                                            navController.navigate("home") {
+                                                popUpTo("home") { inclusive = true }
+                                                launchSingleTop = true
+                                            }
+                                        } else {
+                                            onNavWithLoading(item.route)
+                                        }
                                     } else {
                                         navController.navigate(item.route) {
                                             popUpTo(navController.graph.startDestinationId)

@@ -96,8 +96,20 @@ fun HomeScreen(
 
     BackHandler { showLogoutDialog = true }
 
+    // Estado para ignorar el loading local si el global acaba de estar activo
+    var ignoreLocalLoading by remember { mutableStateOf(false) }
+    LaunchedEffect(globalLoading) {
+        if (globalLoading) {
+            ignoreLocalLoading = true
+        } else {
+            // Espera breve para evitar doble loading
+            kotlinx.coroutines.delay(350)
+            ignoreLocalLoading = false
+        }
+    }
+
     Surface(modifier = Modifier.fillMaxSize(), color = Color(0xFFF5F5F5)) {
-        if (isLoading && !globalLoading) {
+        if (isLoading && !globalLoading && !ignoreLocalLoading) {
             // ── Mientras carga ────────────────────────────────
             Box(Modifier.fillMaxSize(), Alignment.Center) {
                 com.example.recetify.ui.common.LoadingScreen()
