@@ -87,7 +87,7 @@ fun AppNavGraph() {
         if (showLoading && pendingRoute != null) {
             com.example.recetify.ui.common.LoadingScreen()
             LaunchedEffect(pendingRoute) {
-                kotlinx.coroutines.delay(1000) // Cambiado a 1 segundo
+                kotlinx.coroutines.delay(900) // Cambiado a 1 segundo
                 showLoading = false
                 pendingRoute?.let { navController.navigate(it) {
                     popUpTo(navController.graph.startDestinationId)
