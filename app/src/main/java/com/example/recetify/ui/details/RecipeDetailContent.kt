@@ -431,7 +431,9 @@ fun RecipeDetailContent(
     isFavorite: Boolean,
     onToggleFavorite: () -> Unit,
     onSaveEditedRecipe: (RecipeResponse) -> Unit,
-    isAlumno: Boolean
+    isAlumno: Boolean,
+    from: String? = null,
+    onNavigateWithLoading: ((String) -> Unit)? = null // <-- nuevo callback
 ) {
     val primaryTextColor = Color(0xFF042628)
     val selectedButtonColor = Color(0xFF042628)
@@ -544,11 +546,24 @@ fun RecipeDetailContent(
                         activeColor = Color.White,
                         inactiveColor = Color.LightGray
                     )
-                    // Botón volver
+                    // Botón volver en el carrusel de imágenes
                     IconButton(
                         onClick = {
-                            navController.popBackStack("home", inclusive = false)
-                            navController.navigate("home")
+                            if (onNavigateWithLoading != null) {
+                                if (from == "search") {
+                                    onNavigateWithLoading("search")
+                                } else {
+                                    onNavigateWithLoading("home")
+                                }
+                            } else {
+                                if (from == "search") {
+                                    navController.popBackStack("search", inclusive = false)
+                                    navController.navigate("search")
+                                } else {
+                                    navController.popBackStack("home", inclusive = false)
+                                    navController.navigate("home")
+                                }
+                            }
                         },
                         modifier = Modifier
                             .padding(16.dp)

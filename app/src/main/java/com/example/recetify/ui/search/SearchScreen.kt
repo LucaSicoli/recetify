@@ -373,7 +373,7 @@ private fun SearchResultCard(
                         val photoParam = profileUrl
                             ?.let { URLEncoder.encode(it, StandardCharsets.UTF_8.name()) }
                             .orEmpty()
-                        navController.navigate("recipe/${summary.id}?photo=$photoParam")
+                        navController.navigate("recipe/${summary.id}?photo=$photoParam&from=search")
                     }
                     .padding(16.dp),
                 verticalAlignment = Alignment.CenterVertically

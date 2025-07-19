@@ -28,8 +28,9 @@ fun RecipeDetailScreen(
     profilePhotoUrl: String?,
     viewModel: RecipeDetailViewModel = viewModel(),
     favVm: FavouriteViewModel = viewModel(), // inyectamos el VM de favoritos
-    customVm: CustomTasteViewModel = viewModel()
-
+    customVm: CustomTasteViewModel = viewModel(),
+    from: String? = null,
+    onNavigateWithLoading: ((String) -> Unit)? = null // <-- nuevo callback
 ) {
     val context = LocalContext.current
     val details = viewModel.recipeWithDetails
@@ -79,11 +80,22 @@ fun RecipeDetailScreen(
 
     // Interceptar el botón de volver atrás (hardware y UI)
     BackHandler {
-        // Activar loading y navegación a home
-        navController.popBackStack("home", inclusive = false)
-        // Activar loading en MainActivity
-        navController.navigate("home") {
-            popUpTo("home") { inclusive = true }
+        if (onNavigateWithLoading != null) {
+            if (from == "search") {
+                onNavigateWithLoading("search")
+            } else {
+                onNavigateWithLoading("home")
+            }
+        } else {
+            if (from == "search") {
+                navController.popBackStack("search", inclusive = false)
+                navController.navigate("search")
+            } else {
+                navController.popBackStack("home", inclusive = false)
+                navController.navigate("home") {
+                    popUpTo("home") { inclusive = true }
+                }
+            }
         }
     }
 
@@ -132,7 +144,9 @@ fun RecipeDetailScreen(
                                 }
                             )
                         },
-                        isAlumno = isAlumno // <--- pasar el valor
+                        isAlumno = isAlumno,
+                        from = from, // <-- pasar el parámetro
+                        onNavigateWithLoading = onNavigateWithLoading // <-- pasar callback
                     )
                 }
             }

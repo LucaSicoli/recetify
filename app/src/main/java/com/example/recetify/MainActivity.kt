@@ -169,23 +169,28 @@ fun AppNavGraph() {
 
 
                 composable(
-                    route = "recipe/{id}?photo={photo}",
+                    route = "recipe/{id}?photo={photo}&from={from}",
                     arguments = listOf(
                         navArgument("id")   { type = NavType.LongType },
-                        navArgument("photo"){ type = NavType.StringType; defaultValue = "" }
+                        navArgument("photo"){ type = NavType.StringType; defaultValue = "" },
+                        navArgument("from") { type = NavType.StringType; defaultValue = "home" }
                     )
                 ) { back ->
                     val id    = back.arguments!!.getLong("id")
-                    // decodificamos la URL si vino no vacía
                     val photo = back.arguments!!
                         .getString("photo")
                         ?.takeIf(String::isNotBlank)
                         ?.let { java.net.URLDecoder.decode(it, "UTF-8") }
-
+                    val from = back.arguments?.getString("from") ?: "home"
                     RecipeDetailScreen(
                         recipeId        = id,
-                        profilePhotoUrl = photo,              // ← aquí le pasamos la foto
-                        navController   = navController
+                        profilePhotoUrl = photo,
+                        navController   = navController,
+                        from            = from,
+                        onNavigateWithLoading = if (from == "search") { destRoute ->
+                            showLoading = true
+                            pendingRoute = destRoute
+                        } else null
                     )
                 }
 
@@ -353,11 +358,9 @@ fun AppNavGraph() {
                     navController = navController,
                     isAlumno = isAlumno,
                     onNavWithLoading = { destRoute ->
-                        if (destRoute == "home") {
-                            navController.navigate("home") {
-                                popUpTo(navController.graph.startDestinationId)
-                                launchSingleTop = true
-                            }
+                        if (destRoute == "home" || destRoute == "search") {
+                            showLoading = true
+                            pendingRoute = destRoute
                         } else {
                             showLoading = true
                             pendingRoute = destRoute
