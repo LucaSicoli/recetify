@@ -65,7 +65,8 @@ internal val Destacado = FontFamily(
 @Composable
 fun HomeScreen(
     homeVm: HomeViewModel = viewModel(),
-    navController: NavController
+    navController: NavController,
+    globalLoading: Boolean = false // <-- nuevo parámetro
 ) {
     val context = LocalContext.current
     val scope   = rememberCoroutineScope()
@@ -96,7 +97,7 @@ fun HomeScreen(
     BackHandler { showLogoutDialog = true }
 
     Surface(modifier = Modifier.fillMaxSize(), color = Color(0xFFF5F5F5)) {
-        if (isLoading) {
+        if (isLoading && !globalLoading) {
             // ── Mientras carga ────────────────────────────────
             Box(Modifier.fillMaxSize(), Alignment.Center) {
                 com.example.recetify.ui.common.LoadingScreen()

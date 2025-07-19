@@ -1,5 +1,6 @@
 package com.example.recetify.ui.navigation
 
+import androidx.compose.animation.animateColorAsState
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
@@ -22,7 +23,8 @@ import kotlinx.coroutines.launch
 fun BottomNavBar(
     navController: NavController,
     isAlumno: Boolean,
-    onNavWithLoading: ((String) -> Unit)? = null
+    onNavWithLoading: ((String) -> Unit)? = null,
+    showLoading: Boolean = false // <-- nuevo parámetro
 ) {
     val context = LocalContext.current
     val scope = rememberCoroutineScope()
@@ -68,28 +70,36 @@ fun BottomNavBar(
                     NavigationBarItem(
                         icon = {
                             if (item.icon != null) {
+                                val isSelected = currentRoute == item.route
+                                val animatedIconColor by animateColorAsState(
+                                    targetValue = if (isSelected) Color.White else Color.Black
+                                )
                                 Icon(
                                     imageVector = item.icon,
                                     contentDescription = item.route,
-                                    modifier = Modifier.size(26.dp)
+                                    modifier = Modifier.size(26.dp),
+                                    tint = animatedIconColor
                                 )
                             }
                         },
                         selected = currentRoute == item.route,
                         onClick = {
-                            if (item == NavItem.Logout) {
-                                showLogoutDialog = true
-                            } else if (currentRoute != item.route) {
-                                if (onNavWithLoading != null && item != NavItem.Logout) {
-                                    onNavWithLoading(item.route)
-                                } else {
-                                    navController.navigate(item.route) {
-                                        popUpTo(navController.graph.startDestinationId)
-                                        launchSingleTop = true
+                            if (!showLoading) {
+                                if (item == NavItem.Logout) {
+                                    showLogoutDialog = true
+                                } else if (currentRoute != item.route) {
+                                    if (onNavWithLoading != null && item != NavItem.Logout) {
+                                        onNavWithLoading(item.route)
+                                    } else {
+                                        navController.navigate(item.route) {
+                                            popUpTo(navController.graph.startDestinationId)
+                                            launchSingleTop = true
+                                        }
                                     }
                                 }
                             }
                         },
+                        enabled = !showLoading,
                         alwaysShowLabel = false,
                         colors = navColors
                     )
@@ -101,7 +111,7 @@ fun BottomNavBar(
         if (isAlumno) {
             FloatingActionButton(
                 onClick = {
-                    if (currentRoute != NavItem.Chef.route) {
+                    if (!showLoading && currentRoute != NavItem.Chef.route) {
                         if (onNavWithLoading != null) {
                             onNavWithLoading(NavItem.Chef.route)
                         } else {

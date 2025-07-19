@@ -104,18 +104,15 @@ fun AppNavGraph() {
                         viewModel      = viewModel<LoginViewModel>(),
                         onLoginSuccess = { token, email ->
                             scope.launch {
-                                // ahora pasamos también el email:
                                 SessionManager.setAlumno(context, token, email)
-                                navController.navigate("home") {
-                                    popUpTo("login") { inclusive = true }
-                            }
+                                showLoading = true
+                                pendingRoute = "home"
                             }
                         },
                         onVisitor = {
                             scope.launch {
-                                navController.navigate("home") {
-                                    popUpTo("login") { inclusive = true }
-                            }
+                                showLoading = true
+                                pendingRoute = "home"
                             }
                         },
                         onForgot  = { navController.navigate("forgot") }
@@ -159,7 +156,7 @@ fun AppNavGraph() {
                         }
                     } else {
                         // IMPORTANTE: pasar por nombre
-                        HomeScreen(navController = navController)
+                        HomeScreen(navController = navController, globalLoading = showLoading)
                     }
                 }
 
@@ -319,16 +316,14 @@ fun AppNavGraph() {
                         onLoginSuccess = { token, email ->
                             scope.launch {
                                 SessionManager.setAlumno(context, token, email)
-                                navController.navigate("home") {
-                                    popUpTo("login") { inclusive = true }
-                            }
+                                showLoading = true
+                                pendingRoute = "home"
                             }
                         },
                         onVisitor = {
                             scope.launch {
-                                navController.navigate("home") {
-                                    popUpTo("login") { inclusive = true }
-                            }
+                                showLoading = true
+                                pendingRoute = "home"
                             }
                         },
                         onForgot  = { navController.navigate("forgot") },
@@ -357,14 +352,15 @@ fun AppNavGraph() {
                 BottomNavBar(
                     navController = navController,
                     isAlumno = isAlumno,
+                    showLoading = showLoading,
                     onNavWithLoading = { destRoute ->
-                        if (destRoute == "home" || destRoute == "search") {
-                            showLoading = true
-                            pendingRoute = destRoute
-                        } else {
+                        val currentRoute = route
+                        // Solo activar loading si NO estamos ya en la ruta destino y NO está loading activo
+                        if (!showLoading && currentRoute != destRoute) {
                             showLoading = true
                             pendingRoute = destRoute
                         }
+                        // Si ya estamos en la ruta destino o loading está activo, no hacer nada
                     }
                 )
             }
