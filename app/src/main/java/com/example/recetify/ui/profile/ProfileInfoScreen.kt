@@ -55,7 +55,8 @@ private val Destacado = FontFamily(
 @Composable
 fun ProfileInfoScreen(
     navController: NavController,
-    vm: ProfileInfoViewModel = viewModel()
+    vm: ProfileInfoViewModel = viewModel(),
+    onNavigateWithLoading: ((String) -> Unit)? = null
 ) {
     val userState = vm.user.collectAsState()
     val user = userState.value
@@ -78,7 +79,13 @@ fun ProfileInfoScreen(
                     )
                 },
                 navigationIcon = {
-                    IconButton(onClick = { navController.popBackStack() }) {
+                    IconButton(onClick = {
+                        if (onNavigateWithLoading != null) {
+                            onNavigateWithLoading("profile")
+                        } else {
+                            navController.popBackStack()
+                        }
+                    }) {
                         Icon(
                             Icons.Default.ArrowBack,
                             contentDescription = "Volver",

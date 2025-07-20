@@ -37,7 +37,8 @@ import androidx.core.net.toUri
 @Composable
 fun MyRecipesScreen(
     myRecipesVm: MyRecipesViewModel = viewModel(),
-    onRecipeClick: (Long) -> Unit = {}
+    onRecipeClick: (Long) -> Unit = {},
+    onNavigateWithLoading: ((String) -> Unit)? = null
 ) {
     val recipes   by myRecipesVm.recipes.collectAsState(initial = emptyList())
     val listState = rememberLazyListState()
@@ -109,7 +110,11 @@ fun MyRecipesScreen(
             items(recipes, key = { it.id }) { recipe ->
                 Box(Modifier.padding(horizontal = 24.dp)) {
                     PublishedRecipeCard(recipe) {
-                        onRecipeClick(recipe.id)
+                        if (onNavigateWithLoading != null) {
+                            onNavigateWithLoading("editRecipe/${recipe.id}")
+                        } else {
+                            onRecipeClick(recipe.id)
+                        }
                     }
                 }
             }

@@ -249,9 +249,7 @@ fun AppNavGraph() {
 
                 // 5) Profile flow
                 composable("profile") {
-                    // 1) observa la entrada actual del NavController:
                     val backStackEntry by navController.currentBackStackEntryAsState()
-                    // 2) siempre que cambie (o sea, vuelvas aquí), recarga TODOS tus VMs:
                     LaunchedEffect(backStackEntry) {
                         draftVm.refresh()
                         favVm.loadFavourites()
@@ -263,15 +261,32 @@ fun AppNavGraph() {
                         draftVm         = draftVm,
                         favVm           = favVm,
                         myRecipesVm     = myRecipesVm,
-                        reviewCountVm   = reviewCountVm
+                        reviewCountVm   = reviewCountVm,
+                        onNavigateWithLoading = { destRoute ->
+                            showLoading = true
+                            pendingRoute = destRoute
+                        }
                     )
                 }
-                // endpoints para tus pantallas de perfil
+                composable("profileInfo") {
+                    ProfileInfoScreen(
+                        navController = navController,
+                        onNavigateWithLoading = { destRoute ->
+                            showLoading = true
+                            pendingRoute = destRoute
+                        }
+                    )
+                }
                 composable("drafts") {
                     DraftsScreen(
                         draftVm = draftVm,
                         onDraftClick = { id ->
-                            navController.navigate("editRecipe/$id")
+                            showLoading = true
+                            pendingRoute = "editRecipe/$id"
+                        },
+                        onNavigateWithLoading = { destRoute ->
+                            showLoading = true
+                            pendingRoute = destRoute
                         }
                     )
                 }
@@ -290,6 +305,18 @@ fun AppNavGraph() {
                         }
                     )
                 }
+                composable("myRecipes") {
+                    MyRecipesScreen(
+                        onRecipeClick = { id ->
+                            showLoading = true
+                            pendingRoute = "editRecipe/$id"
+                        },
+                        onNavigateWithLoading = { destRoute ->
+                            showLoading = true
+                            pendingRoute = destRoute
+                        }
+                    )
+                }
 
                 composable(
                     "localRecipe/{id}",
@@ -303,14 +330,6 @@ fun AppNavGraph() {
                     )
                 }
 
-                composable("myRecipes") {
-                    MyRecipesScreen(onRecipeClick = { id ->
-                        navController.navigate("editRecipe/$id")
-                    })
-                }
-                composable("profileInfo") {
-                    ProfileInfoScreen(navController = navController)
-                }
 
                 composable("login?passwordChanged={passwordChanged}", arguments = listOf(
                     navArgument("passwordChanged") { type = NavType.StringType; defaultValue = "0" }

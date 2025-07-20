@@ -43,7 +43,8 @@ fun ProfileScreen(
     draftVm: DraftViewModel = viewModel(),
     favVm: FavouriteViewModel = viewModel(),
     myRecipesVm: MyRecipesViewModel = viewModel(),
-    reviewCountVm: ReviewCountViewModel       = viewModel()
+    reviewCountVm: ReviewCountViewModel = viewModel(),
+    onNavigateWithLoading: ((String) -> Unit)? = null
 ) {
     // 1) Listas
     val drafts    by draftVm.drafts.collectAsState()
@@ -160,7 +161,11 @@ fun ProfileScreen(
                 color = Color(0xFFBC6154),
                 title = "Información de perfil"
             ) {
-                navController.navigate("profileInfo")
+                if (onNavigateWithLoading != null) {
+                    onNavigateWithLoading("profileInfo")
+                } else {
+                    navController.navigate("profileInfo")
+                }
             }
             Spacer(Modifier.height(16.dp))
 
@@ -168,7 +173,11 @@ fun ProfileScreen(
                 color = Color(0xFF2E7D32),
                 title = "Mis recetas publicadas"
             ) {
-                navController.navigate("myRecipes")
+                if (onNavigateWithLoading != null) {
+                    onNavigateWithLoading("myRecipes")
+                } else {
+                    navController.navigate("myRecipes")
+                }
             }
             Spacer(Modifier.height(16.dp))
 
@@ -176,7 +185,11 @@ fun ProfileScreen(
                 color = Color(0xFFCC3366),
                 title = "Mis recetas favoritas"
             ) {
-                navController.navigate("saved")
+                if (onNavigateWithLoading != null) {
+                    onNavigateWithLoading("saved")
+                } else {
+                    navController.navigate("saved")
+                }
             }
             Spacer(Modifier.height(16.dp))
 
@@ -184,7 +197,11 @@ fun ProfileScreen(
                 color = Color(0xFF5A6F8A),
                 title = "Mis borradores"
             ) {
-                navController.navigate("drafts")
+                if (onNavigateWithLoading != null) {
+                    onNavigateWithLoading("drafts")
+                } else {
+                    navController.navigate("drafts")
+                }
             }
 
             Spacer(Modifier.height(32.dp))

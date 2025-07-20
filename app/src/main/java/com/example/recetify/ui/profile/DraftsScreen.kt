@@ -40,7 +40,8 @@ import androidx.compose.ui.text.style.TextAlign
 @Composable
 fun DraftsScreen(
     draftVm: DraftViewModel = viewModel(),
-    onDraftClick: (Long) -> Unit = {}
+    onDraftClick: (Long) -> Unit = {},
+    onNavigateWithLoading: ((String) -> Unit)? = null
 ) {
     // Refresca la lista cada vez que se entra a la pantalla
     LaunchedEffect(Unit) {
@@ -110,7 +111,13 @@ fun DraftsScreen(
                 Box(Modifier.padding(horizontal = 24.dp)) {
                     DraftRecipeCard(
                         draft = draft,
-                        onClick = onDraftClick,
+                        onClick = { id ->
+                            if (onNavigateWithLoading != null) {
+                                onNavigateWithLoading("editRecipe/$id")
+                            } else {
+                                onDraftClick(id)
+                            }
+                        },
                         onDelete = { draftVm.deleteDraft(it) }
                     )
                 }
