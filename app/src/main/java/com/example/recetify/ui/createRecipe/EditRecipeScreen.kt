@@ -21,6 +21,7 @@ import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
+import androidx.compose.material.icons.automirrored.filled.ArrowForward
 import androidx.compose.material.icons.filled.*
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
@@ -683,7 +684,7 @@ fun EditRecipeScreen(
 
                     Divider(color = Color(0xFFE0E0E0), thickness = 2.dp)
 
-                    // Ingredientes usando IngredientRow de CreateRecipeScreen
+                    // Ingredientes usando carrusel igual que CreateRecipeScreen
                     Box(
                         modifier = Modifier
                             .fillMaxWidth()
@@ -695,115 +696,102 @@ fun EditRecipeScreen(
                         Text("Ingredientes (${ingredients.size})", color = Color.White)
                     }
 
-                    Column(Modifier.padding(vertical = 8.dp)) {
-                        ingredients.forEachIndexed { idx, ing ->
-                            val offsetX = remember { Animatable(0f) }
-                            val scope = rememberCoroutineScope()
-                            var dismissed by remember { mutableStateOf(false) }
-
-                            if (!dismissed) {
-                                Box(
-                                    Modifier
-                                        .fillMaxWidth()
-                                        .height(IntrinsicSize.Min)
-                                        .pointerInput(Unit) {
-                                            detectHorizontalDragGestures(
-                                                onDragEnd = {
-                                                    if (offsetX.value < -150f) {
-                                                        scope.launch {
-                                                            offsetX.animateTo(
-                                                                -500f,
-                                                                animationSpec = tween(300)
-                                                            )
-                                                            dismissed = true
-                                                            val updatedIngredients =
-                                                                ingredients.toMutableList()
-                                                            updatedIngredients.removeAt(idx)
-                                                            ingredients = updatedIngredients
-                                                        }
-                                                    } else {
-                                                        scope.launch {
-                                                            offsetX.animateTo(
-                                                                0f,
-                                                                animationSpec = tween(300)
-                                                            )
-                                                        }
-                                                    }
-                                                },
-                                                onHorizontalDrag = { change, dragAmount ->
-                                                    val newOffset =
-                                                        (offsetX.value + dragAmount).coerceAtMost(0f)
-                                                    scope.launch { offsetX.snapTo(newOffset) }
-                                                }
-                                            )
-                                        }
-                                ) {
-                                    // Fondo rojo con tacho
-                                    if (offsetX.value < -20f) {
-                                        Box(
-                                            Modifier
-                                                .matchParentSize()
-                                                .background(Color(0xFFD32F2F)),
-                                            contentAlignment = Alignment.CenterEnd
-                                        ) {
-                                            Icon(
-                                                Icons.Default.Delete,
-                                                contentDescription = "Eliminar",
-                                                tint = Color.White,
-                                                modifier = Modifier.padding(end = 24.dp)
-                                            )
-                                        }
-                                    }
-
-                                    // Contenido desplazable - usando IngredientRow de CreateRecipeScreen
-                                    Box(
-                                        Modifier
-                                            .offset { IntOffset(offsetX.value.toInt(), 0) }
-                                    ) {
-                                        IngredientRow(idx, ing, onUpdate = { new ->
-                                            val updatedIngredients = ingredients.toMutableList()
-                                            updatedIngredients[idx] = new
-                                            ingredients = updatedIngredients
-                                        }, onDelete = {
-                                            dismissed = true
-                                            val updatedIngredients = ingredients.toMutableList()
-                                            updatedIngredients.removeAt(idx)
-                                            ingredients = updatedIngredients
-                                        })
-                                    }
-                                }
-                            }
-                        }
-
-                        Card(
+                    Card(
+                        Modifier
+                            .fillMaxWidth()
+                            .clickable { showIngredientDialog = true }
+                            .padding(8.dp),
+                        shape = RoundedCornerShape(12.dp),
+                        colors = CardDefaults.cardColors(containerColor = Color.White),
+                        elevation = CardDefaults.cardElevation(4.dp)
+                    ) {
+                        Row(
                             Modifier
                                 .fillMaxWidth()
-                                .clickable { showIngredientDialog = true }
-                                .padding(8.dp),
-                            shape = RoundedCornerShape(12.dp),
-                            colors = CardDefaults.cardColors(containerColor = Color.White),
-                            elevation = CardDefaults.cardElevation(4.dp)
+                                .padding(16.dp),
+                            horizontalArrangement = Arrangement.Center,
+                            verticalAlignment = Alignment.CenterVertically
+                        ) {
+                            Icon(
+                                Icons.Default.Add,
+                                contentDescription = null,
+                                tint = Color(0xFF006400)
+                            )
+                            Spacer(Modifier.width(8.dp))
+                            Text(
+                                "Agregar ingrediente",
+                                color = Color(0xFF006400),
+                                fontWeight = FontWeight.Medium,
+                                fontFamily = Destacado
+                            )
+                        }
+                    }
+
+                    if (ingredients.isNotEmpty()) {
+                        var currentIngredientIndex by remember { mutableStateOf(0) }
+                        val currentIngredient = ingredients[currentIngredientIndex]
+                        Column(
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .heightIn(max = 340.dp),
+                            verticalArrangement = Arrangement.spacedBy(8.dp)
                         ) {
                             Row(
-                                Modifier
-                                    .fillMaxWidth()
-                                    .padding(16.dp),
+                                modifier = Modifier.fillMaxWidth(),
                                 horizontalArrangement = Arrangement.Center,
                                 verticalAlignment = Alignment.CenterVertically
                             ) {
-                                Icon(
-                                    Icons.Default.Add,
-                                    contentDescription = null,
-                                    tint = Color(0xFF006400)
-                                )
-                                Spacer(Modifier.width(8.dp))
+                                IconButton(
+                                    onClick = {
+                                        if (currentIngredientIndex > 0) currentIngredientIndex--
+                                    },
+                                    enabled = currentIngredientIndex > 0
+                                ) {
+                                    Icon(
+                                        Icons.AutoMirrored.Filled.ArrowBack,
+                                        contentDescription = "Ingrediente anterior",
+                                        tint = if (currentIngredientIndex > 0) Color(0xFFBC6154) else Color.Gray
+                                    )
+                                }
                                 Text(
-                                    "Agregar ingrediente",
-                                    color = Color(0xFF006400),
+                                    "Ingrediente ${currentIngredientIndex + 1} de ${ingredients.size}",
+                                    color = Color.DarkGray,
                                     fontWeight = FontWeight.Medium,
-                                    fontFamily = Destacado
+                                    fontFamily = Destacado,
+                                    modifier = Modifier.padding(horizontal = 16.dp)
                                 )
+                                IconButton(
+                                    onClick = {
+                                        if (currentIngredientIndex < ingredients.size - 1) currentIngredientIndex++
+                                    },
+                                    enabled = currentIngredientIndex < ingredients.size - 1
+                                ) {
+                                    Icon(
+                                        Icons.AutoMirrored.Filled.ArrowForward,
+                                        contentDescription = "Ingrediente siguiente",
+                                        tint = if (currentIngredientIndex < ingredients.size - 1) Color(0xFFBC6154) else Color.Gray
+                                    )
+                                }
                             }
+                            IngredientRow(
+                                idx = currentIngredientIndex,
+                                ingredient = currentIngredient,
+                                onUpdate = { newIng ->
+                                    val updatedIngredients = ingredients.toMutableList()
+                                    updatedIngredients[currentIngredientIndex] = newIng
+                                    ingredients = updatedIngredients
+                                },
+                                onDelete = {
+                                    val updatedIngredients = ingredients.toMutableList()
+                                    updatedIngredients.removeAt(currentIngredientIndex)
+                                    ingredients = updatedIngredients
+                                    if (currentIngredientIndex >= ingredients.size && ingredients.isNotEmpty()) {
+                                        currentIngredientIndex = ingredients.size - 1
+                                    } else if (ingredients.isEmpty()) {
+                                        currentIngredientIndex = 0
+                                    }
+                                }
+                            )
                         }
                     }
 
