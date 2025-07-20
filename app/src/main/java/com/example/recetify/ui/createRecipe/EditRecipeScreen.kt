@@ -171,12 +171,14 @@ fun EditRecipeScreen(
         }
     }
 
+    // Estados para mostrar los diálogos de acción
+    var showPublishedDialog by remember { mutableStateOf(false) }
+    var showSavedDialog by remember { mutableStateOf(false) }
+
     LaunchedEffect(draftResult) {
         draftResult
             ?.onSuccess {
-                Toast.makeText(context, "Borrador #${it.id} actualizado", Toast.LENGTH_SHORT).show()
-                viewModel.loadDraftDetail(recipeId)
-                onSaved()
+                showSavedDialog = true
             }
             ?.onFailure {
                 Toast.makeText(context, "Error actualizando: ${it.message}", Toast.LENGTH_SHORT)
@@ -187,8 +189,7 @@ fun EditRecipeScreen(
     LaunchedEffect(publishResult) {
         publishResult
             ?.onSuccess {
-                Toast.makeText(context, "¡Publicado!", Toast.LENGTH_SHORT).show()
-                onPublished()
+                showPublishedDialog = true
             }
             ?.onFailure {
                 Toast.makeText(context, "Error publicando: ${it.message}", Toast.LENGTH_SHORT)
@@ -1290,5 +1291,20 @@ fun EditRecipeScreen(
                 Toast.makeText(context, "Conéctate a WiFi y vuelve a intentarlo", Toast.LENGTH_LONG).show()
             }
         )
+    }
+
+    // Diálogo de éxito al publicar
+    if (showPublishedDialog) {
+        com.example.recetify.ui.common.RecipePublishedDialog {
+            showPublishedDialog = false
+            onPublished()
+        }
+    }
+    // Diálogo de éxito al guardar como borrador
+    if (showSavedDialog) {
+        com.example.recetify.ui.common.RecipeSavedDialog {
+            showSavedDialog = false
+            onSaved()
+        }
     }
 }
