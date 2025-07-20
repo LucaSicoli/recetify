@@ -87,7 +87,7 @@ fun AppNavGraph() {
         if (showLoading && pendingRoute != null) {
             com.example.recetify.ui.common.LoadingScreen()
             LaunchedEffect(pendingRoute) {
-                kotlinx.coroutines.delay(800)
+                kotlinx.coroutines.delay(500)
                 showLoading = false // Desactivar loading global ANTES de navegar
                 pendingRoute?.let { navController.navigate(it) {
                     popUpTo(navController.graph.startDestinationId)
