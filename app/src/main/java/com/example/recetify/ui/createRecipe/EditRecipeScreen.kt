@@ -239,8 +239,9 @@ fun EditRecipeScreen(
 
     // Interceptar el back físico y el botón de volver
     androidx.activity.compose.BackHandler {
+        // Volver a la pantalla desde la que se llegó (drafts o myRecipes)
         onNavigateWithLoading?.invoke(from) ?: navController.navigate(from) {
-            popUpTo(from)
+            popUpTo(from) { inclusive = false }
             launchSingleTop = true
         }
     }

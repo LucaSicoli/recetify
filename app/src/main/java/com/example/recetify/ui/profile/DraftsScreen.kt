@@ -123,7 +123,7 @@ fun DraftsScreen(
                         draft = draft,
                         onClick = { id ->
                             if (onNavigateWithLoading != null) {
-                                onNavigateWithLoading("editRecipe/$id")
+                                onNavigateWithLoading("editRecipe/$id?from=drafts")
                             } else {
                                 onDraftClick(id)
                             }

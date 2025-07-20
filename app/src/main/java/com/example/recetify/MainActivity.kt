@@ -231,15 +231,15 @@ fun AppNavGraph() {
                         onSaved     = {
                             draftVm.refresh()
                             myRecipesVm.refresh()
-                            navController.navigate(from) {
-                                popUpTo(from) { inclusive = false }
+                            navController.navigate("profile") {
+                                popUpTo("profile") { inclusive = false }
                             }
                         },
                         onPublished = {
                             draftVm.refresh()
                             myRecipesVm.refresh()
-                            navController.navigate(from) {
-                                popUpTo(from) { inclusive = false }
+                            navController.navigate("profile") {
+                                popUpTo("profile") { inclusive = false }
                             }
                         },
                         from = from,

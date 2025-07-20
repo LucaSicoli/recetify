@@ -112,7 +112,7 @@ fun MyRecipesScreen(
                 Box(Modifier.padding(horizontal = 24.dp)) {
                     PublishedRecipeCard(recipe) {
                         if (onNavigateWithLoading != null) {
-                            onNavigateWithLoading("editRecipe/${recipe.id}")
+                            onNavigateWithLoading("editRecipe/${recipe.id}?from=myRecipes")
                         } else {
                             onRecipeClick(recipe.id)
                         }
