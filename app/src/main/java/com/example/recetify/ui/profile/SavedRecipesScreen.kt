@@ -52,8 +52,8 @@ fun SavedRecipesScreen(
     favVm: FavouriteViewModel = viewModel(),
     customVm: CustomTasteViewModel = viewModel(),
     onRecipeClick: (Long) -> Unit = {},
-    onLocalRecipeClick: (Long) -> Unit = {}
-
+    onLocalRecipeClick: (Long) -> Unit = {},
+    onNavigateWithLoading: ((Long) -> Unit)? = null // <-- nuevo callback
 ) {
     var selectedTab by remember { mutableStateOf(0) }
     val tabs      = listOf("Favoritos", "Mi gusto")
@@ -163,9 +163,13 @@ fun SavedRecipesScreen(
                         item     = item,
                         onClick  = {
                             if (selectedTab == 0) {
-                                onRecipeClick(item.recipeId)       // ← Favoritos (backend)
+                                if (onNavigateWithLoading != null) {
+                                    onNavigateWithLoading(item.recipeId)
+                                } else {
+                                    onRecipeClick(item.recipeId)
+                                }
                             } else {
-                                onLocalRecipeClick(item.recipeId)  // ← "Mi gusto" (local)
+                                onLocalRecipeClick(item.recipeId)
                             }
                         },
                         onUnsave = {

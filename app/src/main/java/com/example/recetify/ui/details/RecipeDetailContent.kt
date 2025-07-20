@@ -552,6 +552,8 @@ fun RecipeDetailContent(
                             if (onNavigateWithLoading != null) {
                                 if (from == "search") {
                                     onNavigateWithLoading("search")
+                                } else if (from == "saved") {
+                                    onNavigateWithLoading("saved")
                                 } else {
                                     onNavigateWithLoading("home")
                                 }
@@ -559,6 +561,9 @@ fun RecipeDetailContent(
                                 if (from == "search") {
                                     navController.popBackStack("search", inclusive = false)
                                     navController.navigate("search")
+                                } else if (from == "saved") {
+                                    navController.popBackStack("saved", inclusive = false)
+                                    navController.navigate("saved")
                                 } else {
                                     navController.popBackStack("home", inclusive = false)
                                     navController.navigate("home")

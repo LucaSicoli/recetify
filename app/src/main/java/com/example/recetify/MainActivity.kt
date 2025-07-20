@@ -184,7 +184,7 @@ fun AppNavGraph() {
                         profilePhotoUrl = photo,
                         navController   = navController,
                         from            = from,
-                        onNavigateWithLoading = if (from == "search") { destRoute ->
+                        onNavigateWithLoading = if (from == "search" || from == "saved") { destRoute ->
                             showLoading = true
                             pendingRoute = destRoute
                         } else null
@@ -278,10 +278,15 @@ fun AppNavGraph() {
                 composable("saved") {
                     SavedRecipesScreen(
                         onRecipeClick = { id ->
-                            navController.navigate("recipe/$id")
+                            showLoading = true
+                            pendingRoute = "recipe/$id?from=saved"
                         },
                         onLocalRecipeClick = { localId ->
                             navController.navigate("localRecipe/$localId")
+                        },
+                        onNavigateWithLoading = { id ->
+                            showLoading = true
+                            pendingRoute = "recipe/$id?from=saved"
                         }
                     )
                 }
