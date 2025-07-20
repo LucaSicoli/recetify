@@ -285,6 +285,7 @@ fun CreateRecipeScreen(
     LaunchedEffect(publishResult) {
         publishResult?.onSuccess {
             showPublishedDialog = true
+            // Eliminar llamada directa a onPublished()
         }?.onFailure {
             Toast.makeText(context, "Error publicando: ${it.message}", Toast.LENGTH_SHORT).show()
         }
@@ -1221,7 +1222,7 @@ fun CreateRecipeScreen(
                                                 ingredients = ingredients.toList(),
                                                 steps       = steps.toList()
                                             )
-                                            scope.launch { handleSaveOrPublish(request, localMediaUri, true, onPublished) }
+                                            scope.launch { handleSaveOrPublish(request, localMediaUri, true) } // Eliminar onPublished
                                         }
                                     },
                                     enabled = !viewModel.submitting.collectAsState().value,
