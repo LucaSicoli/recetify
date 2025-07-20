@@ -1620,6 +1620,7 @@ fun CreateRecipeScreen(
         // Diálogo de éxito al publicar
         if (showPublishedDialog) {
             com.example.recetify.ui.common.RecipePublishedDialog {
+                // Solo cerrar y navegar cuando el usuario presiona el botón
                 showPublishedDialog = false
                 onPublished()
             }

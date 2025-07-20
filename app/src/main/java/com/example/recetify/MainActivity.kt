@@ -201,12 +201,10 @@ fun AppNavGraph() {
                     CreateRecipeScreen(
                         viewModel   = vm,
                         onClose     = { navController.popBackStack() },
-                        onSaved     = { navController.navigate("drafts") },
-                        onPublished = { navController.navigate("myRecipes") },
+                        onSaved     = { navController.navigate("profile") },
+                        onPublished = { navController.navigate("profile") },
                         onEditExisting = { existingRecipeId ->
-                            // Navegar a EditRecipeScreen con la receta existente
                             navController.navigate("editRecipe/$existingRecipeId") {
-                                // Limpiar el stack para evitar volver a crear receta
                                 popUpTo("createRecipe") { inclusive = true }
                             }
                         }
