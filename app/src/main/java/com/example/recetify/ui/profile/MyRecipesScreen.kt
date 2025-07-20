@@ -1,6 +1,7 @@
 // 3) MyRecipesScreen.kt
 package com.example.recetify.ui.profile
 
+import androidx.activity.compose.BackHandler
 import androidx.compose.foundation.ExperimentalFoundationApi
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
@@ -119,6 +120,11 @@ fun MyRecipesScreen(
                 }
             }
         }
+    }
+
+    // Interceptar el botón nativo de volver
+    BackHandler {
+        onNavigateWithLoading?.invoke("profile")
     }
 }
 

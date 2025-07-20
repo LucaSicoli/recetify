@@ -20,6 +20,7 @@ import androidx.compose.foundation.text.BasicTextField
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.filled.*
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
@@ -55,9 +56,12 @@ import com.example.recetify.ui.common.MobileDataWarningDialog
 fun EditRecipeScreen(
     recipeId: Long,
     viewModel: CreateRecipeViewModel,
-    onClose:    () -> Unit,
-    onSaved:    () -> Unit,
-    onPublished:() -> Unit,
+    onClose: () -> Unit,
+    onSaved: () -> Unit,
+    onPublished: () -> Unit,
+    from: String = "profile",
+    navController: androidx.navigation.NavController,
+    onNavigateWithLoading: ((String) -> Unit)? = null
 ) {
     val context = LocalContext.current
 
@@ -233,6 +237,14 @@ fun EditRecipeScreen(
         }.also(anyLauncher::launch)
     }
 
+    // Interceptar el back físico y el botón de volver
+    androidx.activity.compose.BackHandler {
+        onNavigateWithLoading?.invoke(from) ?: navController.navigate(from) {
+            popUpTo(from)
+            launchSingleTop = true
+        }
+    }
+
     Scaffold { inner ->
         Column(
             Modifier
@@ -286,14 +298,19 @@ fun EditRecipeScreen(
                     )
                 }
                 IconButton(
-                    onClick = onClose,
+                    onClick = {
+                        onNavigateWithLoading?.invoke(from) ?: navController.navigate(from) {
+                            popUpTo(from)
+                            launchSingleTop = true
+                        }
+                    },
                     modifier = Modifier
                         .padding(16.dp)
                         .size(40.dp)
-                        .background(Color.DarkGray, CircleShape)
+                        .background(DarkGray, CircleShape)
                         .align(Alignment.TopStart)
                 ) {
-                    Icon(Icons.Default.ArrowBack, contentDescription = "Volver", tint = Color.White)
+                    Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = "Volver", tint = Color.White)
                 }
             }
 

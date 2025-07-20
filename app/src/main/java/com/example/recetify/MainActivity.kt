@@ -212,10 +212,11 @@ fun AppNavGraph() {
                         }
                     )
                 }
-                composable("editRecipe/{recipeId}") { backStack ->
+                composable("editRecipe/{recipeId}?from={from}") { backStack ->
                     val recipeId = backStack.arguments
                         ?.getString("recipeId")
                         ?.toLongOrNull() ?: return@composable
+                    val from = backStack.arguments?.getString("from") ?: "profile"
 
                     // Usamos el mismo ViewModel de creación, inyectado igual que en Create
                     val vm: CreateRecipeViewModel =
@@ -228,21 +229,24 @@ fun AppNavGraph() {
                         viewModel   = vm,
                         onClose     = { navController.popBackStack() },
                         onSaved     = {
-                            // 1) recarga borradores
                             draftVm.refresh()
-                            // 2) recarga publicadas
                             myRecipesVm.refresh()
-                            // 3) volvemos atrás
-                            navController.navigate("profile") {
-                                popUpTo("profile") { inclusive = false }
+                            navController.navigate(from) {
+                                popUpTo(from) { inclusive = false }
                             }
                         },
                         onPublished = {
                             draftVm.refresh()
                             myRecipesVm.refresh()
-                            navController.navigate("profile") {
-                                popUpTo("profile") { inclusive = false }
+                            navController.navigate(from) {
+                                popUpTo(from) { inclusive = false }
                             }
+                        },
+                        from = from,
+                        navController = navController,
+                        onNavigateWithLoading = { destRoute ->
+                            showLoading = true
+                            pendingRoute = destRoute
                         }
                     )
                 }
@@ -257,11 +261,11 @@ fun AppNavGraph() {
                         reviewCountVm.loadCount()
                     }
                     ProfileScreen(
-                        navController   = navController,
-                        draftVm         = draftVm,
-                        favVm           = favVm,
-                        myRecipesVm     = myRecipesVm,
-                        reviewCountVm   = reviewCountVm,
+                        navController = navController,
+                        draftVm = draftVm,
+                        favVm = favVm,
+                        myRecipesVm = myRecipesVm,
+                        reviewCountVm = reviewCountVm,
                         onNavigateWithLoading = { destRoute ->
                             showLoading = true
                             pendingRoute = destRoute
@@ -282,7 +286,7 @@ fun AppNavGraph() {
                         draftVm = draftVm,
                         onDraftClick = { id ->
                             showLoading = true
-                            pendingRoute = "editRecipe/$id"
+                            pendingRoute = "editRecipe/$id?from=drafts"
                         },
                         onNavigateWithLoading = { destRoute ->
                             showLoading = true
@@ -309,7 +313,7 @@ fun AppNavGraph() {
                     MyRecipesScreen(
                         onRecipeClick = { id ->
                             showLoading = true
-                            pendingRoute = "editRecipe/$id"
+                            pendingRoute = "editRecipe/$id?from=myRecipes"
                         },
                         onNavigateWithLoading = { destRoute ->
                             showLoading = true

@@ -1,5 +1,6 @@
 package com.example.recetify.ui.profile
 
+import androidx.activity.compose.BackHandler
 import androidx.compose.foundation.ExperimentalFoundationApi
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
@@ -49,6 +50,15 @@ fun DraftsScreen(
     }
     val drafts by draftVm.drafts.collectAsState(initial = emptyList())
     val listState = rememberLazyListState()
+
+    // Interceptar el botón nativo de volver
+    BackHandler {
+        onNavigateWithLoading?.invoke("profile") ?: draftVm.refresh().also {
+            // Navegar a profile
+            // Si no hay animación, navega directo
+            // Si hay animación, la maneja el flujo principal
+        }
+    }
 
     LazyColumn(
         state = listState,

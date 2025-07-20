@@ -66,6 +66,14 @@ fun ProfileInfoScreen(
     val scope = rememberCoroutineScope()
     var showLogoutDialog by remember { mutableStateOf(false) }
 
+    // Interceptar el botón nativo de volver
+    androidx.activity.compose.BackHandler {
+        onNavigateWithLoading?.invoke("profile") ?: navController.navigate("profile") {
+            popUpTo("profile") { inclusive = false }
+            launchSingleTop = true
+        }
+    }
+
     Scaffold(
         containerColor = Color(0xFFF8F9FA),
         topBar = {
