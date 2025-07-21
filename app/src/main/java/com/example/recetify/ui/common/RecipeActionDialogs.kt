@@ -66,7 +66,7 @@ fun RecipePublishedDialog(
                     )
                 }
                 Text(
-                    text = "¡Receta publicada!",
+                    text = "Receta publicada!",
                     fontSize = 24.sp,
                     fontWeight = FontWeight.Bold,
                     fontFamily = Sen,
@@ -74,13 +74,14 @@ fun RecipePublishedDialog(
                     textAlign = TextAlign.Center
                 )
                 Text(
-                    text = "Tu receta fue enviada y está pendiente de aprobación por la administración. Una vez aprobada, otros usuarios podrán verla.",
-                    fontSize = 16.sp,
+                    text = "Tu receta fue enviada y será revisada por la administración. Recuerda que otros usuarios solo podrán verla cuando esté aprobada.",
+                    fontSize = 15.sp,
                     fontFamily = Sen,
                     color = Color(0xFF6B7280),
                     textAlign = TextAlign.Center,
-                    lineHeight = 24.sp,
-                    modifier = Modifier.fillMaxWidth()
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(bottom = 8.dp)
                 )
                 Card(
                     modifier = Modifier.fillMaxWidth(),
@@ -92,7 +93,8 @@ fun RecipePublishedDialog(
                         modifier = Modifier
                             .fillMaxWidth()
                             .padding(horizontal = 20.dp, vertical = 16.dp),
-                        verticalArrangement = Arrangement.spacedBy(6.dp)
+                        verticalArrangement = Arrangement.spacedBy(6.dp),
+                        horizontalAlignment = Alignment.CenterHorizontally
                     ) {
                         Text(
                             text = "Moderación",
@@ -101,16 +103,17 @@ fun RecipePublishedDialog(
                             fontWeight = FontWeight.SemiBold,
                             color = Color(0xFF1F2937),
                             modifier = Modifier.fillMaxWidth(),
-                            maxLines = 1
+                            maxLines = 1,
+                            textAlign = TextAlign.Center
                         )
                         Text(
-                            text = "La revisión puede demorar hasta 24 horas.",
+                            text = "Tu receta fue enviada y está pendiente de aprobación por la administración. Una vez aprobada, otros usuarios podrán verla.",
                             fontSize = 13.sp,
                             fontFamily = Sen,
                             color = Color(0xFF6B7280),
                             lineHeight = 18.sp,
                             modifier = Modifier.fillMaxWidth(),
-                            textAlign = TextAlign.Start
+                            textAlign = TextAlign.Center
                         )
                     }
                 }
@@ -200,7 +203,8 @@ fun RecipeSavedDialog(
                         modifier = Modifier
                             .fillMaxWidth()
                             .padding(horizontal = 20.dp, vertical = 16.dp),
-                        verticalArrangement = Arrangement.spacedBy(6.dp)
+                        verticalArrangement = Arrangement.spacedBy(6.dp),
+                        horizontalAlignment = Alignment.CenterHorizontally
                     ) {
                         Text(
                             text = "¿Dónde encontrarla?",
@@ -209,7 +213,17 @@ fun RecipeSavedDialog(
                             fontWeight = FontWeight.SemiBold,
                             color = Color(0xFF1F2937),
                             modifier = Modifier.fillMaxWidth(),
-                            maxLines = 1
+                            maxLines = 1,
+                            textAlign = TextAlign.Center
+                        )
+                        Text(
+                            text = "Moderación",
+                            fontSize = 16.sp,
+                            fontFamily = Sen,
+                            fontWeight = FontWeight.Bold,
+                            color = Color(0xFF3B82F6),
+                            modifier = Modifier.fillMaxWidth(),
+                            textAlign = TextAlign.Center
                         )
                         Text(
                             text = "Ve a la sección de borradores en tu perfil para editar o publicar tu receta.",
@@ -243,4 +257,3 @@ fun RecipeSavedDialog(
         }
     }
 }
-

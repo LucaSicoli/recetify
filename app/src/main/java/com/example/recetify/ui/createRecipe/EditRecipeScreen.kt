@@ -1167,14 +1167,15 @@ fun EditRecipeScreen(
                     OutlinedTextField(
                         value = searchQuery,
                         onValueChange = { searchQuery = it },
-                        placeholder = { Text("Buscar…") },
+                        placeholder = { Text("Buscar…", fontFamily = Destacado, color = Color.Black) },
                         modifier = Modifier
                             .fillMaxWidth()
                             .padding(bottom = 8.dp),
-                        singleLine = true
+                        singleLine = true,
+                        textStyle = LocalTextStyle.current.copy(fontFamily = Destacado, color = Color.Black)
                     )
                     LazyColumn(
-                        modifier = Modifier.heightIn(max = 300.dp) // Limitar altura del diálogo
+                        modifier = Modifier.heightIn(max = 400.dp) // Limitar altura del diálogo
                     ) {
                         items(filteredIngredients) { ing ->
                             Row(
@@ -1217,7 +1218,8 @@ fun EditRecipeScreen(
                                 Text(
                                     ing,
                                     fontSize = 16.sp,
-                                    color = Color.Black
+                                    color = Color.Black,
+                                    fontFamily = Destacado
                                 )
                             }
                         }
@@ -1225,8 +1227,12 @@ fun EditRecipeScreen(
                 }
             },
             confirmButton = {
-                TextButton(onClick = { showIngredientDialog = false }) {
-                    Text("Cancelar", color = Color(0xFFBC6154))
+                TextButton(
+                    onClick = { showIngredientDialog = false },
+                    modifier = Modifier
+                        .background(Color(0xFFBC6154), RoundedCornerShape(8.dp))
+                ) {
+                    Text("Cancelar", fontFamily = Destacado, color = Color.White)
                 }
             }
         )

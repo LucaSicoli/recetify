@@ -1284,15 +1284,13 @@ fun CreateRecipeScreen(
 
             AlertDialog(
                 onDismissRequest = { showIngredientDialog = false },
-                // Le ponemos un shape y fondo blanco
                 shape = RoundedCornerShape(12.dp),
                 containerColor = Color.White,
                 tonalElevation = 4.dp,
-                // El texto y los botones en negro
                 title = {
                     Text(
                         "Seleccionar ingrediente",
-                        color = Black,
+                        color = Color.Black,
                         fontFamily = Destacado,
                         fontWeight = FontWeight.SemiBold
                     )
@@ -1301,18 +1299,21 @@ fun CreateRecipeScreen(
                     Column(
                         modifier = Modifier
                             .fillMaxWidth()
-                            .background(Color.White) // opcional, para asegurarnos
+                            .background(Color.White)
                     ) {
                         OutlinedTextField(
                             value = searchQuery,
                             onValueChange = { searchQuery = it },
-                            placeholder = { Text("Buscar…", fontFamily = Destacado) },
+                            placeholder = { Text("Buscar…", fontFamily = Destacado, color = Color.Black) },
                             modifier = Modifier
                                 .fillMaxWidth()
                                 .padding(bottom = 8.dp),
-                            singleLine = true
+                            singleLine = true,
+                            textStyle = LocalTextStyle.current.copy(fontFamily = Destacado, color = Color.Black)
                         )
-                        LazyColumn {
+                        LazyColumn(
+                            modifier = Modifier.heightIn(max = 400.dp)
+                        ) {
                             items(filteredIngredients) { ing ->
                                 Row(
                                     modifier = Modifier
@@ -1326,11 +1327,10 @@ fun CreateRecipeScreen(
                                             )
                                             showIngredientDialog = false
                                         }
-                                        .background(Color.White) // filas blancas
+                                        .background(Color.White)
                                         .padding(vertical = 12.dp, horizontal = 8.dp),
                                     verticalAlignment = Alignment.CenterVertically
                                 ) {
-                                    // Reemplazamos el emoji con la imagen de TheMealDB
                                     val imageUrl = TheMealDBImages.getIngredientImageUrlSmart(ing)
                                     if (imageUrl != null) {
                                         Box(
@@ -1348,14 +1348,13 @@ fun CreateRecipeScreen(
                                             )
                                         }
                                     } else {
-                                        // Fallback al emoji si no hay imagen disponible
                                         Text(obtenerEmoji(ing), fontSize = 20.sp)
                                     }
                                     Spacer(Modifier.width(12.dp))
                                     Text(
                                         ing,
                                         fontSize = 16.sp,
-                                        color = Black,
+                                        color = Color.Black,
                                         fontFamily = Destacado
                                     )
                                 }
@@ -1364,8 +1363,12 @@ fun CreateRecipeScreen(
                     }
                 },
                 confirmButton = {
-                    TextButton(onClick = { showIngredientDialog = false }) {
-                        Text("Cancelar", color = Accent)
+                    TextButton(
+                        onClick = { showIngredientDialog = false },
+                        modifier = Modifier
+                            .background(Color(0xFFBC6154), RoundedCornerShape(8.dp))
+                    ) {
+                        Text("Cancelar", fontFamily = Destacado, color = Color.White)
                     }
                 }
             )
