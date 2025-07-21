@@ -1019,16 +1019,17 @@ fun CreateRecipeScreen(
                         modifier = Modifier
                             .fillMaxWidth()
                             .clickable {
-                                // 1) crea el paso vacío
-                                steps += RecipeStepRequest(
-                                    numeroPaso  = steps.size + 1,
-                                    titulo      = "",
-                                    descripcion = "",
-                                    mediaUrls   = emptyList(),
-                                    id = UUID.randomUUID().toString() // Asegurarse de que el nuevo paso también tenga un id
-                                )
-                                // 2) marca ese índice como “en edición”
-                                selectedStepIndex = steps.lastIndex
+                                // Limitar el número máximo de pasos para prevenir problemas de rendimiento
+                                if (steps.size < 20) {
+                                    steps += RecipeStepRequest(
+                                        numeroPaso  = steps.size + 1,
+                                        titulo      = "",
+                                        descripcion = "",
+                                        mediaUrls   = emptyList(),
+                                        id = UUID.randomUUID().toString() // Asegurarse de que el nuevo paso también tenga un id
+                                    )
+                                    selectedStepIndex = steps.lastIndex
+                                }
                             }
                             .padding(8.dp),
                         shape     = RoundedCornerShape(12.dp),
@@ -1044,7 +1045,11 @@ fun CreateRecipeScreen(
                         ) {
                             Icon(Icons.Default.Add, contentDescription = null, tint = Color(0xFF006400))
                             Spacer(Modifier.width(8.dp))
-                            Text("Agregar paso", color = Color(0xFF006400), fontFamily = Destacado)
+                            Text(
+                                if (steps.size >= 20) "Máximo 20 pasos" else "Agregar paso",
+                                color = if (steps.size >= 20) Color.Gray else Color(0xFF006400),
+                                fontFamily = Destacado
+                            )
                         }
                     }
 
