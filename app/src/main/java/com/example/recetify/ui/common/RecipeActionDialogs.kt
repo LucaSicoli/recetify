@@ -217,15 +217,6 @@ fun RecipeSavedDialog(
                             textAlign = TextAlign.Center
                         )
                         Text(
-                            text = "Moderación",
-                            fontSize = 16.sp,
-                            fontFamily = Sen,
-                            fontWeight = FontWeight.Bold,
-                            color = Color(0xFF3B82F6),
-                            modifier = Modifier.fillMaxWidth(),
-                            textAlign = TextAlign.Center
-                        )
-                        Text(
                             text = "Ve a la sección de borradores en tu perfil para editar o publicar tu receta.",
                             fontSize = 13.sp,
                             fontFamily = Sen,
