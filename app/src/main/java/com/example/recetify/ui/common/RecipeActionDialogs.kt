@@ -78,7 +78,7 @@ fun RecipePublishedDialog(
                     fontSize = 15.sp,
                     fontFamily = Sen,
                     color = Color(0xFF6B7280),
-                    textAlign = TextAlign.Center,
+                    textAlign = TextAlign.Start,
                     modifier = Modifier
                         .fillMaxWidth()
                         .padding(bottom = 8.dp)
@@ -113,7 +113,7 @@ fun RecipePublishedDialog(
                             color = Color(0xFF6B7280),
                             lineHeight = 18.sp,
                             modifier = Modifier.fillMaxWidth(),
-                            textAlign = TextAlign.Center
+                            textAlign = TextAlign.Start
                         )
                     }
                 }
