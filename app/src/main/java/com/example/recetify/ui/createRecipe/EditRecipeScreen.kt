@@ -6,6 +6,7 @@ import android.net.Uri
 import android.widget.Toast
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts.StartActivityForResult
+import androidx.compose.animation.animateContentSize
 import androidx.compose.animation.core.Animatable
 import androidx.compose.animation.core.tween
 import androidx.compose.foundation.*
@@ -13,6 +14,7 @@ import androidx.compose.foundation.gestures.detectHorizontalDragGestures
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.lazy.itemsIndexed
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
@@ -684,7 +686,7 @@ fun EditRecipeScreen(
 
                     Divider(color = Color(0xFFE0E0E0), thickness = 2.dp)
 
-                    // Ingredientes usando carrusel igual que CreateRecipeScreen
+                    // Ingredientes header
                     Box(
                         modifier = Modifier
                             .fillMaxWidth()
@@ -693,105 +695,95 @@ fun EditRecipeScreen(
                             .padding(vertical = 16.dp),
                         contentAlignment = Alignment.Center
                     ) {
-                        Text("Ingredientes (${ingredients.size})", color = Color.White)
+                        Text(
+                            "Ingredientes (${ingredients.size})",
+                            color = Color.White,
+                            fontWeight = FontWeight.SemiBold,
+                            fontSize = 16.sp,
+                            textAlign = TextAlign.Center,
+                            fontFamily = Destacado,
+                        )
                     }
 
+                    // Botón para agregar ingrediente
                     Card(
-                        Modifier
+                        modifier = Modifier
                             .fillMaxWidth()
-                            .clickable { showIngredientDialog = true }
+                            .background(Color.White, RoundedCornerShape(12.dp))
                             .padding(8.dp),
-                        shape = RoundedCornerShape(12.dp),
-                        colors = CardDefaults.cardColors(containerColor = Color.White),
-                        elevation = CardDefaults.cardElevation(4.dp)
+                        shape     = RoundedCornerShape(12.dp),
+                        colors    = CardDefaults.cardColors(containerColor = Color.White),
+                        elevation = CardDefaults.cardElevation(4.dp),
+                        onClick = { showIngredientDialog = true }
                     ) {
                         Row(
                             Modifier
                                 .fillMaxWidth()
                                 .padding(16.dp),
-                            horizontalArrangement = Arrangement.Center,
-                            verticalAlignment = Alignment.CenterVertically
+                            verticalAlignment     = Alignment.CenterVertically,
+                            horizontalArrangement = Arrangement.Center
                         ) {
-                            Icon(
-                                Icons.Default.Add,
-                                contentDescription = null,
-                                tint = Color(0xFF006400)
-                            )
+                            Icon(Icons.Default.Add, contentDescription = null, tint = Color(0xFF006400))
                             Spacer(Modifier.width(8.dp))
-                            Text(
-                                "Agregar ingrediente",
-                                color = Color(0xFF006400),
-                                fontWeight = FontWeight.Medium,
-                                fontFamily = Destacado
-                            )
+                            Text("Agregar ingrediente", color = Color(0xFF006400), fontWeight = FontWeight.Medium, fontFamily = Destacado,)
                         }
                     }
 
+                    // Lista de ingredientes: hasta 5 crece, luego scroll
                     if (ingredients.isNotEmpty()) {
-                        var currentIngredientIndex by remember { mutableStateOf(0) }
-                        val currentIngredient = ingredients[currentIngredientIndex]
-                        Column(
-                            modifier = Modifier
-                                .fillMaxWidth()
-                                .heightIn(max = 340.dp),
-                            verticalArrangement = Arrangement.spacedBy(8.dp)
-                        ) {
-                            Row(
-                                modifier = Modifier.fillMaxWidth(),
-                                horizontalArrangement = Arrangement.Center,
-                                verticalAlignment = Alignment.CenterVertically
+                        val maxVisible = 5
+                        val itemHeight = 80.dp
+                        val spacing = 8.dp
+
+                        if (ingredients.size <= maxVisible) {
+                            Column(
+                                Modifier
+                                    .fillMaxWidth()
+                                    .animateContentSize(),
+                                verticalArrangement = Arrangement.spacedBy(spacing)
                             ) {
-                                IconButton(
-                                    onClick = {
-                                        if (currentIngredientIndex > 0) currentIngredientIndex--
-                                    },
-                                    enabled = currentIngredientIndex > 0
-                                ) {
-                                    Icon(
-                                        Icons.AutoMirrored.Filled.ArrowBack,
-                                        contentDescription = "Ingrediente anterior",
-                                        tint = if (currentIngredientIndex > 0) Color(0xFFBC6154) else Color.Gray
-                                    )
-                                }
-                                Text(
-                                    "Ingrediente ${currentIngredientIndex + 1} de ${ingredients.size}",
-                                    color = Color.DarkGray,
-                                    fontWeight = FontWeight.Medium,
-                                    fontFamily = Destacado,
-                                    modifier = Modifier.padding(horizontal = 16.dp)
-                                )
-                                IconButton(
-                                    onClick = {
-                                        if (currentIngredientIndex < ingredients.size - 1) currentIngredientIndex++
-                                    },
-                                    enabled = currentIngredientIndex < ingredients.size - 1
-                                ) {
-                                    Icon(
-                                        Icons.AutoMirrored.Filled.ArrowForward,
-                                        contentDescription = "Ingrediente siguiente",
-                                        tint = if (currentIngredientIndex < ingredients.size - 1) Color(0xFFBC6154) else Color.Gray
+                                ingredients.forEachIndexed { idx, ingredient ->
+                                    IngredientRow(
+                                        idx = idx,
+                                        ingredient = ingredient,
+                                        onUpdate = { newIng ->
+                                            val updatedIngredients = ingredients.toMutableList()
+                                            updatedIngredients[idx] = newIng
+                                            ingredients = updatedIngredients
+                                        },
+                                        onDelete = {
+                                            val updatedIngredients = ingredients.toMutableList()
+                                            updatedIngredients.removeAt(idx)
+                                            ingredients = updatedIngredients
+                                        }
                                     )
                                 }
                             }
-                            IngredientRow(
-                                idx = currentIngredientIndex,
-                                ingredient = currentIngredient,
-                                onUpdate = { newIng ->
-                                    val updatedIngredients = ingredients.toMutableList()
-                                    updatedIngredients[currentIngredientIndex] = newIng
-                                    ingredients = updatedIngredients
-                                },
-                                onDelete = {
-                                    val updatedIngredients = ingredients.toMutableList()
-                                    updatedIngredients.removeAt(currentIngredientIndex)
-                                    ingredients = updatedIngredients
-                                    if (currentIngredientIndex >= ingredients.size && ingredients.isNotEmpty()) {
-                                        currentIngredientIndex = ingredients.size - 1
-                                    } else if (ingredients.isEmpty()) {
-                                        currentIngredientIndex = 0
-                                    }
+                        } else {
+                            val scrollVisible = 6
+                            LazyColumn(
+                                modifier = Modifier
+                                    .fillMaxWidth()
+                                    .height(itemHeight * scrollVisible + spacing * (scrollVisible - 1)),
+                                verticalArrangement = Arrangement.spacedBy(spacing)
+                            ) {
+                                itemsIndexed(ingredients) { idx, ingredient ->
+                                    IngredientRow(
+                                        idx = idx,
+                                        ingredient = ingredient,
+                                        onUpdate = { newIng ->
+                                            val updatedIngredients = ingredients.toMutableList()
+                                            updatedIngredients[idx] = newIng
+                                            ingredients = updatedIngredients
+                                        },
+                                        onDelete = {
+                                            val updatedIngredients = ingredients.toMutableList()
+                                            updatedIngredients.removeAt(idx)
+                                            ingredients = updatedIngredients
+                                        }
+                                    )
                                 }
-                            )
+                            }
                         }
                     }
 
