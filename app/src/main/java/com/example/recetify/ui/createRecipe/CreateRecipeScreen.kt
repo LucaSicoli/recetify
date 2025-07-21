@@ -56,6 +56,7 @@ import com.example.recetify.util.listaIngredientesConEmoji
 import android.content.Intent
 import android.widget.Toast
 import androidx.activity.result.contract.ActivityResultContracts.StartActivityForResult
+import androidx.compose.animation.animateContentSize
 import androidx.compose.material.icons.filled.Delete
 import androidx.compose.ui.viewinterop.AndroidView
 import com.example.recetify.data.remote.model.RecipeRequest
@@ -69,9 +70,11 @@ import androidx.compose.ui.layout.onGloballyPositioned
 import androidx.compose.ui.text.rememberTextMeasurer
 import androidx.compose.ui.unit.TextUnitType
 import androidx.compose.animation.core.Animatable
+import androidx.compose.animation.core.animateDpAsState
 import androidx.compose.animation.core.tween
 import androidx.compose.foundation.gestures.detectHorizontalDragGestures
 import androidx.compose.foundation.lazy.LazyRow
+import androidx.compose.foundation.lazy.itemsIndexed
 import androidx.compose.material.icons.filled.BookmarkBorder
 import androidx.compose.material.icons.filled.Close
 import androidx.compose.material.icons.filled.PlayArrow
@@ -818,70 +821,48 @@ fun CreateRecipeScreen(
                         }
                     }
 
-                    // Carrusel de ingredientes
+                    // Lista de ingredientes: hasta 6 crece, luego scroll
                     if (ingredients.isNotEmpty()) {
-                        var currentIngredientIndex by remember { mutableStateOf(0) }
-                        val currentIngredient = ingredients[currentIngredientIndex]
-                        Column(
-                            modifier = Modifier
-                                .fillMaxWidth()
-                                .heightIn(max = 340.dp),
-                            verticalArrangement = Arrangement.spacedBy(8.dp)
-                        ) {
-                            // Indicador de página y navegación
-                            Row(
-                                modifier = Modifier.fillMaxWidth(),
-                                horizontalArrangement = Arrangement.Center,
-                                verticalAlignment = Alignment.CenterVertically
+                        val maxVisible = 6
+                        val itemHeight = 80.dp
+                        val spacing = 8.dp
+
+                        if (ingredients.size <= maxVisible) {
+                            // Muestra todos los ingredientes, el Column crece naturalmente y se anima
+                            Column(
+                                Modifier
+                                    .fillMaxWidth()
+                                    .animateContentSize(),
+                                verticalArrangement = Arrangement.spacedBy(spacing)
                             ) {
-                                IconButton(
-                                    onClick = {
-                                        if (currentIngredientIndex > 0) currentIngredientIndex--
-                                    },
-                                    enabled = currentIngredientIndex > 0
-                                ) {
-                                    Icon(
-                                        Icons.AutoMirrored.Filled.ArrowBack,
-                                        contentDescription = "Ingrediente anterior",
-                                        tint = if (currentIngredientIndex > 0) Accent else Gray
-                                    )
-                                }
-                                Text(
-                                    "Ingrediente ${currentIngredientIndex + 1} de ${ingredients.size}",
-                                    color = DarkGray,
-                                    fontWeight = FontWeight.Medium,
-                                    fontFamily = Destacado,
-                                    modifier = Modifier.padding(horizontal = 16.dp)
-                                )
-                                IconButton(
-                                    onClick = {
-                                        if (currentIngredientIndex < ingredients.size - 1) currentIngredientIndex++
-                                    },
-                                    enabled = currentIngredientIndex < ingredients.size - 1
-                                ) {
-                                    Icon(
-                                        Icons.AutoMirrored.Filled.ArrowForward,
-                                        contentDescription = "Ingrediente siguiente",
-                                        tint = if (currentIngredientIndex < ingredients.size - 1) Accent else Gray
+                                ingredients.forEachIndexed { idx, ingredient ->
+                                    IngredientRow(
+                                        idx = idx,
+                                        ingredient = ingredient,
+                                        onUpdate = { newIng -> ingredients[idx] = newIng },
+                                        onDelete = { ingredients.removeAt(idx) }
                                     )
                                 }
                             }
-                            // Mostrar solo el ingrediente actual
-                            IngredientRow(
-                                idx = currentIngredientIndex,
-                                ingredient = currentIngredient,
-                                onUpdate = { newIng ->
-                                    ingredients[currentIngredientIndex] = newIng
-                                },
-                                onDelete = {
-                                    ingredients.removeAt(currentIngredientIndex)
-                                    if (currentIngredientIndex >= ingredients.size && ingredients.isNotEmpty()) {
-                                        currentIngredientIndex = ingredients.size - 1
-                                    } else if (ingredients.isEmpty()) {
-                                        currentIngredientIndex = 0
-                                    }
+                        } else {
+                            // Más de 6: limitamos la altura a 8 ítems y dejamos scroll
+                            val scrollVisible = 6
+                            LazyColumn(
+                                modifier = Modifier
+                                    .fillMaxWidth()
+                                    // altura = 8 * itemHeight + 7 * spacing
+                                    .height(itemHeight * scrollVisible + spacing * (scrollVisible - 1)),
+                                verticalArrangement = Arrangement.spacedBy(spacing)
+                            ) {
+                                itemsIndexed(ingredients) { idx, ingredient ->
+                                    IngredientRow(
+                                        idx = idx,
+                                        ingredient = ingredient,
+                                        onUpdate = { newIng -> ingredients[idx] = newIng },
+                                        onDelete = { ingredients.removeAt(idx) }
+                                    )
                                 }
-                            )
+                            }
                         }
                     }
                     if (ingredientesError) {
