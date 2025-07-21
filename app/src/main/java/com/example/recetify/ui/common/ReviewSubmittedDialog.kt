@@ -6,6 +6,7 @@ import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.CheckCircle
+import androidx.compose.material.icons.filled.Warning
 import androidx.compose.material3.*
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
@@ -106,26 +107,43 @@ fun ReviewSubmittedDialog(
                     ) {
                         Row(
                             modifier = Modifier.fillMaxWidth(),
-                            verticalAlignment = Alignment.CenterVertically
+                            verticalAlignment = Alignment.CenterVertically,
+                            horizontalArrangement = Arrangement.Center
                         ) {
+                            // Centrado conjunto: icono y texto pegados y centrados
+                            Box(
+                                modifier = Modifier
+                                    .size(24.dp)
+                                    .background(Color(0xFFFFF3CD), shape = CircleShape),
+                                contentAlignment = Alignment.Center
+                            ) {
+                                Icon(
+                                    imageVector = Icons.Default.Warning,
+                                    contentDescription = "Advertencia",
+                                    tint = Color(0xFFF59E42),
+                                    modifier = Modifier.size(16.dp)
+                                )
+                            }
+                            Spacer(modifier = Modifier.width(6.dp)) // Menos espacio entre icono y texto
                             Text(
-                                text = "Proceso de moderación",
+                                text = "Atención:",
                                 fontSize = 15.sp,
                                 fontFamily = Sen,
                                 fontWeight = FontWeight.SemiBold,
-                                color = Color(0xFF1F2937),
-                                modifier = Modifier.fillMaxWidth(),
-                                maxLines = 1
+                                color = Color(0xFFBC6154),
+                                maxLines = 1,
+                                textAlign = TextAlign.Center
                             )
                         }
                         Text(
-                            text = "Nuestro equipo revisará tu reseña en las próximas 24 horas",
+                            text = "Si tenías alguna reseña previa sobre esta receta, la misma fue eliminada, y deberás esperar a que la administración apruebe tu nueva reseña.",
                             fontSize = 13.sp,
                             fontFamily = Sen,
                             color = Color(0xFF6B7280),
                             lineHeight = 18.sp,
                             modifier = Modifier.fillMaxWidth(),
-                            textAlign = TextAlign.Start
+                            textAlign = TextAlign.Center,
+                            letterSpacing = 0.1.sp // Reduce el espacio entre letras
                         )
                     }
                 }
