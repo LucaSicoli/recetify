@@ -2066,8 +2066,8 @@ internal fun IngredientRow(
                     IconButton(
                         onClick = {
                             val current = cantidadText.toDoubleOrNull() ?: 1.0
-                            if (current > 0.1) {
-                                val newValue = (current - 1).coerceAtLeast(0.1)
+                            if (current > 0.0) { // No permitir menos de 0
+                                val newValue = (current - 1).coerceAtLeast(0.0)
                                 cantidadText = newValue.toString()
                                 onUpdate(ingredient.copy(cantidad = newValue, unidadMedida = unidad))
                             }
@@ -2084,16 +2084,21 @@ internal fun IngredientRow(
 
                     // Campo cantidad
                     Card(
-                        modifier = Modifier.width(50.dp),
+                        modifier = Modifier.width(90.dp), // Agrandado
                         shape = RoundedCornerShape(8.dp),
                         colors = CardDefaults.cardColors(containerColor = Color(0xFFF8F8F8)),
                         border = BorderStroke(1.dp, Color(0xFFE0E0E0))
                     ) {
                         BasicTextField(
-                            value = cantidadText,
+                            value = if (cantidadText.toDoubleOrNull()?.rem(1.0) == 0.0) {
+                                cantidadText.toDoubleOrNull()?.toInt()?.toString() ?: cantidadText
+                            } else {
+                                cantidadText
+                            },
                             onValueChange = { new ->
                                 val normalized = new.replace(',', '.')
-                                if (normalized.matches(Regex("^\\d*\\.?\\d*") ) || normalized.isEmpty()) {
+                                val digitsOnly = normalized.replace(".", "")
+                                if (digitsOnly.length <= 6 && (normalized.matches(Regex("^\\d*\\.?\\d*") ) || normalized.isEmpty())) {
                                     cantidadText = normalized
                                     val parsed = normalized.toDoubleOrNull() ?: 0.0
                                     onUpdate(ingredient.copy(cantidad = parsed, unidadMedida = unidad))
@@ -2132,6 +2137,8 @@ internal fun IngredientRow(
                             modifier = Modifier.size(16.dp)
                         )
                     }
+
+                    Spacer(modifier = Modifier.width(16.dp)) // Separación extra
 
                     // Selector de unidad
                     Card(
