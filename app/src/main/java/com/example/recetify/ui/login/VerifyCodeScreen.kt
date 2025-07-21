@@ -66,6 +66,7 @@ fun VerifyCodeScreen(
     var isFocused by remember { mutableStateOf(false) }
     var cursorVisible by remember { mutableStateOf(false) }
     var validationState by remember { mutableStateOf<Validation?>(null) }
+    var isInputEnabled by remember { mutableStateOf(true) } // Estado para habilitar/deshabilitar input
     val keyboard = LocalSoftwareKeyboardController.current
     val lifecycleOwner = LocalLifecycleOwner.current
     val scope = rememberCoroutineScope()
@@ -80,6 +81,7 @@ fun VerifyCodeScreen(
         if (validationState == Validation.Invalid) {
             showRedBoxes = true
             showErrorMessage = true
+            isInputEnabled = false
             shakeOffset.snapTo(0f)
             shakeOffset.animateTo(
                 targetValue = 1f,
@@ -90,12 +92,15 @@ fun VerifyCodeScreen(
                 )
             )
             shakeOffset.snapTo(0f)
-            kotlinx.coroutines.delay(2000)
+            kotlinx.coroutines.delay(1800)
             showRedBoxes = false
+            showErrorMessage = false
             otp = ""
+            viewModel.clearError()
+            isInputEnabled = true
         } else if (validationState == Validation.Valid) {
             showSuccessMessage = true
-            kotlinx.coroutines.delay(1500)
+            kotlinx.coroutines.delay(1600)
             showSuccessMessage = false
         }
     }
@@ -224,7 +229,7 @@ fun VerifyCodeScreen(
                 BasicTextField(
                     value = otp,
                     onValueChange = { new ->
-                        if (new.length <= 6 && new.all(Char::isDigit)) {
+                        if (isInputEnabled && new.length <= 6 && new.all(Char::isDigit)) {
                             otp = new
                             validationState = null
                             viewModel.clearError()
