@@ -1,6 +1,7 @@
 // app/src/main/java/com/example/recetify/ui/details/LocalRecipeDetailScreen.kt
 package com.example.recetify.ui.details
 
+import androidx.activity.compose.BackHandler
 import androidx.compose.foundation.layout.*
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.Scaffold
@@ -24,7 +25,8 @@ import kotlinx.coroutines.flow.firstOrNull
 fun LocalRecipeDetailScreen(
     localRecipeId: Long,
     navController: NavController,
-    customVm: CustomTasteViewModel = viewModel()
+    customVm: CustomTasteViewModel = viewModel(),
+    from: String = "customTaste" // <-- nuevo parámetro para saber desde dónde se invocó
 ) {
     val context     = LocalContext.current
 
@@ -51,6 +53,10 @@ fun LocalRecipeDetailScreen(
         containerColor = Color.White,                    // quita franja negra
         bottomBar      = { BottomNavBar(navController, isAlumno) }
     ) { padding ->
+        // Interceptar el botón físico y el de la barra para navegación personalizada
+        BackHandler {
+            navController.popBackStack()
+        }
         Box(
             Modifier
                 .fillMaxSize()
@@ -76,7 +82,8 @@ fun LocalRecipeDetailScreen(
                     isFavorite = true,
                     onToggleFavorite = { /* sin favoritos locales */ },
                     onSaveEditedRecipe = { /* opcional */ },
-                    isAlumno = isAlumno
+                    isAlumno = isAlumno,
+                    onBack = { navController.popBackStack() } // <-- ahora el botón de la UI hace lo mismo que el nativo
                 )
             }
         }

@@ -321,14 +321,18 @@ fun AppNavGraph() {
                 }
 
                 composable(
-                    "localRecipe/{id}",
-                    arguments = listOf(navArgument("id") { type = NavType.LongType })
+                    "localRecipe/{id}?from={from}",
+                    arguments = listOf(
+                        navArgument("id") { type = NavType.LongType },
+                        navArgument("from") { type = NavType.StringType; defaultValue = "customTaste" }
+                    )
                 ) { backStackEntry ->
                     val id = backStackEntry.arguments?.getLong("id") ?: return@composable
-                    // Aquí faltaba el navController
+                    val from = backStackEntry.arguments?.getString("from") ?: "customTaste"
                     LocalRecipeDetailScreen(
                         localRecipeId = id,
-                        navController = navController   // ← pásalo aquí
+                        navController = navController,
+                        from = from // ← pasar parámetro correctamente
                     )
                 }
 

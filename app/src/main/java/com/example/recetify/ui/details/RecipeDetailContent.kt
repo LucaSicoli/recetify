@@ -433,7 +433,8 @@ fun RecipeDetailContent(
     onSaveEditedRecipe: (RecipeResponse) -> Unit,
     isAlumno: Boolean,
     from: String? = null,
-    onNavigateWithLoading: ((String) -> Unit)? = null // <-- nuevo callback
+    onNavigateWithLoading: ((String) -> Unit)? = null,
+    onBack: (() -> Unit)? = null // <-- nuevo parámetro
 ) {
     val primaryTextColor = Color(0xFF042628)
     val selectedButtonColor = Color(0xFF042628)
