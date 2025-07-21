@@ -1995,8 +1995,9 @@ internal fun IngredientRow(
     onUpdate: (RecipeIngredientRequest) -> Unit,
     onDelete: () -> Unit
 ) {
-    var cantidadText by remember { mutableStateOf(ingredient.cantidad.toInt().toString()) }
-    var unidad by remember { mutableStateOf(ingredient.unidadMedida) }
+    // Usar el valor actual del ingrediente, no un estado local inicializado solo una vez
+    var cantidadText by remember(ingredient.cantidad) { mutableStateOf(ingredient.cantidad.toString()) }
+    var unidad by remember(ingredient.unidadMedida) { mutableStateOf(ingredient.unidadMedida) }
     var expanded by remember { mutableStateOf(false) }
 
     Card(
@@ -2091,7 +2092,6 @@ internal fun IngredientRow(
                         BasicTextField(
                             value = cantidadText,
                             onValueChange = { new ->
-                                // Permitir números decimales con punto o coma
                                 val normalized = new.replace(',', '.')
                                 if (normalized.matches(Regex("^\\d*\\.?\\d*") ) || normalized.isEmpty()) {
                                     cantidadText = normalized
