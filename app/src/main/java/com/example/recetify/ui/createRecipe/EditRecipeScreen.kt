@@ -798,7 +798,11 @@ fun EditRecipeScreen(
                             .padding(vertical = 16.dp),
                         contentAlignment = Alignment.Center
                     ) {
-                        Text("Instrucciones (${steps.size})", color = Color.White)
+                        Text(
+                            "Instrucciones (${steps.size})",
+                            color = Color.White,
+                            fontFamily = Destacado,
+                        )
                     }
 
                     // Carrusel de pasos - mostrar uno a la vez
