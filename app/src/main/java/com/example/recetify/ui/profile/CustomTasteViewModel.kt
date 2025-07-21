@@ -32,6 +32,9 @@ class CustomTasteViewModel(app: Application) : AndroidViewModel(app) {
     private val _customRecipes = MutableStateFlow<List<ISavedRecipe>>(emptyList())
     val customRecipes: StateFlow<List<ISavedRecipe>> = _customRecipes
 
+    private val _showLimitDialog = MutableStateFlow(false)
+    val showLimitDialog: StateFlow<Boolean> = _showLimitDialog
+
     init {
         viewModelScope.launch {
             ownerEmail = SessionManager.getCurrentUserEmail(app.applicationContext)
@@ -61,6 +64,7 @@ class CustomTasteViewModel(app: Application) : AndroidViewModel(app) {
         viewModelScope.launch {
             val count = withContext(Dispatchers.IO) { dao.countForUser(ownerEmail) }
             if (count >= 10) {
+                _showLimitDialog.value = true
                 onError("Ya tienes 10 recetas en “Mi gusto”. Borra alguna antes.")
                 return@launch
             }
@@ -91,5 +95,9 @@ class CustomTasteViewModel(app: Application) : AndroidViewModel(app) {
         viewModelScope.launch(Dispatchers.IO) {
             dao.delete(recipeId, ownerEmail)
         }
+    }
+
+    fun dismissLimitDialog() {
+        _showLimitDialog.value = false
     }
 }

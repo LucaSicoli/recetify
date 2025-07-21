@@ -104,6 +104,14 @@ fun RecipeDetailScreen(
         }
     }
 
+    // Mostrar el diálogo de límite de recetas personalizadas
+    val showLimitDialog by customVm.showLimitDialog.collectAsState()
+    if (showLimitDialog) {
+        com.example.recetify.ui.common.CustomLimitDialog(
+            onDismiss = { customVm.dismissLimitDialog() }
+        )
+    }
+
     Scaffold(
         bottomBar = { BottomNavBar(navController, isAlumno) },
         containerColor = Color.White,
