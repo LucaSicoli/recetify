@@ -823,7 +823,7 @@ fun CreateRecipeScreen(
 
                     // Lista de ingredientes: hasta 6 crece, luego scroll
                     if (ingredients.isNotEmpty()) {
-                        val maxVisible = 6
+                        val maxVisible = 5
                         val itemHeight = 80.dp
                         val spacing = 8.dp
 
