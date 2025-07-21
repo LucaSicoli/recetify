@@ -2084,7 +2084,7 @@ internal fun IngredientRow(
 
                     // Campo cantidad
                     Card(
-                        modifier = Modifier.width(90.dp), // Agrandado
+                        modifier = Modifier.width(70.dp), // Agrandado
                         shape = RoundedCornerShape(8.dp),
                         colors = CardDefaults.cardColors(containerColor = Color(0xFFF8F8F8)),
                         border = BorderStroke(1.dp, Color(0xFFE0E0E0))
@@ -2120,6 +2120,8 @@ internal fun IngredientRow(
                         )
                     }
 
+                    // Espacio extra entre cantidad y unidad
+
                     // Botón incrementar
                     IconButton(
                         onClick = {
@@ -2133,12 +2135,12 @@ internal fun IngredientRow(
                         Icon(
                             Icons.Default.Add,
                             contentDescription = null,
-                            tint = Accent,
+                            tint = Color(0xFF006400), // Verde oscuro
                             modifier = Modifier.size(16.dp)
                         )
                     }
 
-                    Spacer(modifier = Modifier.width(16.dp)) // Separación extra
+                    Spacer(modifier = Modifier.width(22.dp)) // Separación extra
 
                     // Selector de unidad
                     Card(
