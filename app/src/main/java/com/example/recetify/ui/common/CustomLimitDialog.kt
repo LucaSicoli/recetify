@@ -70,7 +70,8 @@ fun CustomLimitDialog(
                     fontWeight = FontWeight.Bold,
                     fontFamily = Sen,
                     color = Color(0xFFBC6154),
-                    textAlign = TextAlign.Center
+                    textAlign = TextAlign.Center,
+                    letterSpacing = 0.1.sp
                 )
                 Text(
                     text = "Ya tienes 10 recetas personalizadas guardadas. Elimina una para poder seguir guardando nuevas.",
@@ -79,6 +80,7 @@ fun CustomLimitDialog(
                     color = Color(0xFF6B7280),
                     textAlign = TextAlign.Center,
                     lineHeight = 22.sp,
+                    letterSpacing = 0.1.sp,
                     modifier = Modifier.fillMaxWidth()
                 )
                 Spacer(Modifier.height(8.dp))
@@ -102,4 +104,3 @@ fun CustomLimitDialog(
         }
     }
 }
-
