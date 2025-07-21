@@ -823,7 +823,7 @@ fun CreateRecipeScreen(
 
                     // Lista de ingredientes: hasta 6 crece, luego scroll
                     if (ingredients.isNotEmpty()) {
-                        val maxVisible = 5
+                        val maxVisible = 6
                         val itemHeight = 80.dp
                         val spacing = 8.dp
 
@@ -2003,7 +2003,6 @@ internal fun IngredientRow(
     onUpdate: (RecipeIngredientRequest) -> Unit,
     onDelete: () -> Unit
 ) {
-    // Usar el valor actual del ingrediente, no un estado local inicializado solo una vez
     var cantidadText by remember(ingredient.cantidad) { mutableStateOf(ingredient.cantidad.toString()) }
     var unidad by remember(ingredient.unidadMedida) { mutableStateOf(ingredient.unidadMedida) }
     var expanded by remember { mutableStateOf(false) }
@@ -2011,51 +2010,45 @@ internal fun IngredientRow(
     Card(
         modifier = Modifier
             .fillMaxWidth()
-            .padding(vertical = 4.dp),
-        shape = RoundedCornerShape(16.dp),
+            .padding(vertical = 2.dp),                // menos padding externo
+        shape = RoundedCornerShape(12.dp),
         colors = CardDefaults.cardColors(containerColor = Color.White),
-        elevation = CardDefaults.cardElevation(2.dp),
+        elevation = CardDefaults.cardElevation(1.dp),
         border = BorderStroke(1.dp, Color(0xFFE8E8E8))
     ) {
         Row(
             modifier = Modifier
                 .fillMaxWidth()
-                .padding(16.dp),
+                .padding(horizontal = 12.dp, vertical = 6.dp), // menos padding interno
             verticalAlignment = Alignment.CenterVertically,
-            horizontalArrangement = Arrangement.spacedBy(12.dp)
+            horizontalArrangement = Arrangement.spacedBy(8.dp)
         ) {
-            // Imagen del ingrediente
             val imageUrl = TheMealDBImages.getIngredientImageUrlSmart(ingredient.nombre.orEmpty())
             if (imageUrl != null) {
                 AsyncImage(
                     model = imageUrl,
                     contentDescription = ingredient.nombre.orEmpty(),
                     modifier = Modifier
-                        .size(56.dp)
+                        .size(40.dp) // más chico
                         .clip(CircleShape),
                     contentScale = ContentScale.Crop
                 )
             } else {
                 Box(
-                    modifier = Modifier
-                        .size(56.dp),
+                    modifier = Modifier.size(40.dp),
                     contentAlignment = Alignment.Center
                 ) {
-                    Text(
-                        text = obtenerEmoji(ingredient.nombre.orEmpty()),
-                        fontSize = 24.sp
-                    )
+                    Text(obtenerEmoji(ingredient.nombre.orEmpty()), fontSize = 18.sp)
                 }
             }
 
-            // Nombre del ingrediente
             Column(
                 modifier = Modifier.weight(1f),
                 horizontalAlignment = Alignment.CenterHorizontally
             ) {
                 Text(
                     text = ingredient.nombre.orEmpty(),
-                    fontSize = 16.sp,
+                    fontSize = 14.sp,
                     fontWeight = FontWeight.SemiBold,
                     color = Black,
                     fontFamily = Destacado,
@@ -2064,136 +2057,88 @@ internal fun IngredientRow(
                     textAlign = TextAlign.Center
                 )
 
-                // Controles de cantidad y unidad en una fila compacta
                 Row(
                     verticalAlignment = Alignment.CenterVertically,
-                    horizontalArrangement = Arrangement.Center,
-                    modifier = Modifier.padding(top = 12.dp)
+                    horizontalArrangement = Arrangement.spacedBy(16.dp), // separación limpia entre grupos
+                    modifier = Modifier.padding(top = 4.dp)             // menos espacio vertical
                 ) {
-                    // Botón decrementar
-                    IconButton(
-                        onClick = {
+                    // Grupo cantidad (+ / campo / -)
+                    Row(
+                        verticalAlignment = Alignment.CenterVertically,
+                        horizontalArrangement = Arrangement.spacedBy(4.dp)
+                    ) {
+                        SmallIconButton(onClick = {
                             val current = cantidadText.toDoubleOrNull() ?: 1.0
-                            if (current > 0.0) { // No permitir menos de 0
+                            if (current > 0.0) {
                                 val newValue = (current - 1).coerceAtLeast(0.0)
                                 cantidadText = newValue.toString()
                                 onUpdate(ingredient.copy(cantidad = newValue, unidadMedida = unidad))
                             }
-                        },
-                        modifier = Modifier.size(28.dp)
-                    ) {
-                        Icon(
-                            Icons.Default.Remove,
-                            contentDescription = null,
-                            tint = Accent,
-                            modifier = Modifier.size(16.dp)
-                        )
-                    }
+                        }) { Icon(Icons.Default.Remove, null, tint = Accent, modifier = Modifier.size(14.dp)) }
 
-                    // Campo cantidad
-                    Card(
-                        modifier = Modifier.width(70.dp), // Agrandado
-                        shape = RoundedCornerShape(8.dp),
-                        colors = CardDefaults.cardColors(containerColor = Color(0xFFF8F8F8)),
-                        border = BorderStroke(1.dp, Color(0xFFE0E0E0))
-                    ) {
-                        BasicTextField(
-                            value = if (cantidadText.toDoubleOrNull()?.rem(1.0) == 0.0) {
-                                cantidadText.toDoubleOrNull()?.toInt()?.toString() ?: cantidadText
-                            } else {
-                                cantidadText
-                            },
-                            onValueChange = { new ->
-                                val normalized = new.replace(',', '.')
-                                val digitsOnly = normalized.replace(".", "")
-                                if (digitsOnly.length <= 6 && (normalized.matches(Regex("^\\d*\\.?\\d*") ) || normalized.isEmpty())) {
-                                    cantidadText = normalized
-                                    val parsed = normalized.toDoubleOrNull() ?: 0.0
-                                    onUpdate(ingredient.copy(cantidad = parsed, unidadMedida = unidad))
-                                }
-                            },
-                            singleLine = true,
-                            keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Decimal),
-                            textStyle = LocalTextStyle.current.copy(
-                                color = Black,
-                                fontSize = 14.sp,
-                                fontWeight = FontWeight.Medium,
-                                textAlign = TextAlign.Center,
-                                fontFamily = Destacado
-                            ),
-                            cursorBrush = SolidColor(Accent),
-                            modifier = Modifier
-                                .fillMaxWidth()
-                                .padding(8.dp)
-                        )
-                    }
+                        Card(
+                            modifier = Modifier.width(56.dp),
+                            shape = RoundedCornerShape(6.dp),
+                            colors = CardDefaults.cardColors(containerColor = Color(0xFFF4F4F4)),
+                            border = BorderStroke(1.dp, Color(0xFFE0E0E0))
+                        ) {
+                            BasicTextField(
+                                value = if (cantidadText.toDoubleOrNull()?.rem(1.0) == 0.0)
+                                    (cantidadText.toDoubleOrNull()?.toInt()?.toString() ?: cantidadText)
+                                else cantidadText,
+                                onValueChange = { new ->
+                                    val normalized = new.replace(',', '.')
+                                    val digitsOnly = normalized.replace(".", "")
+                                    if (digitsOnly.length <= 6 && (normalized.matches(Regex("^\\d*\\.?\\d*")) || normalized.isEmpty())) {
+                                        cantidadText = normalized
+                                        onUpdate(ingredient.copy(cantidad = normalized.toDoubleOrNull() ?: 0.0, unidadMedida = unidad))
+                                    }
+                                },
+                                singleLine = true,
+                                keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Decimal),
+                                textStyle = LocalTextStyle.current.copy(
+                                    color = Black, fontSize = 12.sp,
+                                    fontWeight = FontWeight.Medium, textAlign = TextAlign.Center,
+                                    fontFamily = Destacado
+                                ),
+                                cursorBrush = SolidColor(Accent),
+                                modifier = Modifier
+                                    .fillMaxWidth()
+                                    .padding(vertical = 4.dp) // menos padding
+                            )
+                        }
 
-                    // Espacio extra entre cantidad y unidad
-
-                    // Botón incrementar
-                    IconButton(
-                        onClick = {
+                        SmallIconButton(onClick = {
                             val current = cantidadText.toDoubleOrNull() ?: 0.0
                             val newValue = current + 1
                             cantidadText = newValue.toString()
                             onUpdate(ingredient.copy(cantidad = newValue, unidadMedida = unidad))
-                        },
-                        modifier = Modifier.size(28.dp)
-                    ) {
-                        Icon(
-                            Icons.Default.Add,
-                            contentDescription = null,
-                            tint = Color(0xFF006400), // Verde oscuro
-                            modifier = Modifier.size(16.dp)
-                        )
+                        }) { Icon(Icons.Default.Add, null, tint = Color(0xFF006400), modifier = Modifier.size(14.dp)) }
                     }
 
-                    Spacer(modifier = Modifier.width(22.dp)) // Separación extra
-
-                    // Selector de unidad
+                    // Selector de unidad (más separado gracias al spacedBy arriba)
                     Card(
-                        modifier = Modifier.width(60.dp),
-                        shape = RoundedCornerShape(8.dp),
-                        colors = CardDefaults.cardColors(containerColor = Color(0xFFF8F8F8)),
+                        modifier = Modifier.width(56.dp),
+                        shape = RoundedCornerShape(6.dp),
+                        colors = CardDefaults.cardColors(containerColor = Color(0xFFF4F4F4)),
                         border = BorderStroke(1.dp, Color(0xFFE0E0E0))
                     ) {
                         Box(
                             modifier = Modifier
                                 .fillMaxWidth()
                                 .clickable { expanded = true }
-                                .padding(8.dp),
+                                .padding(vertical = 4.dp),
                             contentAlignment = Alignment.Center
                         ) {
-                            Text(
-                                unidad,
-                                color = Black,
-                                fontFamily = Destacado,
-                                fontSize = 12.sp,
-                                fontWeight = FontWeight.Medium
-                            )
-
-                            DropdownMenu(
-                                expanded = expanded,
-                                onDismissRequest = { expanded = false },
-                                modifier = Modifier.background(Color.White, shape = RoundedCornerShape(8.dp))
-                            ) {
+                            Text(unidad, color = Black, fontFamily = Destacado, fontSize = 11.sp, fontWeight = FontWeight.Medium)
+                            DropdownMenu(expanded = expanded, onDismissRequest = { expanded = false }) {
                                 listOf("un","g","kg","ml","l","tsp","tbsp","cup").forEach { u ->
                                     DropdownMenuItem(
-                                        text = {
-                                            Text(
-                                                u,
-                                                color = Black,
-                                                fontFamily = Destacado,
-                                                fontSize = 12.sp
-                                            )
-                                        },
+                                        text = { Text(u, fontSize = 12.sp, fontFamily = Destacado) },
                                         onClick = {
-                                            unidad = u
-                                            expanded = false
-                                            val qty = cantidadText.toDoubleOrNull() ?: 0.0
-                                            onUpdate(ingredient.copy(cantidad = qty, unidadMedida = unidad))
-                                        },
-                                        contentPadding = PaddingValues(horizontal = 8.dp, vertical = 4.dp)
+                                            unidad = u; expanded = false
+                                            onUpdate(ingredient.copy(cantidad = cantidadText.toDoubleOrNull() ?: 0.0, unidadMedida = unidad))
+                                        }
                                     )
                                 }
                             }
@@ -2202,18 +2147,20 @@ internal fun IngredientRow(
                 }
             }
 
-            // Botón eliminar
-            IconButton(
-                onClick = onDelete,
-                modifier = Modifier.size(36.dp)
-            ) {
-                Icon(
-                    Icons.Default.Close,
-                    contentDescription = "Eliminar ingrediente",
-                    tint = Color(0xFF757575),
-                    modifier = Modifier.size(20.dp)
-                )
+            IconButton(onClick = onDelete, modifier = Modifier.size(32.dp)) {
+                Icon(Icons.Default.Close, contentDescription = "Eliminar", tint = Color(0xFF757575), modifier = Modifier.size(18.dp))
             }
         }
     }
+}
+
+@Composable
+private fun SmallIconButton(onClick: () -> Unit, content: @Composable () -> Unit) {
+    Box(
+        modifier = Modifier
+            .size(28.dp)
+            .clip(CircleShape)
+            .clickable(onClick = onClick),
+        contentAlignment = Alignment.Center
+    ) { content() }
 }
