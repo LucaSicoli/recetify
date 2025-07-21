@@ -1234,7 +1234,8 @@ fun RecipeDetailContent(
                                                         .padding(vertical = 4.dp),
                                                     shape = RoundedCornerShape(12.dp),
                                                     border = BorderStroke(1.dp, Color(0xFFF0E0DC)),
-                                                    colors = CardDefaults.cardColors(containerColor = Color.White)
+                                                    colors = CardDefaults.cardColors(containerColor = Color.White),
+                                                    elevation = CardDefaults.cardElevation(defaultElevation = 2.dp)
                                                 ) {
                                                     Row(
                                                         modifier = Modifier
@@ -1242,22 +1243,12 @@ fun RecipeDetailContent(
                                                             .padding(12.dp),
                                                         verticalAlignment = Alignment.CenterVertically
                                                     ) {
-                                                        // Emoji del ingrediente
-                                                        //Text(
-                                                        //    obtenerEmoji(ingredient.nombre),
-                                                        //    fontSize = 20.sp
-                                                        //)
-                                                        //Spacer(Modifier.width(8.dp))
-
-                                                        // Nombre del ingrediente
                                                         Text(
                                                             ingredient.nombre,
                                                             modifier = Modifier.weight(1f),
                                                             fontWeight = FontWeight.Medium,
                                                             color = Color.Black
                                                         )
-                                                        
-                                                        // Campo de cantidad editable
                                                         Box(
                                                             modifier = Modifier
                                                                 .width(80.dp)
@@ -1267,20 +1258,21 @@ fun RecipeDetailContent(
                                                             contentAlignment = Alignment.Center
                                                         ) {
                                                             BasicTextField(
-                                                                value = ingredient.cantidad.toString(),
+                                                                value = ingredient.cantidad.toInt().toString(),
                                                                 onValueChange = { newValue ->
+                                                                    val filtered = newValue.filter { it.isDigit() }.take(6)
                                                                     val originalCantidad = receta.ingredients[index].cantidad
-                                                                    val newCantidad = newValue.toDoubleOrNull() ?: ingredient.cantidad
-                                                                    val factor = if (originalCantidad > 0) newCantidad / originalCantidad else 1.0
+                                                                    val newCantidad = filtered.toIntOrNull() ?: ingredient.cantidad.toInt()
+                                                                    val factor = if (originalCantidad > 0) newCantidad.toDouble() / originalCantidad else 1.0
                                                                     tempIngredients = tempIngredients.mapIndexed { i, ing ->
                                                                         val base = receta.ingredients[i].cantidad
-                                                                        ing.copy(cantidad = (base * factor))
+                                                                        ing.copy(cantidad = (base * factor).toInt().toDouble())
                                                                     }
                                                                     currentPortions = floor(receta.porciones * factor).toInt().coerceAtLeast(1)
                                                                     tempPortionInput = currentPortions.toString()
                                                                 },
                                                                 singleLine = true,
-                                                                keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Decimal),
+                                                                keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
                                                                 textStyle = LocalTextStyle.current.copy(
                                                                     color = Color.Black,
                                                                     fontSize = 14.sp,
@@ -1293,10 +1285,7 @@ fun RecipeDetailContent(
                                                                 }
                                                             )
                                                         }
-                                                        
                                                         Spacer(Modifier.width(8.dp))
-                                                        
-                                                        // Unidad de medida
                                                         Text(
                                                             ingredient.unidadMedida,
                                                             fontSize = 14.sp,
